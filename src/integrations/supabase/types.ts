@@ -64,6 +64,233 @@ export type Database = {
           },
         ]
       }
+      clients: {
+        Row: {
+          address: Json | null
+          birth_date: string | null
+          classification: string | null
+          created_at: string | null
+          document: string
+          email: string | null
+          id: string
+          monthly_income: number | null
+          name: string
+          notes: string | null
+          occupation: string | null
+          office_id: string | null
+          phone: string | null
+          responsible_user_id: string | null
+          secondary_phone: string | null
+          settings: Json | null
+          source: string | null
+          status: string | null
+          tenant_id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: Json | null
+          birth_date?: string | null
+          classification?: string | null
+          created_at?: string | null
+          document: string
+          email?: string | null
+          id?: string
+          monthly_income?: number | null
+          name: string
+          notes?: string | null
+          occupation?: string | null
+          office_id?: string | null
+          phone?: string | null
+          responsible_user_id?: string | null
+          secondary_phone?: string | null
+          settings?: Json | null
+          source?: string | null
+          status?: string | null
+          tenant_id: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: Json | null
+          birth_date?: string | null
+          classification?: string | null
+          created_at?: string | null
+          document?: string
+          email?: string | null
+          id?: string
+          monthly_income?: number | null
+          name?: string
+          notes?: string | null
+          occupation?: string | null
+          office_id?: string | null
+          phone?: string | null
+          responsible_user_id?: string | null
+          secondary_phone?: string | null
+          settings?: Json | null
+          source?: string | null
+          status?: string | null
+          tenant_id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commissions: {
+        Row: {
+          approval_date: string | null
+          base_amount: number
+          commission_amount: number
+          commission_rate: number
+          created_at: string | null
+          due_date: string
+          id: string
+          notes: string | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          recipient_id: string
+          recipient_type: string
+          sale_id: string
+          settings: Json | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          base_amount: number
+          commission_amount: number
+          commission_rate: number
+          created_at?: string | null
+          due_date: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          recipient_id: string
+          recipient_type: string
+          sale_id: string
+          settings?: Json | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          base_amount?: number
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          recipient_id?: string
+          recipient_type?: string
+          sale_id?: string
+          settings?: Json | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consortium_products: {
+        Row: {
+          administration_fee: number
+          asset_value: number
+          category: string
+          commission_rate: number
+          created_at: string | null
+          description: string | null
+          id: string
+          installments: number
+          min_down_payment: number | null
+          monthly_fee: number
+          name: string
+          settings: Json | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          administration_fee: number
+          asset_value: number
+          category: string
+          commission_rate: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          installments: number
+          min_down_payment?: number | null
+          monthly_fee: number
+          name: string
+          settings?: Json | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          administration_fee?: number
+          asset_value?: number
+          category?: string
+          commission_rate?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          installments?: number
+          min_down_payment?: number | null
+          monthly_fee?: number
+          name?: string
+          settings?: Json | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consortium_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -383,6 +610,110 @@ export type Database = {
           },
           {
             foreignKeyName: "role_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          approval_date: string | null
+          cancellation_date: string | null
+          client_id: string
+          commission_amount: number
+          commission_rate: number
+          completion_date: string | null
+          contract_number: string | null
+          created_at: string | null
+          down_payment: number | null
+          id: string
+          installments: number
+          monthly_payment: number
+          notes: string | null
+          office_id: string
+          product_id: string
+          sale_date: string
+          sale_value: number
+          seller_id: string
+          settings: Json | null
+          status: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          approval_date?: string | null
+          cancellation_date?: string | null
+          client_id: string
+          commission_amount: number
+          commission_rate: number
+          completion_date?: string | null
+          contract_number?: string | null
+          created_at?: string | null
+          down_payment?: number | null
+          id?: string
+          installments: number
+          monthly_payment: number
+          notes?: string | null
+          office_id: string
+          product_id: string
+          sale_date?: string
+          sale_value: number
+          seller_id: string
+          settings?: Json | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          approval_date?: string | null
+          cancellation_date?: string | null
+          client_id?: string
+          commission_amount?: number
+          commission_rate?: number
+          completion_date?: string | null
+          contract_number?: string | null
+          created_at?: string | null
+          down_payment?: number | null
+          id?: string
+          installments?: number
+          monthly_payment?: number
+          notes?: string | null
+          office_id?: string
+          product_id?: string
+          sale_date?: string
+          sale_value?: number
+          seller_id?: string
+          settings?: Json | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "consortium_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -718,6 +1049,10 @@ export type Database = {
           user_role?: Database["public"]["Enums"]["user_role"]
         }
         Returns: Json
+      }
+      calculate_commission: {
+        Args: { p_sale_value: number; p_commission_rate: number }
+        Returns: number
       }
       create_initial_user_setup: {
         Args: {
