@@ -9,12 +9,12 @@ export type CommissionInsert = TablesInsert<'commissions'>;
 export type CommissionUpdate = TablesUpdate<'commissions'>;
 
 export function useCommissions() {
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useQuery({
-    queryKey: ['commissions', currentTenant?.tenant_id],
+    queryKey: ['commissions', activeTenant?.tenant_id],
     queryFn: async () => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
@@ -28,13 +28,13 @@ export function useCommissions() {
             clients:client_id(name)
           )
         `)
-        .eq('tenant_id', currentTenant.tenant_id)
+        .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!currentTenant?.tenant_id,
+    enabled: !!activeTenant?.tenant_id,
   });
 }
 
@@ -60,19 +60,19 @@ export function useUpdateCommission() {
 }
 
 export function useCommissionStats() {
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useQuery({
-    queryKey: ['commission_stats', currentTenant?.tenant_id],
+    queryKey: ['commission_stats', activeTenant?.tenant_id],
     queryFn: async () => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
       const { data, error } = await supabase
         .from('commissions')
         .select('status, commission_amount')
-        .eq('tenant_id', currentTenant.tenant_id);
+        .eq('tenant_id', activeTenant.tenant_id);
 
       if (error) throw error;
 
@@ -88,6 +88,6 @@ export function useCommissionStats() {
 
       return stats;
     },
-    enabled: !!currentTenant?.tenant_id,
+    enabled: !!activeTenant?.tenant_id,
   });
 }

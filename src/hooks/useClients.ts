@@ -9,41 +9,41 @@ export type ClientInsert = TablesInsert<'clients'>;
 export type ClientUpdate = TablesUpdate<'clients'>;
 
 export function useClients() {
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useQuery({
-    queryKey: ['clients', currentTenant?.tenant_id],
+    queryKey: ['clients', activeTenant?.tenant_id],
     queryFn: async () => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
       const { data, error } = await supabase
         .from('clients')
         .select('*')
-        .eq('tenant_id', currentTenant.tenant_id)
+        .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as Client[];
     },
-    enabled: !!currentTenant?.tenant_id,
+    enabled: !!activeTenant?.tenant_id,
   });
 }
 
 export function useCreateClient() {
   const queryClient = useQueryClient();
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useMutation({
     mutationFn: async (client: Omit<ClientInsert, 'tenant_id'>) => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
       const { data, error } = await supabase
         .from('clients')
-        .insert({ ...client, tenant_id: currentTenant.tenant_id })
+        .insert({ ...client, tenant_id: activeTenant.tenant_id })
         .select()
         .single();
 

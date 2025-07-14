@@ -9,41 +9,41 @@ export type ConsortiumProductInsert = TablesInsert<'consortium_products'>;
 export type ConsortiumProductUpdate = TablesUpdate<'consortium_products'>;
 
 export function useConsortiumProducts() {
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useQuery({
-    queryKey: ['consortium_products', currentTenant?.tenant_id],
+    queryKey: ['consortium_products', activeTenant?.tenant_id],
     queryFn: async () => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
       const { data, error } = await supabase
         .from('consortium_products')
         .select('*')
-        .eq('tenant_id', currentTenant.tenant_id)
+        .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as ConsortiumProduct[];
     },
-    enabled: !!currentTenant?.tenant_id,
+    enabled: !!activeTenant?.tenant_id,
   });
 }
 
 export function useCreateConsortiumProduct() {
   const queryClient = useQueryClient();
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useMutation({
     mutationFn: async (product: Omit<ConsortiumProductInsert, 'tenant_id'>) => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
       const { data, error } = await supabase
         .from('consortium_products')
-        .insert({ ...product, tenant_id: currentTenant.tenant_id })
+        .insert({ ...product, tenant_id: activeTenant.tenant_id })
         .select()
         .single();
 

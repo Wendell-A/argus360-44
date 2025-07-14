@@ -9,12 +9,12 @@ export type SaleInsert = TablesInsert<'sales'>;
 export type SaleUpdate = TablesUpdate<'sales'>;
 
 export function useSales() {
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useQuery({
-    queryKey: ['sales', currentTenant?.tenant_id],
+    queryKey: ['sales', activeTenant?.tenant_id],
     queryFn: async () => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
@@ -25,29 +25,29 @@ export function useSales() {
           clients:client_id(name, document),
           consortium_products:product_id(name, category)
         `)
-        .eq('tenant_id', currentTenant.tenant_id)
+        .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!currentTenant?.tenant_id,
+    enabled: !!activeTenant?.tenant_id,
   });
 }
 
 export function useCreateSale() {
   const queryClient = useQueryClient();
-  const { currentTenant } = useAuth();
+  const { activeTenant } = useAuth();
 
   return useMutation({
     mutationFn: async (sale: Omit<SaleInsert, 'tenant_id'>) => {
-      if (!currentTenant?.tenant_id) {
+      if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
       const { data, error } = await supabase
         .from('sales')
-        .insert({ ...sale, tenant_id: currentTenant.tenant_id })
+        .insert({ ...sale, tenant_id: activeTenant.tenant_id })
         .select()
         .single();
 
