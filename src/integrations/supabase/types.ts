@@ -7,329 +7,699 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
-      auditoria_sistema: {
+      audit_log: {
         Row: {
-          acao: string
-          dados_anteriores: Json | null
-          dados_novos: Json | null
-          id: number
-          id_escritorio: number | null
-          id_usuario: number | null
-          ip_origem: unknown | null
-          registro_id: number | null
-          tabela_afetada: string | null
-          timestamp_acao: string | null
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          record_id: string | null
+          table_name: string | null
+          tenant_id: string | null
           user_agent: string | null
-          uuid: string
+          user_id: string | null
         }
         Insert: {
-          acao: string
-          dados_anteriores?: Json | null
-          dados_novos?: Json | null
-          id?: number
-          id_escritorio?: number | null
-          id_usuario?: number | null
-          ip_origem?: unknown | null
-          registro_id?: number | null
-          tabela_afetada?: string | null
-          timestamp_acao?: string | null
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          tenant_id?: string | null
           user_agent?: string | null
-          uuid?: string
+          user_id?: string | null
         }
         Update: {
-          acao?: string
-          dados_anteriores?: Json | null
-          dados_novos?: Json | null
-          id?: number
-          id_escritorio?: number | null
-          id_usuario?: number | null
-          ip_origem?: unknown | null
-          registro_id?: number | null
-          tabela_afetada?: string | null
-          timestamp_acao?: string | null
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          record_id?: string | null
+          table_name?: string | null
+          tenant_id?: string | null
           user_agent?: string | null
-          uuid?: string
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "auditoria_sistema_id_escritorio_fkey"
-            columns: ["id_escritorio"]
+            foreignKeyName: "audit_log_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "escritorios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "auditoria_sistema_id_usuario_fkey"
-            columns: ["id_usuario"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
       }
-      escritorios: {
+      departments: {
         Row: {
-          aceite_lgpd: boolean | null
-          cep: string | null
-          cidade: string | null
-          cnpj: string
-          configuracoes: Json | null
-          data_aceite_lgpd: string | null
-          data_atualizacao: string | null
-          data_criacao: string | null
-          data_trial_fim: string | null
-          email: string
-          endereco_completo: string | null
-          estado: string | null
-          id: number
-          id_plano: number
-          ip_permitidos: unknown[] | null
-          max_tentativas_login: number | null
-          nome_fantasia: string
-          razao_social: string
-          require_2fa: boolean | null
-          status: string | null
-          telefone: string | null
-          timeout_sessao_minutos: number | null
-          uuid: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
         }
         Insert: {
-          aceite_lgpd?: boolean | null
-          cep?: string | null
-          cidade?: string | null
-          cnpj: string
-          configuracoes?: Json | null
-          data_aceite_lgpd?: string | null
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          data_trial_fim?: string | null
-          email: string
-          endereco_completo?: string | null
-          estado?: string | null
-          id?: number
-          id_plano: number
-          ip_permitidos?: unknown[] | null
-          max_tentativas_login?: number | null
-          nome_fantasia: string
-          razao_social: string
-          require_2fa?: boolean | null
-          status?: string | null
-          telefone?: string | null
-          timeout_sessao_minutos?: number | null
-          uuid?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
         }
         Update: {
-          aceite_lgpd?: boolean | null
-          cep?: string | null
-          cidade?: string | null
-          cnpj?: string
-          configuracoes?: Json | null
-          data_aceite_lgpd?: string | null
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          data_trial_fim?: string | null
-          email?: string
-          endereco_completo?: string | null
-          estado?: string | null
-          id?: number
-          id_plano?: number
-          ip_permitidos?: unknown[] | null
-          max_tentativas_login?: number | null
-          nome_fantasia?: string
-          razao_social?: string
-          require_2fa?: boolean | null
-          status?: string | null
-          telefone?: string | null
-          timeout_sessao_minutos?: number | null
-          uuid?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "escritorios_id_plano_fkey"
-            columns: ["id_plano"]
+            foreignKeyName: "departments_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "planos_saas"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
       }
-      perfis_acesso: {
+      office_users: {
         Row: {
-          ativo: boolean | null
-          data_atualizacao: string | null
-          data_criacao: string | null
-          descricao: string | null
-          id: number
-          id_escritorio: number
-          nivel_acesso: number | null
-          nome: string
-          permissoes: Json | null
-          sistema: boolean | null
-          uuid: string
+          active: boolean | null
+          created_at: string | null
+          id: string
+          office_id: string
+          role: Database["public"]["Enums"]["user_role"] | null
+          tenant_id: string
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          ativo?: boolean | null
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          descricao?: string | null
-          id?: number
-          id_escritorio: number
-          nivel_acesso?: number | null
-          nome: string
-          permissoes?: Json | null
-          sistema?: boolean | null
-          uuid?: string
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          office_id: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id: string
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
-          ativo?: boolean | null
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          descricao?: string | null
-          id?: number
-          id_escritorio?: number
-          nivel_acesso?: number | null
-          nome?: string
-          permissoes?: Json | null
-          sistema?: boolean | null
-          uuid?: string
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          office_id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "perfis_acesso_id_escritorio_fkey"
-            columns: ["id_escritorio"]
+            foreignKeyName: "office_users_office_id_fkey"
+            columns: ["office_id"]
             isOneToOne: false
-            referencedRelation: "escritorios"
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
       }
-      planos_saas: {
+      offices: {
         Row: {
-          ativo: boolean | null
-          codigo: string
-          data_atualizacao: string | null
-          data_criacao: string | null
-          descricao: string | null
-          id: number
-          max_clientes: number | null
-          max_usuarios: number | null
-          nome: string
-          recursos_inclusos: string[] | null
-          uuid: string
-          valor_mensal: number | null
+          active: boolean | null
+          address: Json | null
+          cnpj: string | null
+          contact: Json | null
+          created_at: string | null
+          id: string
+          name: string
+          parent_office_id: string | null
+          responsible_id: string | null
+          settings: Json | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["office_type"] | null
+          updated_at: string | null
+          working_hours: Json | null
         }
         Insert: {
-          ativo?: boolean | null
-          codigo: string
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          descricao?: string | null
-          id?: number
-          max_clientes?: number | null
-          max_usuarios?: number | null
-          nome: string
-          recursos_inclusos?: string[] | null
-          uuid?: string
-          valor_mensal?: number | null
+          active?: boolean | null
+          address?: Json | null
+          cnpj?: string | null
+          contact?: Json | null
+          created_at?: string | null
+          id?: string
+          name: string
+          parent_office_id?: string | null
+          responsible_id?: string | null
+          settings?: Json | null
+          tenant_id: string
+          type?: Database["public"]["Enums"]["office_type"] | null
+          updated_at?: string | null
+          working_hours?: Json | null
         }
         Update: {
-          ativo?: boolean | null
-          codigo?: string
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          descricao?: string | null
-          id?: number
-          max_clientes?: number | null
-          max_usuarios?: number | null
-          nome?: string
-          recursos_inclusos?: string[] | null
-          uuid?: string
-          valor_mensal?: number | null
+          active?: boolean | null
+          address?: Json | null
+          cnpj?: string | null
+          contact?: Json | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          parent_office_id?: string | null
+          responsible_id?: string | null
+          settings?: Json | null
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["office_type"] | null
+          updated_at?: string | null
+          working_hours?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offices_parent_office_id_fkey"
+            columns: ["parent_office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permissions: {
+        Row: {
+          actions: string[]
+          created_at: string | null
+          id: string
+          module: string
+          resource: string
+        }
+        Insert: {
+          actions: string[]
+          created_at?: string | null
+          id?: string
+          module: string
+          resource: string
+        }
+        Update: {
+          actions?: string[]
+          created_at?: string | null
+          id?: string
+          module?: string
+          resource?: string
         }
         Relationships: []
       }
-      usuarios: {
+      positions: {
         Row: {
-          ativo: boolean | null
-          avatar_url: string | null
-          bloqueado_ate: string | null
-          configuracoes_usuario: Json | null
-          data_atualizacao: string | null
-          data_criacao: string | null
-          deve_trocar_senha: boolean | null
-          email: string
-          email_verificado: boolean | null
-          id: number
-          id_escritorio: number
-          id_perfil_acesso: number
-          nome: string
-          password_hash: string
-          tentativas_login: number | null
-          totp_ativo: boolean | null
-          totp_secret: string | null
-          ultimo_ip: unknown | null
-          ultimo_login: string | null
-          uuid: string
+          created_at: string
+          department_id: string | null
+          description: string | null
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
         }
         Insert: {
-          ativo?: boolean | null
-          avatar_url?: string | null
-          bloqueado_ate?: string | null
-          configuracoes_usuario?: Json | null
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          deve_trocar_senha?: boolean | null
-          email: string
-          email_verificado?: boolean | null
-          id?: number
-          id_escritorio: number
-          id_perfil_acesso: number
-          nome: string
-          password_hash: string
-          tentativas_login?: number | null
-          totp_ativo?: boolean | null
-          totp_secret?: string | null
-          ultimo_ip?: unknown | null
-          ultimo_login?: string | null
-          uuid?: string
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
         }
         Update: {
-          ativo?: boolean | null
-          avatar_url?: string | null
-          bloqueado_ate?: string | null
-          configuracoes_usuario?: Json | null
-          data_atualizacao?: string | null
-          data_criacao?: string | null
-          deve_trocar_senha?: boolean | null
-          email?: string
-          email_verificado?: boolean | null
-          id?: number
-          id_escritorio?: number
-          id_perfil_acesso?: number
-          nome?: string
-          password_hash?: string
-          tentativas_login?: number | null
-          totp_ativo?: boolean | null
-          totp_secret?: string | null
-          ultimo_ip?: unknown | null
-          ultimo_login?: string | null
-          uuid?: string
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "usuarios_id_escritorio_fkey"
-            columns: ["id_escritorio"]
+            foreignKeyName: "positions_department_id_fkey"
+            columns: ["department_id"]
             isOneToOne: false
-            referencedRelation: "escritorios"
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "usuarios_id_perfil_acesso_fkey"
-            columns: ["id_perfil_acesso"]
+            foreignKeyName: "positions_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "perfis_acesso"
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          department: string | null
+          department_id: string | null
+          email: string
+          full_name: string | null
+          hierarchical_level: number | null
+          hire_date: string | null
+          id: string
+          last_access: string | null
+          phone: string | null
+          position: string | null
+          position_id: string | null
+          settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          department_id?: string | null
+          email: string
+          full_name?: string | null
+          hierarchical_level?: number | null
+          hire_date?: string | null
+          id: string
+          last_access?: string | null
+          phone?: string | null
+          position?: string | null
+          position_id?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          department?: string | null
+          department_id?: string | null
+          email?: string
+          full_name?: string | null
+          hierarchical_level?: number | null
+          hire_date?: string | null
+          id?: string
+          last_access?: string | null
+          phone?: string | null
+          position?: string | null
+          position_id?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          active: boolean | null
+          id: string
+          joined_at: string | null
+          role: string | null
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          goals: Json | null
+          id: string
+          leader_id: string | null
+          metrics: Json | null
+          name: string
+          office_id: string
+          parent_team_id: string | null
+          settings: Json | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          goals?: Json | null
+          id?: string
+          leader_id?: string | null
+          metrics?: Json | null
+          name: string
+          office_id: string
+          parent_team_id?: string | null
+          settings?: Json | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          goals?: Json | null
+          id?: string
+          leader_id?: string | null
+          metrics?: Json | null
+          name?: string
+          office_id?: string
+          parent_team_id?: string | null
+          settings?: Json | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_parent_team_id_fkey"
+            columns: ["parent_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_users: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          invited_at: string | null
+          joined_at: string | null
+          permissions: Json | null
+          profile_id: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          tenant_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          permissions?: Json | null
+          profile_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          permissions?: Json | null
+          profile_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_users_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string | null
+          domain: string | null
+          id: string
+          max_api_calls: number | null
+          max_offices: number | null
+          max_storage_gb: number | null
+          max_users: number | null
+          name: string
+          settings: Json | null
+          slug: string
+          status: Database["public"]["Enums"]["tenant_status"] | null
+          subscription_ends_at: string | null
+          subscription_plan:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
+          subscription_starts_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain?: string | null
+          id?: string
+          max_api_calls?: number | null
+          max_offices?: number | null
+          max_storage_gb?: number | null
+          max_users?: number | null
+          name: string
+          settings?: Json | null
+          slug: string
+          status?: Database["public"]["Enums"]["tenant_status"] | null
+          subscription_ends_at?: string | null
+          subscription_plan?:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
+          subscription_starts_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string | null
+          id?: string
+          max_api_calls?: number | null
+          max_offices?: number | null
+          max_storage_gb?: number | null
+          max_users?: number | null
+          name?: string
+          settings?: Json | null
+          slug?: string
+          status?: Database["public"]["Enums"]["tenant_status"] | null
+          subscription_ends_at?: string | null
+          subscription_plan?:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
+          subscription_starts_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_permissions: {
+        Row: {
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          permission_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_custom: boolean
+          level: number
+          name: string
+          permissions: Json | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_custom?: boolean
+          level?: number
+          name: string
+          permissions?: Json | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_custom?: boolean
+          level?: number
+          name?: string
+          permissions?: Json | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -339,21 +709,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      criar_perfis_padrao: {
-        Args: { escritorio_id: number }
-        Returns: undefined
+      get_user_role_in_tenant: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: Database["public"]["Enums"]["user_role"]
       }
-      get_user_escritorio_id: {
-        Args: Record<PropertyKey, never>
-        Returns: number
+      get_user_tenant_ids: {
+        Args: { user_uuid: string }
+        Returns: string[]
       }
-      user_has_admin_access: {
-        Args: Record<PropertyKey, never>
+      is_tenant_owner: {
+        Args: { user_uuid: string; tenant_uuid: string }
         Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      office_type: "matriz" | "filial" | "representacao"
+      subscription_plan: "starter" | "professional" | "enterprise"
+      tenant_status: "trial" | "active" | "suspended" | "cancelled"
+      user_role: "owner" | "admin" | "manager" | "user" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -361,21 +734,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -393,14 +770,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -416,14 +795,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -439,14 +820,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -454,20 +837,27 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      office_type: ["matriz", "filial", "representacao"],
+      subscription_plan: ["starter", "professional", "enterprise"],
+      tenant_status: ["trial", "active", "suspended", "cancelled"],
+      user_role: ["owner", "admin", "manager", "user", "viewer"],
+    },
   },
 } as const
