@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const userData = data as UserData;
+      const userData = data as unknown as UserData;
       
       if (userData?.authenticated && userData?.tenants) {
         setTenants(userData.tenants);
@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         );
 
-        const result = setupResult as SetupResult;
+        const result = setupResult as unknown as SetupResult;
 
         if (setupError || !result?.success) {
           console.error('Setup error:', setupError || result?.error);
