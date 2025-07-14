@@ -709,6 +709,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_user_to_tenant: {
+        Args: {
+          user_id: string
+          user_email: string
+          user_full_name: string
+          target_tenant_id: string
+          user_role?: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: Json
+      }
+      create_initial_user_setup: {
+        Args: {
+          user_id: string
+          user_email: string
+          user_full_name: string
+          tenant_name: string
+          tenant_slug: string
+        }
+        Returns: Json
+      }
+      get_authenticated_user_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_user_role_in_tenant: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: Database["public"]["Enums"]["user_role"]
