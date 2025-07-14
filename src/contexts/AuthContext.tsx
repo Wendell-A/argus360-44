@@ -13,6 +13,22 @@ interface Tenant {
   active: boolean;
 }
 
+interface UserData {
+  authenticated: boolean;
+  user_id?: string;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
+  tenants?: Tenant[];
+}
+
+interface SetupResult {
+  success: boolean;
+  error?: string;
+  tenant_id?: string;
+  user_id?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -51,10 +67,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      if (data?.authenticated && data?.tenants) {
-        setTenants(data.tenants);
+      const userData = data as UserData;
+      
+      if (userData?.authenticated && userData?.tenants) {
+        setTenants(userData.tenants);
         // Set first active tenant as default
-        const firstActiveTenant = data.tenants.find((t: Tenant) => t.active);
+        const firstActiveTenant = userData.tenants.find((t: Tenant) => t.active);
         if (firstActiveTenant && !activeTenant) {
           setActiveTenant(firstActiveTenant);
         }
@@ -152,10 +170,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         );
 
-        if (setupError || !setupResult?.success) {
-          console.error('Setup error:', setupError || setupResult?.error);
-          toast.error('Erro ao configurar organização: ' + (setupResult?.error || setupError?.message));
-          return { error: setupError || new Error(setupResult?.error) };
+        const result = setupResult as SetupResult;
+
+        if (setupError || !result?.success) {
+          console.error('Setup error:', setupError || result?.error);
+          toast.error('Erro ao configurar organização: ' + (result?.error || setupError?.message));
+          return { error: setupError || new Error(result?.error) };
         }
 
         toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');
