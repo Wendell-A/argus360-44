@@ -96,18 +96,67 @@ export function useClients() {
   };
 }
 
-// Export individual mutations for backward compatibility
+// Export individual mutations with both mutate and mutateAsync
 export const useCreateClient = () => {
-  const { createClient, isCreating } = useClients();
-  return { mutate: createClient, isPending: isCreating };
+  const { activeTenant } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (client: Omit<ClientInsert, 'tenant_id'>) => {
+      if (!activeTenant?.tenant_id) {
+        throw new Error('No tenant selected');
+      }
+
+      const { data, error } = await supabase
+        .from('clients')
+        .insert({ ...client, tenant_id: activeTenant.tenant_id })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Client;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
 };
 
 export const useUpdateClient = () => {
-  const { updateClient, isUpdating } = useClients();
-  return { mutate: updateClient, isPending: isUpdating };
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: ClientUpdate & { id: string }) => {
+      const { data, error } = await supabase
+        .from('clients')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Client;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
 };
 
 export const useDeleteClient = () => {
-  const { deleteClient, isDeleting } = useClients();
-  return { mutate: deleteClient, isPending: isDeleting };
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
 };
