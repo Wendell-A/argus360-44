@@ -11,63 +11,57 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Car, Home, Wrench, Calculator } from "lucide-react";
-
-const consorcios = [
-  {
-    id: 1,
-    tipo: "Veículos",
-    categoria: "Carros",
-    valor: "R$ 50.000",
-    prazo: "60 meses",
-    taxaAdmin: "15%",
-    taxaComissao: "5%",
-    status: "Ativo",
-    icon: Car,
-    cotas: 150,
-    cotasVendidas: 89
-  },
-  {
-    id: 2,
-    tipo: "Imóveis",
-    categoria: "Casa",
-    valor: "R$ 200.000",
-    prazo: "120 meses",
-    taxaAdmin: "12%",
-    taxaComissao: "3%",
-    status: "Ativo",
-    icon: Home,
-    cotas: 200,
-    cotasVendidas: 145
-  },
-  {
-    id: 3,
-    tipo: "Veículos",
-    categoria: "Motos",
-    valor: "R$ 15.000",
-    prazo: "36 meses",
-    taxaAdmin: "18%",
-    taxaComissao: "6%",
-    status: "Ativo",
-    icon: Car,
-    cotas: 100,
-    cotasVendidas: 67
-  },
-  {
-    id: 4,
-    tipo: "Serviços",
-    categoria: "Reforma",
-    valor: "R$ 80.000",
-    prazo: "84 meses",
-    taxaAdmin: "14%",
-    taxaComissao: "4%",
-    status: "Encerrado",
-    icon: Wrench,
-    cotas: 120,
-    cotasVendidas: 120
-  },
-];
+import { useConsortiumProducts } from "@/hooks/useConsortiumProducts";
+import { ConsortiumTableRow } from "@/components/ConsortiumCard";
 
 export default function Consorcios() {
+  const { data: products, isLoading, error } = useConsortiumProducts();
+
+  console.log('Produtos carregados:', products);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="flex items-center justify-center">
+          <p>Carregando produtos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error('Erro ao carregar produtos:', error);
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="flex items-center justify-center">
+          <p className="text-red-600">Erro ao carregar produtos: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const productsData = products || [];
+  
+  // Cálculos baseados nos dados reais
+  const activeProducts = productsData.filter(p => p.status === 'active');
+  const totalAssetValue = productsData.reduce((sum, p) => sum + p.asset_value, 0);
+  const averageCommission = productsData.length > 0 
+    ? productsData.reduce((sum, p) => sum + p.commission_rate, 0) / productsData.length 
+    : 0;
+  
+  // Simulando cotas vendidas para as métricas - depois podemos implementar isso adequadamente
+  const totalCotas = productsData.length * 100;
+  const cotasVendidas = Math.floor(totalCotas * 0.7); // 70% vendidas em média
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between">
@@ -89,8 +83,8 @@ export default function Consorcios() {
             <Calculator className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-blue-600 mt-1">3 categorias</p>
+            <div className="text-2xl font-bold">{activeProducts.length}</div>
+            <p className="text-xs text-blue-600 mt-1">{productsData.length} total</p>
           </CardContent>
         </Card>
 
@@ -100,8 +94,8 @@ export default function Consorcios() {
             <Car className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">421</div>
-            <p className="text-xs text-green-600 mt-1">de 570 cotas</p>
+            <div className="text-2xl font-bold">{cotasVendidas}</div>
+            <p className="text-xs text-green-600 mt-1">de {totalCotas} cotas</p>
           </CardContent>
         </Card>
 
@@ -111,7 +105,7 @@ export default function Consorcios() {
             <Calculator className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4.5%</div>
+            <div className="text-2xl font-bold">{averageCommission.toFixed(1)}%</div>
             <p className="text-xs text-purple-600 mt-1">Comissão média</p>
           </CardContent>
         </Card>
@@ -122,7 +116,7 @@ export default function Consorcios() {
             <Home className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 14.5M</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalAssetValue / 1000000)}M</div>
             <p className="text-xs text-orange-600 mt-1">Em consórcios ativos</p>
           </CardContent>
         </Card>
@@ -134,82 +128,34 @@ export default function Consorcios() {
           <CardTitle>Tabelas de Consórcios</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo/Categoria</TableHead>
-                <TableHead>Valor do Bem</TableHead>
-                <TableHead>Prazo</TableHead>
-                <TableHead>Taxa Admin</TableHead>
-                <TableHead>Taxa Comissão</TableHead>
-                <TableHead>Cotas</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {consorcios.map((consorcio) => {
-                const IconComponent = consorcio.icon;
-                const porcentagemVendida = (consorcio.cotasVendidas / consorcio.cotas * 100).toFixed(0);
-                
-                return (
-                  <TableRow key={consorcio.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <IconComponent className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{consorcio.tipo}</p>
-                          <p className="text-sm text-gray-600">{consorcio.categoria}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">{consorcio.valor}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-gray-50">
-                        {consorcio.prazo}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-red-600 font-medium">{consorcio.taxaAdmin}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-green-600 font-medium">{consorcio.taxaComissao}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{consorcio.cotasVendidas}/{consorcio.cotas}</p>
-                        <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${porcentagemVendida}%` }}
-                          ></div>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1">{porcentagemVendida}%</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={consorcio.status === "Ativo" ? "default" : "secondary"}
-                        className={consorcio.status === "Ativo" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-                      >
-                        {consorcio.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">Editar</Button>
-                        <Button variant="outline" size="sm">Vendas</Button>
-                      </div>
-                    </TableCell>
+          {productsData.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Nenhum produto encontrado.</p>
+              <p className="text-gray-400 text-sm mt-1">Clique em "Nova Tabela" para adicionar o primeiro produto.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tipo/Categoria</TableHead>
+                  <TableHead>Valor do Bem</TableHead>
+                  <TableHead>Prazo</TableHead>
+                  <TableHead>Taxa Admin</TableHead>
+                  <TableHead>Taxa Comissão</TableHead>
+                  <TableHead>Cotas</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {productsData.map((product) => (
+                  <TableRow key={product.id} className="hover:bg-gray-50">
+                    <ConsortiumTableRow product={product} />
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
