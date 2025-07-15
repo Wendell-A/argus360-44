@@ -29,6 +29,20 @@ interface SetupResult {
   user_id?: string;
 }
 
+interface OfficeData {
+  cnpj: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  contact: {
+    phone: string;
+    email: string;
+  };
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -36,7 +50,7 @@ interface AuthContextType {
   tenants: Tenant[];
   activeTenant: Tenant | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string, tenantName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, tenantName: string, officeData?: OfficeData) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   setActiveTenant: (tenant: Tenant) => void;
 }
@@ -132,7 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, tenantName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, tenantName: string, officeData?: OfficeData) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -176,6 +190,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.error('Setup error:', setupError || result?.error);
           toast.error('Erro ao configurar organização: ' + (result?.error || setupError?.message));
           return { error: setupError || new Error(result?.error) };
+        }
+
+        // Se temos dados do escritório, criar o escritório
+        if (officeData && result.tenant_id) {
+          const { error: officeError } = await supabase
+            .from('offices')
+            .insert([{
+              tenant_id: result.tenant_id,
+              name: tenantName, // Herda o nome da empresa
+              type: 'matriz',
+              cnpj: officeData.cnpj,
+              parent_office_id: null,
+              address: officeData.address,
+              contact: officeData.contact,
+              active: true,
+            }]);
+
+          if (officeError) {
+            console.error('Error creating office:', officeError);
+            // Não falhar o cadastro por causa do escritório
+          }
         }
 
         toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');

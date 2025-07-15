@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
@@ -17,11 +18,16 @@ interface VendedorData extends Profile {
 export const useVendedores = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { activeTenant } = useAuth();
 
   // Buscar todos os vendedores (profiles que são vendedores)
   const { data: vendedores = [], isLoading } = useQuery({
-    queryKey: ["vendedores"],
+    queryKey: ["vendedores", activeTenant?.tenant_id],
     queryFn: async () => {
+      if (!activeTenant?.tenant_id) {
+        return [];
+      }
+
       console.log("Fetching vendedores...");
       
       // Buscar profiles básicos primeiro
@@ -35,68 +41,104 @@ export const useVendedores = () => {
         throw profilesError;
       }
 
-      // Para cada profile, buscar dados de vendas e comissões separadamente
-      const processedData = await Promise.all(
-        profiles.map(async (profile) => {
-          try {
-            // Buscar vendas onde o seller_id corresponde ao profile.id
-            const { data: salesData, error: salesError } = await supabase
-              .from("sales")
-              .select("id")
-              .eq("seller_id", profile.id);
+      if (!profiles || profiles.length === 0) {
+        return [];
+      }
 
-            // Buscar comissões onde o recipient_id corresponde ao profile.id
-            const { data: commissionsData, error: commissionsError } = await supabase
-              .from("commissions")
-              .select("commission_amount")
-              .eq("recipient_id", profile.id);
+      // Buscar vendas
+      const { data: salesData, error: salesError } = await supabase
+        .from("sales")
+        .select("id, seller_id")
+        .eq("tenant_id", activeTenant.tenant_id);
 
-            const sales = salesData || [];
-            const commissions = commissionsData || [];
+      if (salesError) {
+        console.error("Error fetching sales:", salesError);
+      }
 
-            return {
-              ...profile,
-              sales_count: sales.length,
-              commission_total: commissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
-              active_status: true, // Por enquanto assumindo todos ativos
-            } as VendedorData;
-          } catch (error) {
-            console.error("Error processing profile data:", error);
-            // Retornar dados básicos em caso de erro
-            return {
-              ...profile,
-              sales_count: 0,
-              commission_total: 0,
-              active_status: true,
-            } as VendedorData;
-          }
-        })
-      );
+      // Buscar comissões
+      const { data: commissionsData, error: commissionsError } = await supabase
+        .from("commissions")
+        .select("commission_amount, recipient_id")
+        .eq("tenant_id", activeTenant.tenant_id)
+        .eq("recipient_type", "seller");
+
+      if (commissionsError) {
+        console.error("Error fetching commissions:", commissionsError);
+      }
+
+      const sales = salesData || [];
+      const commissions = commissionsData || [];
+
+      // Para cada profile, calcular dados de vendas e comissões
+      const processedData = profiles.map((profile) => {
+        const profileSales = sales.filter(s => s.seller_id === profile.id);
+        const profileCommissions = commissions.filter(c => c.recipient_id === profile.id);
+
+        return {
+          ...profile,
+          sales_count: profileSales.length,
+          commission_total: profileCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
+          active_status: true,
+        } as VendedorData;
+      });
 
       console.log("Fetched vendedores:", processedData);
       return processedData;
     },
+    enabled: !!activeTenant?.tenant_id,
   });
 
   // Criar vendedor
   const createVendedorMutation = useMutation({
-    mutationFn: async (vendedor: ProfileInsert) => {
+    mutationFn: async (vendedor: ProfileInsert & { office_id?: string }) => {
+      if (!activeTenant?.tenant_id) {
+        throw new Error("Tenant não encontrado");
+      }
+
       console.log("Creating vendedor:", vendedor);
-      const { data, error } = await supabase
+      
+      // Criar o profile primeiro
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .insert([vendedor])
+        .insert([{
+          id: vendedor.id,
+          full_name: vendedor.full_name,
+          email: vendedor.email,
+          phone: vendedor.phone,
+          department: vendedor.department,
+          position: vendedor.position,
+        }])
         .select()
         .single();
 
-      if (error) {
-        console.error("Error creating vendedor:", error);
-        throw error;
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        throw profileError;
       }
 
-      return data;
+      // Se foi selecionado um escritório, criar a associação
+      if (vendedor.office_id && vendedor.office_id !== "") {
+        const { error: officeUserError } = await supabase
+          .from("office_users")
+          .insert([{
+            user_id: profileData.id,
+            office_id: vendedor.office_id,
+            tenant_id: activeTenant.tenant_id,
+            role: "user",
+            active: true,
+          }]);
+
+        if (officeUserError) {
+          console.error("Error creating office user:", officeUserError);
+          // Não falhar a criação do vendedor por causa disso
+        }
+      }
+
+      return profileData;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendedores"] });
+      queryClient.invalidateQueries({ queryKey: ["vendedores", activeTenant?.tenant_id] });
+      queryClient.invalidateQueries({ queryKey: ["office_users", activeTenant?.tenant_id] });
       toast({
         title: "Sucesso",
         description: "Vendedor criado com sucesso!",
@@ -131,7 +173,7 @@ export const useVendedores = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendedores"] });
+      queryClient.invalidateQueries({ queryKey: ["vendedores", activeTenant?.tenant_id] });
       toast({
         title: "Sucesso",
         description: "Vendedor atualizado com sucesso!",
@@ -152,8 +194,13 @@ export const useVendedores = () => {
     mutationFn: async (id: string) => {
       console.log("Deactivating vendedor:", id);
       
-      // Por enquanto, vamos apenas atualizar o status para inativo
-      // Em uma implementação completa, teríamos uma coluna 'active' na tabela profiles
+      // Desativar associações com escritórios
+      await supabase
+        .from("office_users")
+        .update({ active: false })
+        .eq("user_id", id);
+
+      // Atualizar settings do profile
       const { error } = await supabase
         .from("profiles")
         .update({ 
@@ -167,7 +214,8 @@ export const useVendedores = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["vendedores"] });
+      queryClient.invalidateQueries({ queryKey: ["vendedores", activeTenant?.tenant_id] });
+      queryClient.invalidateQueries({ queryKey: ["office_users", activeTenant?.tenant_id] });
       toast({
         title: "Sucesso",
         description: "Vendedor desativado com sucesso!",

@@ -4,7 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Database } from "@/integrations/supabase/types";
+import { useOffices } from "@/hooks/useOffices";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
@@ -13,7 +15,7 @@ interface VendedorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vendedor?: Profile | null;
-  onSave: (vendedor: ProfileInsert) => void;
+  onSave: (vendedor: ProfileInsert & { office_id?: string }) => void;
   isLoading: boolean;
 }
 
@@ -24,12 +26,15 @@ export default function VendedorModal({
   onSave,
   isLoading,
 }: VendedorModalProps) {
+  const { offices } = useOffices();
+  
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
     phone: "",
     department: "",
     position: "",
+    office_id: "",
   });
 
   useEffect(() => {
@@ -40,6 +45,7 @@ export default function VendedorModal({
         phone: vendedor.phone || "",
         department: vendedor.department || "",
         position: vendedor.position || "",
+        office_id: "",
       });
     } else {
       setFormData({
@@ -48,6 +54,7 @@ export default function VendedorModal({
         phone: "",
         department: "",
         position: "",
+        office_id: "",
       });
     }
   }, [vendedor, open]);
@@ -55,13 +62,14 @@ export default function VendedorModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const vendedorData: ProfileInsert = {
+    const vendedorData: ProfileInsert & { office_id?: string } = {
       id: vendedor?.id || crypto.randomUUID(),
       full_name: formData.full_name,
       email: formData.email,
       phone: formData.phone || null,
       department: formData.department || null,
       position: formData.position || null,
+      office_id: formData.office_id || undefined,
     };
 
     onSave(vendedorData);
@@ -106,6 +114,23 @@ export default function VendedorModal({
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="(11) 99999-9999"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="office_id">Escritório</Label>
+            <Select value={formData.office_id} onValueChange={(value) => setFormData({ ...formData, office_id: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um escritório" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nenhum</SelectItem>
+                {offices.map((office) => (
+                  <SelectItem key={office.id} value={office.id}>
+                    {office.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

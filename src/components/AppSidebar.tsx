@@ -1,6 +1,7 @@
 
-import { Home, Users, Building, UsersRound, Car, DollarSign, BarChart3, Settings } from "lucide-react";
+import { Home, Users, Building, UsersRound, Car, DollarSign, BarChart3, Settings, LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
   Sidebar,
@@ -11,7 +12,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const items = [
   {
@@ -57,6 +60,12 @@ const items = [
 ];
 
 export function AppSidebar() {
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -85,6 +94,23 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      
+      <SidebarFooter>
+        <div className="p-2">
+          <div className="mb-2 text-sm text-muted-foreground">
+            {user?.email}
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSignOut}
+            className="w-full"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sair
+          </Button>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

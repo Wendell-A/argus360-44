@@ -1,96 +1,162 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
-export type ConsortiumProduct = Tables<'consortium_products'>;
-export type ConsortiumProductInsert = TablesInsert<'consortium_products'>;
-export type ConsortiumProductUpdate = TablesUpdate<'consortium_products'>;
+type ConsortiumProduct = Database["public"]["Tables"]["consortium_products"]["Row"];
+type ConsortiumProductInsert = Database["public"]["Tables"]["consortium_products"]["Insert"];
+type ConsortiumProductUpdate = Database["public"]["Tables"]["consortium_products"]["Update"];
 
-export function useConsortiumProducts() {
+export const useConsortiumProducts = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { activeTenant } = useAuth();
 
-  return useQuery({
-    queryKey: ['consortium_products', activeTenant?.tenant_id],
+  console.log("useConsortiumProducts - activeTenant:", activeTenant);
+
+  // Buscar todos os produtos de consórcio
+  const { data: products = [], isLoading, error } = useQuery({
+    queryKey: ["consortium_products", activeTenant?.tenant_id],
     queryFn: async () => {
+      console.log("Fetching consortium products for tenant:", activeTenant?.tenant_id);
+      
       if (!activeTenant?.tenant_id) {
-        throw new Error('No tenant selected');
+        console.log("No active tenant, returning empty array");
+        return [];
       }
 
       const { data, error } = await supabase
-        .from('consortium_products')
-        .select('*')
-        .eq('tenant_id', activeTenant.tenant_id)
-        .order('created_at', { ascending: false });
+        .from("consortium_products")
+        .select("*")
+        .eq("tenant_id", activeTenant.tenant_id)
+        .order("name");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching consortium products:", error);
+        throw error;
+      }
+
+      console.log("Fetched consortium products:", data);
       return data as ConsortiumProduct[];
     },
     enabled: !!activeTenant?.tenant_id,
   });
-}
 
-export function useCreateConsortiumProduct() {
-  const queryClient = useQueryClient();
-  const { activeTenant } = useAuth();
-
-  return useMutation({
+  // Criar produto
+  const createProductMutation = useMutation({
     mutationFn: async (product: Omit<ConsortiumProductInsert, 'tenant_id'>) => {
       if (!activeTenant?.tenant_id) {
-        throw new Error('No tenant selected');
+        throw new Error("Tenant não encontrado");
       }
 
+      console.log("Creating consortium product:", product);
       const { data, error } = await supabase
-        .from('consortium_products')
-        .insert({ ...product, tenant_id: activeTenant.tenant_id })
+        .from("consortium_products")
+        .insert([{ ...product, tenant_id: activeTenant.tenant_id }])
         .select()
         .single();
 
-      if (error) throw error;
-      return data as ConsortiumProduct;
+      if (error) {
+        console.error("Error creating consortium product:", error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['consortium_products'] });
+      queryClient.invalidateQueries({ queryKey: ["consortium_products", activeTenant?.tenant_id] });
+      toast({
+        title: "Sucesso",
+        description: "Produto criado com sucesso!",
+      });
+    },
+    onError: (error) => {
+      console.error("Error creating consortium product:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao criar produto. Tente novamente.",
+        variant: "destructive",
+      });
     },
   });
-}
 
-export function useUpdateConsortiumProduct() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: ConsortiumProductUpdate & { id: string }) => {
+  // Atualizar produto
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: ConsortiumProductUpdate }) => {
+      console.log("Updating consortium product:", id, updates);
       const { data, error } = await supabase
-        .from('consortium_products')
+        .from("consortium_products")
         .update(updates)
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
-      if (error) throw error;
-      return data as ConsortiumProduct;
+      if (error) {
+        console.error("Error updating consortium product:", error);
+        throw error;
+      }
+
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['consortium_products'] });
+      queryClient.invalidateQueries({ queryKey: ["consortium_products", activeTenant?.tenant_id] });
+      toast({
+        title: "Sucesso",
+        description: "Produto atualizado com sucesso!",
+      });
+    },
+    onError: (error) => {
+      console.error("Error updating consortium product:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar produto. Tente novamente.",
+        variant: "destructive",
+      });
     },
   });
-}
 
-export function useDeleteConsortiumProduct() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  // Deletar produto
+  const deleteProductMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log("Deleting consortium product:", id);
       const { error } = await supabase
-        .from('consortium_products')
+        .from("consortium_products")
         .delete()
-        .eq('id', id);
+        .eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting consortium product:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['consortium_products'] });
+      queryClient.invalidateQueries({ queryKey: ["consortium_products", activeTenant?.tenant_id] });
+      toast({
+        title: "Sucesso",
+        description: "Produto removido com sucesso!",
+      });
+    },
+    onError: (error) => {
+      console.error("Error deleting consortium product:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover produto. Tente novamente.",
+        variant: "destructive",
+      });
     },
   });
-}
+
+  return {
+    products,
+    isLoading,
+    error,
+    createProduct: createProductMutation.mutate,
+    updateProduct: updateProductMutation.mutate,
+    deleteProduct: deleteProductMutation.mutate,
+    isCreating: createProductMutation.isPending,
+    isUpdating: updateProductMutation.isPending,
+    isDeleting: deleteProductMutation.isPending,
+  };
+};
