@@ -118,12 +118,15 @@ export default function VendedorModal({
 
           <div className="space-y-2">
             <Label htmlFor="office_id">Escritório</Label>
-            <Select value={formData.office_id} onValueChange={(value) => setFormData({ ...formData, office_id: value })}>
+            <Select 
+              value={formData.office_id} 
+              onValueChange={(value) => setFormData({ ...formData, office_id: value === "none" ? "" : value })}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um escritório" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {offices.map((office) => (
                   <SelectItem key={office.id} value={office.id}>
                     {office.name}
