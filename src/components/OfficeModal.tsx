@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Office = Database["public"]["Tables"]["offices"]["Row"];
 type OfficeInsert = Database["public"]["Tables"]["offices"]["Insert"];
@@ -28,6 +28,8 @@ export default function OfficeModal({
   onSave,
   isLoading,
 }: OfficeModalProps) {
+  const { activeTenant } = useAuth();
+  
   const [formData, setFormData] = useState({
     name: "",
     type: "matriz" as "matriz" | "filial" | "representacao",
@@ -105,6 +107,8 @@ export default function OfficeModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!activeTenant?.tenant_id) return;
+    
     const officeData: OfficeInsert = {
       name: formData.name,
       type: formData.type,
@@ -113,6 +117,7 @@ export default function OfficeModal({
       address: formData.address,
       contact: formData.contact,
       working_hours: formData.working_hours,
+      tenant_id: activeTenant.tenant_id,
     };
 
     onSave(officeData);
