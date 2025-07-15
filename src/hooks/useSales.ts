@@ -91,6 +91,7 @@ export function useSales() {
 
   return {
     sales: salesQuery.data || [],
+    data: salesQuery.data || [],
     isLoading: salesQuery.isLoading,
     error: salesQuery.error,
     createSale: createSaleMutation.mutate,

@@ -103,6 +103,7 @@ export function useCommissions() {
 
   return {
     commissions: commissionsQuery.data || [],
+    data: commissionsQuery.data || [],
     isLoading: commissionsQuery.isLoading,
     error: commissionsQuery.error,
     updateCommission: updateCommissionMutation.mutate,

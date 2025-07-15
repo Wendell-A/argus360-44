@@ -1,3 +1,4 @@
+
 import {
   BarChart3,
   Building,
@@ -8,6 +9,8 @@ import {
   ShoppingCart,
   User,
   Users,
+  Menu,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -109,7 +112,7 @@ export function AppSidebar({ className }: SidebarProps) {
             className
           )}
         >
-          <BarChart3 className="h-5 w-5" />
+          <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-full border-r md:w-4/5 lg:max-w-[280px]">
@@ -137,16 +140,12 @@ export function AppSidebar({ className }: SidebarProps) {
         </div>
         <Separator className="my-4" />
         <div className="flex flex-col gap-2">
-          <Button variant="ghost" className="justify-start px-4">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Configurações</span>
-          </Button>
           <Button
             variant="ghost"
             className="justify-start px-4"
             onClick={() => signOut()}
           >
-            <Settings className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-4 w-4" />
             <span>Sair</span>
           </Button>
         </div>

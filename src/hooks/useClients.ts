@@ -84,6 +84,7 @@ export function useClients() {
 
   return {
     clients: clientsQuery.data || [],
+    data: clientsQuery.data || [],
     isLoading: clientsQuery.isLoading,
     error: clientsQuery.error,
     createClient: createClientMutation.mutate,
@@ -91,6 +92,22 @@ export function useClients() {
     deleteClient: deleteClientMutation.mutate,
     isCreating: createClientMutation.isPending,
     isUpdating: updateClientMutation.isPending,
-    isDeleting: deleteSaleMutation.isPending,
+    isDeleting: deleteClientMutation.isPending,
   };
 }
+
+// Export individual mutations for backward compatibility
+export const useCreateClient = () => {
+  const { createClient, isCreating } = useClients();
+  return { mutate: createClient, isPending: isCreating };
+};
+
+export const useUpdateClient = () => {
+  const { updateClient, isUpdating } = useClients();
+  return { mutate: updateClient, isPending: isUpdating };
+};
+
+export const useDeleteClient = () => {
+  const { deleteClient, isDeleting } = useClients();
+  return { mutate: deleteClient, isPending: isDeleting };
+};
