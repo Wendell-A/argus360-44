@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, DollarSign, Users, TrendingUp } from "lucide-react";
 import { useConsortiumProducts } from "@/hooks/useConsortiumProducts";
-import ProductModal from "@/components/ProductModal";
-import ConsortiumCard from "@/components/ConsortiumCard";
+import { ProductModal } from "@/components/ProductModal";
+import { ConsortiumCard } from "@/components/ConsortiumCard";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Consorcios() {
@@ -159,7 +159,7 @@ export default function Consorcios() {
                 key={product.id}
                 product={product}
                 onEdit={handleEditProduct}
-                onDelete={handleDeleteProduct}
+                onView={handleEditProduct}
               />
             ))}
           </div>
@@ -167,11 +167,10 @@ export default function Consorcios() {
 
         {/* Modal */}
         <ProductModal
-          open={modalOpen}
-          onOpenChange={setModalOpen}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
           product={selectedProduct}
-          onSave={handleSaveProduct}
-          isLoading={isCreating || isUpdating}
+          mode={selectedProduct ? "edit" : "create"}
         />
       </div>
     </div>

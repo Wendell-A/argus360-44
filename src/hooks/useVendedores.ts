@@ -30,13 +30,10 @@ export const useVendedores = () => {
 
       console.log("Fetching vendedores for tenant:", activeTenant.tenant_id);
       
-      // Buscar apenas profiles que estão associados ao tenant através de office_users
+      // Primeiro, buscar os usuários que pertencem ao tenant através de office_users
       const { data: officeUsers, error: officeUsersError } = await supabase
         .from("office_users")
-        .select(`
-          user_id,
-          profiles!inner(*)
-        `)
+        .select("user_id")
         .eq("tenant_id", activeTenant.tenant_id)
         .eq("active", true);
 
@@ -49,11 +46,20 @@ export const useVendedores = () => {
         return [];
       }
 
-      // Extrair profiles dos office_users
-      const profiles = officeUsers.map(ou => ou.profiles).filter(Boolean);
-      const userIds = profiles.map(p => p.id);
+      const userIds = officeUsers.map(ou => ou.user_id);
 
-      if (userIds.length === 0) {
+      // Buscar profiles desses usuários
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", userIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
+
+      if (!profiles || profiles.length === 0) {
         return [];
       }
 

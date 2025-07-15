@@ -63,7 +63,8 @@ const items = [
 
 export function AppSidebar() {
   const { signOut, user, activeTenant } = useAuth();
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   const handleSignOut = async () => {
     await signOut();
@@ -73,7 +74,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <div className="p-2">
-          {!collapsed ? (
+          {!isCollapsed ? (
             <div>
               <h2 className="text-lg font-bold text-primary">ConsórcioPro</h2>
               {activeTenant && (
@@ -94,7 +95,7 @@ export function AppSidebar() {
       
       <SidebarContent>
         <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>}
+          {!isCollapsed && <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -109,7 +110,7 @@ export function AppSidebar() {
                       }
                     >
                       <item.icon className="w-4 h-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -121,7 +122,7 @@ export function AppSidebar() {
       
       <SidebarFooter>
         <div className="p-2">
-          {!collapsed ? (
+          {!isCollapsed ? (
             <>
               <div className="mb-2 text-sm text-muted-foreground truncate">
                 {user?.email}
