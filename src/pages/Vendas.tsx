@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit, Trash2, DollarSign, Calendar, TrendingUp, Users } from "lucide-react";
+import { Plus, Eye, Edit, Trash2, DollarSign, Calendar, TrendingUp, Users } from "lucide-react";
 import { useSales } from "@/hooks/useSales";
 import { useClients } from "@/hooks/useClients";
 import { useVendedores } from "@/hooks/useVendedores";
@@ -52,7 +52,7 @@ export default function Vendas() {
 
   const handleSaveSale = (saleData: any) => {
     if (selectedSale) {
-      updateSale({ id: selectedSale.id, ...saleData });
+      updateSale({ id: selectedSale.id, updates: saleData });
     } else {
       createSale(saleData);
     }

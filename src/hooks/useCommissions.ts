@@ -10,9 +10,8 @@ export type CommissionUpdate = TablesUpdate<'commissions'>;
 
 export function useCommissions() {
   const { activeTenant } = useAuth();
-  const queryClient = useQueryClient();
 
-  const commissionsQuery = useQuery({
+  return useQuery({
     queryKey: ['commissions', activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
@@ -24,8 +23,8 @@ export function useCommissions() {
         .select(`
           *,
           sales:sale_id(
+            contract_number,
             sale_value,
-            client_id,
             clients:client_id(name)
           )
         `)
@@ -37,8 +36,12 @@ export function useCommissions() {
     },
     enabled: !!activeTenant?.tenant_id,
   });
+}
 
-  const updateCommissionMutation = useMutation({
+export function useUpdateCommission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async ({ id, ...updates }: CommissionUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('commissions')
@@ -54,63 +57,37 @@ export function useCommissions() {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
     },
   });
+}
 
-  const approveCommissionMutation = useMutation({
-    mutationFn: async (id: string) => {
+export function useCommissionStats() {
+  const { activeTenant } = useAuth();
+
+  return useQuery({
+    queryKey: ['commission_stats', activeTenant?.tenant_id],
+    queryFn: async () => {
+      if (!activeTenant?.tenant_id) {
+        throw new Error('No tenant selected');
+      }
+
       const { data, error } = await supabase
         .from('commissions')
-        .update({ 
-          status: 'approved',
-          approval_date: new Date().toISOString().split('T')[0]
-        })
-        .eq('id', id)
-        .select()
-        .single();
+        .select('status, commission_amount')
+        .eq('tenant_id', activeTenant.tenant_id);
 
       if (error) throw error;
-      return data as Commission;
+
+      const stats = data.reduce((acc, commission) => {
+        acc.total += Number(commission.commission_amount);
+        acc.byStatus[commission.status || 'pending'] = 
+          (acc.byStatus[commission.status || 'pending'] || 0) + Number(commission.commission_amount);
+        return acc;
+      }, {
+        total: 0,
+        byStatus: {} as Record<string, number>
+      });
+
+      return stats;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commissions'] });
-    },
+    enabled: !!activeTenant?.tenant_id,
   });
-
-  const payCommissionMutation = useMutation({
-    mutationFn: async ({ id, payment_method, payment_reference }: { 
-      id: string; 
-      payment_method: string; 
-      payment_reference?: string; 
-    }) => {
-      const { data, error } = await supabase
-        .from('commissions')
-        .update({ 
-          status: 'paid',
-          payment_date: new Date().toISOString().split('T')[0],
-          payment_method,
-          payment_reference
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Commission;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commissions'] });
-    },
-  });
-
-  return {
-    commissions: commissionsQuery.data || [],
-    data: commissionsQuery.data || [],
-    isLoading: commissionsQuery.isLoading,
-    error: commissionsQuery.error,
-    updateCommission: updateCommissionMutation.mutate,
-    approveCommission: approveCommissionMutation.mutate,
-    payCommission: payCommissionMutation.mutate,
-    isUpdating: updateCommissionMutation.isPending,
-    isApproving: approveCommissionMutation.isPending,
-    isPaying: payCommissionMutation.isPending,
-  };
 }
