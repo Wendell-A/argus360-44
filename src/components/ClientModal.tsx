@@ -152,11 +152,16 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
   const onSubmit = async (data: ClientFormData) => {
     setIsSubmitting(true);
     try {
+      // Ensure all required fields are present and properly typed
       const submitData = {
-        ...data,
+        name: data.name,
+        type: data.type,
+        document: data.document,
         email: data.email || null,
         phone: data.phone || null,
         secondary_phone: data.secondary_phone || null,
+        status: data.status,
+        classification: data.classification,
         monthly_income: data.monthly_income || null,
         occupation: data.occupation || null,
         notes: data.notes || null,

@@ -119,14 +119,28 @@ export function ProductModal({ isOpen, onClose, product, mode }: ProductModalPro
   const onSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
+      // Ensure all required fields are present
+      const submitData = {
+        name: data.name,
+        description: data.description || null,
+        category: data.category,
+        asset_value: data.asset_value,
+        installments: data.installments,
+        monthly_fee: data.monthly_fee,
+        administration_fee: data.administration_fee,
+        commission_rate: data.commission_rate,
+        min_down_payment: data.min_down_payment || null,
+        status: data.status,
+      };
+
       if (mode === "edit" && product) {
-        await updateMutation.mutateAsync({ id: product.id, ...data });
+        await updateMutation.mutateAsync({ id: product.id, ...submitData });
         toast({
           title: "Produto atualizado",
           description: "O produto foi atualizado com sucesso.",
         });
       } else if (mode === "create") {
-        await createMutation.mutateAsync(data);
+        await createMutation.mutateAsync(submitData);
         toast({
           title: "Produto criado",
           description: "O produto foi criado com sucesso.",
