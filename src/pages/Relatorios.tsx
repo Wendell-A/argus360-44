@@ -2,201 +2,259 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  BarChart,
-  Bar,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  BarChart3, 
+  TrendingUp, 
+  DollarSign, 
+  Users,
+  Download,
+  Calendar,
+  FileText,
+  PieChart
+} from "lucide-react";
+import {
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
+  BarChart,
+  Bar,
+  PieChart as RechartsPieChart,
   Pie,
   Cell
 } from "recharts";
-import { Download, TrendingUp, DollarSign, Users, Calendar } from "lucide-react";
 
-const vendasMensais = [
-  { mes: "Jan", vendas: 45, comissoes: 12000 },
-  { mes: "Fev", vendas: 52, comissoes: 14500 },
-  { mes: "Mar", vendas: 38, comissoes: 10200 },
-  { mes: "Abr", vendas: 67, comissoes: 18900 },
-  { mes: "Mai", vendas: 71, comissoes: 21500 },
-  { mes: "Jun", vendas: 59, comissoes: 16800 },
+const salesData = [
+  { month: 'Jan', vendas: 12, receita: 45000, comissoes: 2250 },
+  { month: 'Fev', vendas: 19, receita: 72000, comissoes: 3600 },
+  { month: 'Mar', vendas: 8, receita: 28000, comissoes: 1400 },
+  { month: 'Abr', vendas: 15, receita: 58000, comissoes: 2900 },
+  { month: 'Mai', vendas: 22, receita: 85000, comissoes: 4250 },
+  { month: 'Jun', vendas: 18, receita: 68000, comissoes: 3400 },
 ];
 
-const vendedoresPerformance = [
-  { vendedor: "João Silva", vendas: 35, comissoes: 8500 },
-  { vendedor: "Maria Santos", vendas: 28, comissoes: 7200 },
-  { vendedor: "Pedro Costa", vendas: 22, comissoes: 5800 },
-  { vendedor: "Ana Oliveira", vendas: 15, comissoes: 4100 },
+const topSellers = [
+  { name: 'João Silva', vendas: 15, receita: 45000 },
+  { name: 'Maria Santos', vendas: 12, receita: 38000 },
+  { name: 'Pedro Costa', vendas: 8, receita: 25000 },
+  { name: 'Ana Oliveira', vendas: 5, receita: 18000 },
 ];
 
-const tiposConsorcio = [
-  { name: "Veículos", value: 45, color: "#3B82F6" },
-  { name: "Imóveis", value: 30, color: "#06B6D4" },
-  { name: "Serviços", value: 15, color: "#8B5CF6" },
-  { name: "Outros", value: 10, color: "#F59E0B" },
+const categoryData = [
+  { name: 'Carros', value: 45, color: '#3b82f6' },
+  { name: 'Motos', value: 25, color: '#10b981' },
+  { name: 'Imóveis', value: 20, color: '#f59e0b' },
+  { name: 'Outros', value: 10, color: '#ef4444' },
 ];
 
 export default function Relatorios() {
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
-          <p className="text-gray-600 mt-1">Análise detalhada de vendas e performance</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-4 sm:p-6 lg:p-8 w-full">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Relatórios</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">Análises e métricas do seu negócio</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select defaultValue="month">
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Hoje</SelectItem>
+                <SelectItem value="week">Esta Semana</SelectItem>
+                <SelectItem value="month">Este Mês</SelectItem>
+                <SelectItem value="quarter">Trimestre</SelectItem>
+                <SelectItem value="year">Este Ano</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="w-full sm:w-auto">
+              <Download className="w-4 h-4 mr-2" />
+              Exportar
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Calendar className="w-4 h-4 mr-2" />
-            Período
-          </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar PDF
-          </Button>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Vendas Totais</CardTitle>
+              <BarChart3 className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">94</div>
+              <p className="text-xs text-blue-600 mt-1">+12% vs mês anterior</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">R$ 356k</div>
+              <p className="text-xs text-green-600 mt-1">+18% vs mês anterior</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Comissões Pagas</CardTitle>
+              <TrendingUp className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">R$ 17.8k</div>
+              <p className="text-xs text-purple-600 mt-1">5% da receita total</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Vendedores Ativos</CardTitle>
+              <Users className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">8</div>
+              <p className="text-xs text-orange-600 mt-1">11.8 vendas/vendedor</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
+          {/* Sales Trend */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                Evolução das Vendas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 sm:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={salesData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="vendas" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      name="Vendas"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Revenue Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
+                Receita por Mês
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 sm:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={salesData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`R$ ${value.toLocaleString()}`, 'Receita']} />
+                    <Bar dataKey="receita" fill="#10b981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Additional Charts */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
+          {/* Category Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <PieChart className="w-4 h-4 sm:w-5 sm:h-5" />
+                Vendas por Categoria
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top Sellers */}
+          <Card className="xl:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                Top Vendedores
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {topSellers.map((seller, index) => (
+                  <div key={seller.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-medium text-sm">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium">{seller.name}</p>
+                        <p className="text-sm text-gray-600">{seller.vendas} vendas</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-green-600">
+                        R$ {seller.receita.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-600">receita</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Cards resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vendas Totais (6m)</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">332</div>
-            <p className="text-xs text-blue-600 mt-1">Meta: 360 vendas</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comissões (6m)</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 103.9k</div>
-            <p className="text-xs text-green-600 mt-1">+15% vs período anterior</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <DollarSign className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 67.5k</div>
-            <p className="text-xs text-purple-600 mt-1">Por venda realizada</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa Conversão</CardTitle>
-            <Users className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">68%</div>
-            <p className="text-xs text-orange-600 mt-1">Prospects convertidos</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de vendas e comissões mensais */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas e Comissões por Mês</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={vendasMensais}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
-                <Bar yAxisId="left" dataKey="vendas" fill="#3B82F6" name="Vendas" />
-                <Bar yAxisId="right" dataKey="comissoes" fill="#10B981" name="Comissões (R$)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Distribuição por tipo de consórcio */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas por Tipo de Consórcio</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={tiposConsorcio}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ name, value }) => `${name}: ${value}%`}
-                >
-                  {tiposConsorcio.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance dos vendedores */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance dos Vendedores</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={vendedoresPerformance} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="vendedor" type="category" width={100} />
-              <Tooltip />
-              <Bar dataKey="vendas" fill="#3B82F6" name="Vendas" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Evolução das comissões */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Evolução das Comissões</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={vendasMensais}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mes" />
-              <YAxis />
-              <Tooltip formatter={(value) => [`R$ ${value}`, "Comissões"]} />
-              <Line
-                type="monotone"
-                dataKey="comissoes"
-                stroke="#10B981"
-                strokeWidth={3}
-                dot={{ fill: "#10B981", strokeWidth: 2, r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
     </div>
   );
 }
