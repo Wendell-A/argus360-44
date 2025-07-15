@@ -11,7 +11,7 @@ export type CommissionUpdate = TablesUpdate<'commissions'>;
 export function useCommissions() {
   const { activeTenant } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['commissions', activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
@@ -36,12 +36,19 @@ export function useCommissions() {
     },
     enabled: !!activeTenant?.tenant_id,
   });
+
+  return {
+    commissions: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }
 
 export function useUpdateCommission() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async ({ id, ...updates }: CommissionUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('commissions')
@@ -57,12 +64,19 @@ export function useUpdateCommission() {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
     },
   });
+
+  return {
+    updateCommission: mutation.mutate,
+    updateCommissionAsync: mutation.mutateAsync,
+    isUpdating: mutation.isPending,
+    error: mutation.error,
+  };
 }
 
 export function useCommissionStats() {
   const { activeTenant } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['commission_stats', activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
@@ -90,4 +104,10 @@ export function useCommissionStats() {
     },
     enabled: !!activeTenant?.tenant_id,
   });
+
+  return {
+    stats: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+  };
 }

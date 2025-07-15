@@ -11,7 +11,7 @@ export type ClientUpdate = TablesUpdate<'clients'>;
 export function useClients() {
   const { activeTenant } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['clients', activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
@@ -29,13 +29,20 @@ export function useClients() {
     },
     enabled: !!activeTenant?.tenant_id,
   });
+
+  return {
+    clients: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }
 
 export function useCreateClient() {
   const queryClient = useQueryClient();
   const { activeTenant } = useAuth();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (client: Omit<ClientInsert, 'tenant_id'>) => {
       if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
@@ -54,12 +61,19 @@ export function useCreateClient() {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
   });
+
+  return {
+    createClient: mutation.mutate,
+    createClientAsync: mutation.mutateAsync,
+    isCreating: mutation.isPending,
+    error: mutation.error,
+  };
 }
 
 export function useUpdateClient() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async ({ id, ...updates }: ClientUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('clients')
@@ -75,12 +89,19 @@ export function useUpdateClient() {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
   });
+
+  return {
+    updateClient: mutation.mutate,
+    updateClientAsync: mutation.mutateAsync,
+    isUpdating: mutation.isPending,
+    error: mutation.error,
+  };
 }
 
 export function useDeleteClient() {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('clients')
@@ -93,4 +114,11 @@ export function useDeleteClient() {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
   });
+
+  return {
+    deleteClient: mutation.mutate,
+    deleteClientAsync: mutation.mutateAsync,
+    isDeleting: mutation.isPending,
+    error: mutation.error,
+  };
 }
