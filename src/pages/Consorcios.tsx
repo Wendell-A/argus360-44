@@ -32,7 +32,7 @@ export default function Consorcios() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  const { data: products = [], isLoading } = useConsortiumProducts();
+  const { products, isLoading } = useConsortiumProducts();
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,9 +157,9 @@ export default function Consorcios() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as Categorias</SelectItem>
-                    <SelectItem value="vehicles">Veículos</SelectItem>
-                    <SelectItem value="real_estate">Imóveis</SelectItem>
-                    <SelectItem value="services">Serviços</SelectItem>
+                    <SelectItem value="Veículos">Veículos</SelectItem>
+                    <SelectItem value="Imóveis">Imóveis</SelectItem>
+                    <SelectItem value="Serviços">Serviços</SelectItem>
                   </SelectContent>
                 </Select>
 
