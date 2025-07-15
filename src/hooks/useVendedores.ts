@@ -24,35 +24,54 @@ export const useVendedores = () => {
     queryFn: async () => {
       console.log("Fetching vendedores...");
       
-      // Buscar profiles com informações de vendas
-      const { data, error } = await supabase
+      // Buscar profiles básicos primeiro
+      const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select(`
-          *,
-          sales:sales!sales_seller_id_fkey(count),
-          commissions:commissions!commissions_recipient_id_fkey(
-            commission_amount
-          )
-        `)
+        .select("*")
         .order("full_name");
 
-      if (error) {
-        console.error("Error fetching vendedores:", error);
-        throw error;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
       }
 
-      // Processar dados para incluir métricas
-      const processedData = data.map((vendedor) => {
-        const sales = vendedor.sales as any[] || [];
-        const commissions = vendedor.commissions as any[] || [];
-        
-        return {
-          ...vendedor,
-          sales_count: sales.length,
-          commission_total: commissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
-          active_status: true, // Por enquanto assumindo todos ativos
-        } as VendedorData;
-      });
+      // Para cada profile, buscar dados de vendas e comissões separadamente
+      const processedData = await Promise.all(
+        profiles.map(async (profile) => {
+          try {
+            // Buscar vendas onde o seller_id corresponde ao profile.id
+            const { data: salesData, error: salesError } = await supabase
+              .from("sales")
+              .select("id")
+              .eq("seller_id", profile.id);
+
+            // Buscar comissões onde o recipient_id corresponde ao profile.id
+            const { data: commissionsData, error: commissionsError } = await supabase
+              .from("commissions")
+              .select("commission_amount")
+              .eq("recipient_id", profile.id);
+
+            const sales = salesData || [];
+            const commissions = commissionsData || [];
+
+            return {
+              ...profile,
+              sales_count: sales.length,
+              commission_total: commissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
+              active_status: true, // Por enquanto assumindo todos ativos
+            } as VendedorData;
+          } catch (error) {
+            console.error("Error processing profile data:", error);
+            // Retornar dados básicos em caso de erro
+            return {
+              ...profile,
+              sales_count: 0,
+              commission_total: 0,
+              active_status: true,
+            } as VendedorData;
+          }
+        })
+      );
 
       console.log("Fetched vendedores:", processedData);
       return processedData;
