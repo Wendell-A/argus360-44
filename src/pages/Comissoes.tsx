@@ -37,7 +37,7 @@ export default function Comissoes() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
 
-  const { data: commissions = [], isLoading } = useCommissions();
+  const { commissions, isLoading } = useCommissions();
 
   const filteredCommissions = commissions.filter((commission) => {
     const matchesSearch = commission.recipient_id.toLowerCase().includes(searchTerm.toLowerCase());

@@ -68,8 +68,8 @@ interface ClientModalProps {
 }
 
 export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps) {
-  const createMutation = useCreateClient();
-  const updateMutation = useUpdateClient();
+  const { createClientAsync, isCreating } = useCreateClient();
+  const { updateClientAsync, isUpdating } = useUpdateClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClientFormData>({
@@ -169,13 +169,13 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
       };
 
       if (mode === "edit" && client) {
-        await updateMutation.mutateAsync({ id: client.id, ...submitData });
+        await updateClientAsync({ id: client.id, ...submitData });
         toast({
           title: "Cliente atualizado",
           description: "O cliente foi atualizado com sucesso.",
         });
       } else if (mode === "create") {
-        await createMutation.mutateAsync(submitData);
+        await createClientAsync(submitData);
         toast({
           title: "Cliente criado",
           description: "O cliente foi criado com sucesso.",
@@ -530,7 +530,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
                 <Button type="button" variant="outline" onClick={onClose}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting || isCreating || isUpdating}>
                   {isSubmitting ? "Salvando..." : mode === "create" ? "Criar" : "Salvar"}
                 </Button>
               </DialogFooter>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,8 +43,8 @@ export default function Clientes() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   
-  const { data: clients = [], isLoading } = useClients();
-  const deleteClient = useDeleteClient();
+  const { clients, isLoading } = useClients();
+  const { deleteClientAsync, isDeleting } = useDeleteClient();
   const { toast } = useToast();
 
   const filteredClients = clients.filter((client) => {
@@ -84,7 +85,7 @@ export default function Clientes() {
   const handleDelete = async (clientId: string) => {
     if (window.confirm("Tem certeza que deseja excluir este cliente?")) {
       try {
-        await deleteClient.mutateAsync(clientId);
+        await deleteClientAsync(clientId);
         toast({
           title: "Cliente excluído",
           description: "O cliente foi excluído com sucesso.",
