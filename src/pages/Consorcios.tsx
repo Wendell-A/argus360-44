@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,11 +12,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Car, Home, Wrench, Calculator } from "lucide-react";
-import { useConsortiumProducts } from "@/hooks/useConsortiumProducts";
+import { useConsortiumProducts, ConsortiumProduct } from "@/hooks/useConsortiumProducts";
 import { ConsortiumTableRow } from "@/components/ConsortiumCard";
+import { ProductModal } from "@/components/ProductModal";
 
 export default function Consorcios() {
   const { data: products, isLoading, error } = useConsortiumProducts();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ConsortiumProduct | null>(null);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
 
   console.log('Produtos carregados:', products);
 
@@ -62,6 +67,29 @@ export default function Consorcios() {
     }).format(value);
   };
 
+  const handleCreateProduct = () => {
+    setSelectedProduct(null);
+    setModalMode("create");
+    setModalOpen(true);
+  };
+
+  const handleEditProduct = (product: ConsortiumProduct) => {
+    setSelectedProduct(product);
+    setModalMode("edit");
+    setModalOpen(true);
+  };
+
+  const handleViewProduct = (product: ConsortiumProduct) => {
+    setSelectedProduct(product);
+    setModalMode("view");
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedProduct(null);
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between">
@@ -69,7 +97,7 @@ export default function Consorcios() {
           <h1 className="text-3xl font-bold text-gray-900">Consórcios</h1>
           <p className="text-gray-600 mt-1">Configure as tabelas de consórcios e comissões</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateProduct}>
           <Plus className="w-4 h-4 mr-2" />
           Nova Tabela
         </Button>
@@ -150,7 +178,11 @@ export default function Consorcios() {
               <TableBody>
                 {productsData.map((product) => (
                   <TableRow key={product.id} className="hover:bg-gray-50">
-                    <ConsortiumTableRow product={product} />
+                    <ConsortiumTableRow 
+                      product={product} 
+                      onEdit={handleEditProduct}
+                      onView={handleViewProduct}
+                    />
                   </TableRow>
                 ))}
               </TableBody>
@@ -158,6 +190,13 @@ export default function Consorcios() {
           )}
         </CardContent>
       </Card>
+
+      <ProductModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        product={selectedProduct}
+        mode={modalMode}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,53 +11,143 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Building2, Users, HandCoins, Search } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Plus, Building2, Users, HandCoins, Search, Eye, Edit, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-
-const clientes = [
-  {
-    id: 1,
-    nome: "Empresa ABC Ltda",
-    cnpj: "12.345.678/0001-90",
-    vendedor: "João Silva",
-    ultimaCompra: "2024-01-15",
-    valorTotal: "R$ 85.000",
-    status: "Ativo",
-    tipo: "Pessoa Jurídica"
-  },
-  {
-    id: 2,
-    nome: "Construtora XYZ",
-    cnpj: "98.765.432/0001-10",
-    vendedor: "Maria Santos",
-    ultimaCompra: "2024-01-10",
-    valorTotal: "R$ 120.000",
-    status: "Ativo",
-    tipo: "Pessoa Jurídica"
-  },
-  {
-    id: 3,
-    nome: "Carlos Mendes",
-    cnpj: "123.456.789-00",
-    vendedor: "Pedro Costa",
-    ultimaCompra: "2024-01-08",
-    valorTotal: "R$ 45.000",
-    status: "Prospect",
-    tipo: "Pessoa Física"
-  },
-  {
-    id: 4,
-    nome: "Transportes Rápidos",
-    cnpj: "11.222.333/0001-44",
-    vendedor: "Ana Oliveira",
-    ultimaCompra: "2023-12-20",
-    valorTotal: "R$ 65.000",
-    status: "Inativo",
-    tipo: "Pessoa Jurídica"
-  },
-];
+import { useClients, useDeleteClient, Client } from "@/hooks/useClients";
+import { ClientModal } from "@/components/ClientModal";
+import { toast } from "@/hooks/use-toast";
 
 export default function Clientes() {
+  const { data: clients, isLoading, error } = useClients();
+  const deleteMutation = useDeleteClient();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="flex items-center justify-center">
+          <p>Carregando clientes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="flex items-center justify-center">
+          <p className="text-red-600">Erro ao carregar clientes: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const clientsData = clients || [];
+  
+  // Filtros
+  const filteredClients = clientsData.filter(client => {
+    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         client.document.includes(searchTerm) ||
+                         (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === "all" || client.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Métricas calculadas
+  const totalClients = clientsData.length;
+  const activeClients = clientsData.filter(c => c.status === 'active').length;
+  const prospects = clientsData.filter(c => c.status === 'prospect').length;
+  const totalValue = clientsData.reduce((sum, c) => sum + (c.monthly_income || 0), 0) * 12; // Valor anual estimado
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  const handleCreateClient = () => {
+    setSelectedClient(null);
+    setModalMode("create");
+    setModalOpen(true);
+  };
+
+  const handleEditClient = (client: Client) => {
+    setSelectedClient(client);
+    setModalMode("edit");
+    setModalOpen(true);
+  };
+
+  const handleViewClient = (client: Client) => {
+    setSelectedClient(client);
+    setModalMode("view");
+    setModalOpen(true);
+  };
+
+  const handleDeleteClient = async (client: Client) => {
+    try {
+      await deleteMutation.mutateAsync(client.id);
+      toast({
+        title: "Cliente excluído",
+        description: "O cliente foi excluído com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir o cliente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedClient(null);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
+      case "prospect":
+        return <Badge className="bg-yellow-100 text-yellow-800">Prospect</Badge>;
+      case "inactive":
+        return <Badge className="bg-gray-100 text-gray-800">Inativo</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getTypeBadge = (type: string) => {
+    return (
+      <Badge 
+        variant="outline" 
+        className={type === "company" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"}
+      >
+        {type === "company" ? "Pessoa Jurídica" : "Pessoa Física"}
+      </Badge>
+    );
+  };
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between">
@@ -64,7 +155,7 @@ export default function Clientes() {
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
           <p className="text-gray-600 mt-1">Gerencie sua carteira de clientes</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateClient}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Cliente
         </Button>
@@ -78,8 +169,8 @@ export default function Clientes() {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">247</div>
-            <p className="text-xs text-blue-600 mt-1">+12 este mês</p>
+            <div className="text-2xl font-bold">{totalClients}</div>
+            <p className="text-xs text-blue-600 mt-1">Total cadastrado</p>
           </CardContent>
         </Card>
 
@@ -89,8 +180,8 @@ export default function Clientes() {
             <Building2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">189</div>
-            <p className="text-xs text-green-600 mt-1">76% do total</p>
+            <div className="text-2xl font-bold">{activeClients}</div>
+            <p className="text-xs text-green-600 mt-1">{totalClients > 0 ? Math.round((activeClients / totalClients) * 100) : 0}% do total</p>
           </CardContent>
         </Card>
 
@@ -100,19 +191,19 @@ export default function Clientes() {
             <HandCoins className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">35</div>
+            <div className="text-2xl font-bold">{prospects}</div>
             <p className="text-xs text-yellow-600 mt-1">Em negociação</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Valor Estimado</CardTitle>
             <HandCoins className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 2.1M</div>
-            <p className="text-xs text-purple-600 mt-1">Carteira total</p>
+            <div className="text-2xl font-bold">{formatCurrency(totalValue / 1000000)}M</div>
+            <p className="text-xs text-purple-600 mt-1">Renda anual total</p>
           </CardContent>
         </Card>
       </div>
@@ -125,15 +216,37 @@ export default function Clientes() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Buscar por nome, CNPJ/CPF..."
+                  placeholder="Buscar por nome, CNPJ/CPF, email..."
                   className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
-            <Button variant="outline">Todos</Button>
-            <Button variant="outline">Ativos</Button>
-            <Button variant="outline">Prospects</Button>
-            <Button variant="outline">Inativos</Button>
+            <Button 
+              variant={statusFilter === "all" ? "default" : "outline"}
+              onClick={() => setStatusFilter("all")}
+            >
+              Todos
+            </Button>
+            <Button 
+              variant={statusFilter === "active" ? "default" : "outline"}
+              onClick={() => setStatusFilter("active")}
+            >
+              Ativos
+            </Button>
+            <Button 
+              variant={statusFilter === "prospect" ? "default" : "outline"}
+              onClick={() => setStatusFilter("prospect")}
+            >
+              Prospects
+            </Button>
+            <Button 
+              variant={statusFilter === "inactive" ? "default" : "outline"}
+              onClick={() => setStatusFilter("inactive")}
+            >
+              Inativos
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -141,78 +254,116 @@ export default function Clientes() {
       {/* Tabela de clientes */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Clientes</CardTitle>
+          <CardTitle>Lista de Clientes ({filteredClients.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>CNPJ/CPF</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Vendedor</TableHead>
-                <TableHead>Última Compra</TableHead>
-                <TableHead>Valor Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clientes.map((cliente) => (
-                <TableRow key={cliente.id} className="hover:bg-gray-50">
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{cliente.nome}</p>
-                      <p className="text-sm text-gray-600">ID: {cliente.id}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-sm">{cliente.cnpj}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={
-                      cliente.tipo === "Pessoa Jurídica" 
-                        ? "bg-blue-50 text-blue-700" 
-                        : "bg-green-50 text-green-700"
-                    }>
-                      {cliente.tipo}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{cliente.vendedor}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{cliente.ultimaCompra}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium text-green-600">{cliente.valorTotal}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={cliente.status === "Ativo" ? "default" : cliente.status === "Prospect" ? "secondary" : "outline"}
-                      className={
-                        cliente.status === "Ativo" 
-                          ? "bg-green-100 text-green-800" 
-                          : cliente.status === "Prospect"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
-                      }
-                    >
-                      {cliente.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">Editar</Button>
-                      <Button variant="outline" size="sm">Histórico</Button>
-                    </div>
-                  </TableCell>
+          {filteredClients.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">
+                {searchTerm || statusFilter !== "all" 
+                  ? "Nenhum cliente encontrado com os filtros aplicados." 
+                  : "Nenhum cliente encontrado."
+                }
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                {!searchTerm && statusFilter === "all" && "Clique em 'Novo Cliente' para adicionar o primeiro cliente."}
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>CNPJ/CPF</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Contato</TableHead>
+                  <TableHead>Renda</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredClients.map((client) => (
+                  <TableRow key={client.id} className="hover:bg-gray-50">
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{client.name}</p>
+                        <p className="text-sm text-gray-600">ID: {client.id.slice(0, 8)}...</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-sm">{client.document}</span>
+                    </TableCell>
+                    <TableCell>
+                      {getTypeBadge(client.type)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {client.email && (
+                          <p className="text-sm">{client.email}</p>
+                        )}
+                        {client.phone && (
+                          <p className="text-sm text-gray-600">{client.phone}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {client.monthly_income ? (
+                        <span className="font-medium text-green-600">
+                          {formatCurrency(client.monthly_income)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(client.status)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleViewClient(client)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEditClient(client)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir o cliente "{client.name}"? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteClient(client)}>
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
+
+      <ClientModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        client={selectedClient}
+        mode={modalMode}
+      />
     </div>
   );
 }
