@@ -10,8 +10,9 @@ export type SaleUpdate = TablesUpdate<'sales'>;
 
 export function useSales() {
   const { activeTenant } = useAuth();
+  const queryClient = useQueryClient();
 
-  return useQuery({
+  const salesQuery = useQuery({
     queryKey: ['sales', activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
@@ -33,13 +34,8 @@ export function useSales() {
     },
     enabled: !!activeTenant?.tenant_id,
   });
-}
 
-export function useCreateSale() {
-  const queryClient = useQueryClient();
-  const { activeTenant } = useAuth();
-
-  return useMutation({
+  const createSaleMutation = useMutation({
     mutationFn: async (sale: Omit<SaleInsert, 'tenant_id'>) => {
       if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
@@ -59,12 +55,8 @@ export function useCreateSale() {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
     },
   });
-}
 
-export function useUpdateSale() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  const updateSaleMutation = useMutation({
     mutationFn: async ({ id, ...updates }: SaleUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('sales')
@@ -81,4 +73,31 @@ export function useUpdateSale() {
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
     },
   });
+
+  const deleteSaleMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      queryClient.invalidateQueries({ queryKey: ['commissions'] });
+    },
+  });
+
+  return {
+    sales: salesQuery.data || [],
+    isLoading: salesQuery.isLoading,
+    error: salesQuery.error,
+    createSale: createSaleMutation.mutate,
+    updateSale: updateSaleMutation.mutate,
+    deleteSale: deleteSaleMutation.mutate,
+    isCreating: createSaleMutation.isPending,
+    isUpdating: updateSaleMutation.isPending,
+    isDeleting: deleteSaleMutation.isPending,
+  };
 }

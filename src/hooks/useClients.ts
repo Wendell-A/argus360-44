@@ -10,8 +10,9 @@ export type ClientUpdate = TablesUpdate<'clients'>;
 
 export function useClients() {
   const { activeTenant } = useAuth();
+  const queryClient = useQueryClient();
 
-  return useQuery({
+  const clientsQuery = useQuery({
     queryKey: ['clients', activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
@@ -29,13 +30,8 @@ export function useClients() {
     },
     enabled: !!activeTenant?.tenant_id,
   });
-}
 
-export function useCreateClient() {
-  const queryClient = useQueryClient();
-  const { activeTenant } = useAuth();
-
-  return useMutation({
+  const createClientMutation = useMutation({
     mutationFn: async (client: Omit<ClientInsert, 'tenant_id'>) => {
       if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
@@ -54,12 +50,8 @@ export function useCreateClient() {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
   });
-}
 
-export function useUpdateClient() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  const updateClientMutation = useMutation({
     mutationFn: async ({ id, ...updates }: ClientUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('clients')
@@ -75,12 +67,8 @@ export function useUpdateClient() {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
   });
-}
 
-export function useDeleteClient() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  const deleteClientMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('clients')
@@ -93,4 +81,16 @@ export function useDeleteClient() {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
     },
   });
+
+  return {
+    clients: clientsQuery.data || [],
+    isLoading: clientsQuery.isLoading,
+    error: clientsQuery.error,
+    createClient: createClientMutation.mutate,
+    updateClient: updateClientMutation.mutate,
+    deleteClient: deleteClientMutation.mutate,
+    isCreating: createClientMutation.isPending,
+    isUpdating: updateClientMutation.isPending,
+    isDeleting: deleteSaleMutation.isPending,
+  };
 }
