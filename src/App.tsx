@@ -1,20 +1,21 @@
+
 import React from "react";
 import "./App.css";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicRoute } from "@/components/auth/PublicRoute";
+import { ProtectedLayout } from "@/components/layout/ProtectedLayout";
 
 // Public pages
 import Landing from "./pages/Landing";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
-// Protected pages (existing)
+// Protected pages
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Vendedores from "./pages/Vendedores";
@@ -60,14 +61,14 @@ const App = () => (
               }
             />
 
-            {/* Protected Routes */}
+            {/* Protected Routes with Layout */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
+                  <ProtectedLayout>
                     <Dashboard />
-                  </SidebarProvider>
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -75,9 +76,9 @@ const App = () => (
               path="/vendedores"
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
+                  <ProtectedLayout>
                     <Vendedores />
-                  </SidebarProvider>
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -85,9 +86,9 @@ const App = () => (
               path="/clientes"
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
+                  <ProtectedLayout>
                     <Clientes />
-                  </SidebarProvider>
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -95,9 +96,9 @@ const App = () => (
               path="/consorcios"
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
+                  <ProtectedLayout>
                     <Consorcios />
-                  </SidebarProvider>
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -105,9 +106,9 @@ const App = () => (
               path="/comissoes"
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
+                  <ProtectedLayout>
                     <Comissoes />
-                  </SidebarProvider>
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -115,9 +116,9 @@ const App = () => (
               path="/relatorios"
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
+                  <ProtectedLayout>
                     <Relatorios />
-                  </SidebarProvider>
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />
@@ -125,9 +126,9 @@ const App = () => (
               path="/configuracoes"
               element={
                 <ProtectedRoute>
-                  <SidebarProvider>
+                  <ProtectedLayout>
                     <Configuracoes />
-                  </SidebarProvider>
+                  </ProtectedLayout>
                 </ProtectedRoute>
               }
             />

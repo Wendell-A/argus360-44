@@ -1,8 +1,8 @@
+
 import {
   BarChart3,
   Building2,
   DollarSign,
-  FileText,
   Home,
   Settings,
   Users,
@@ -10,6 +10,7 @@ import {
   LogOut,
   User,
 } from "lucide-react"
+import { NavLink } from "react-router-dom"
 import {
   Sidebar,
   SidebarContent,
@@ -32,7 +33,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 
 const items = [
@@ -108,10 +108,17 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <NavLink 
+                      to={item.url}
+                      className={({ isActive }) => 
+                        isActive 
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+                          : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      }
+                    >
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -170,10 +177,10 @@ export function AppSidebar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <a href="/configuracoes">
+                  <NavLink to="/configuracoes" className="w-full">
                     <User className="mr-2 h-4 w-4" />
                     Perfil
-                  </a>
+                  </NavLink>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-red-600">
