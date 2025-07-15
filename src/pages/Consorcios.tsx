@@ -2,73 +2,86 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ConsortiumCard } from "@/components/ConsortiumCard";
-import { ProductModal } from "@/components/ProductModal";
-import { 
-  Plus, 
-  Search, 
-  Building2, 
-  Car, 
-  Bike, 
-  DollarSign,
-  TrendingUp,
-  Package
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, DollarSign, Users, TrendingUp } from "lucide-react";
 import { useConsortiumProducts } from "@/hooks/useConsortiumProducts";
+import ProductModal from "@/components/ProductModal";
+import ConsortiumCard from "@/components/ConsortiumCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Consorcios() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const { activeTenant } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  
+  const { 
+    products, 
+    isLoading, 
+    createProduct, 
+    updateProduct, 
+    deleteProduct,
+    isCreating,
+    isUpdating,
+    isDeleting
+  } = useConsortiumProducts();
 
-  const { products, isLoading } = useConsortiumProducts();
+  console.log("Consorcios page - activeTenant:", activeTenant);
+  console.log("Consorcios page - products:", products);
+  console.log("Consorcios page - isLoading:", isLoading);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
-    const matchesStatus = statusFilter === "all" || product.status === statusFilter;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  const metrics = {
-    total: products.length,
-    active: products.filter(p => p.status === 'active').length,
-    totalValue: products.reduce((sum, p) => sum + p.asset_value, 0),
-    avgCommission: products.length > 0 
-      ? products.reduce((sum, p) => sum + p.commission_rate, 0) / products.length 
-      : 0
-  };
-
-  const handleCreate = () => {
+  const handleCreateProduct = () => {
     setSelectedProduct(null);
-    setModalMode("create");
-    setIsModalOpen(true);
+    setModalOpen(true);
   };
 
-  const handleView = (product: any) => {
+  const handleEditProduct = (product: any) => {
     setSelectedProduct(product);
-    setModalMode("view");
-    setIsModalOpen(true);
+    setModalOpen(true);
   };
 
-  const handleEdit = (product: any) => {
-    setSelectedProduct(product);
-    setModalMode("edit");
-    setIsModalOpen(true);
+  const handleSaveProduct = (productData: any) => {
+    if (selectedProduct) {
+      updateProduct({ id: selectedProduct.id, updates: productData });
+    } else {
+      createProduct(productData);
+    }
+    setModalOpen(false);
   };
+
+  const handleDeleteProduct = (id: string) => {
+    if (confirm("Tem certeza que deseja deletar este produto?")) {
+      deleteProduct(id);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>Carregando produtos...</div>
+      </div>
+    );
+  }
+
+  if (!activeTenant) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>Carregando informações do tenant...</div>
+      </div>
+    );
+  }
+
+  const activeProducts = products.filter(p => p.status === 'active');
+  const totalValue = products.reduce((sum, p) => sum + p.asset_value, 0);
+  const averageCommission = products.length > 0 
+    ? products.reduce((sum, p) => sum + p.commission_rate, 0) / products.length 
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,10 +90,10 @@ export default function Consorcios() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Consórcios</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Gerencie seus produtos de consórcio</p>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">Gerencie os produtos de consórcio</p>
           </div>
           <Button 
-            onClick={handleCreate}
+            onClick={handleCreateProduct}
             className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -88,137 +101,77 @@ export default function Consorcios() {
           </Button>
         </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        {/* Cards resumo */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-              <Package className="h-4 w-4 text-blue-600" />
+              <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.total}</div>
-              <p className="text-xs text-gray-600 mt-1">Produtos cadastrados</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Produtos Ativos</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.active}</div>
-              <p className="text-xs text-green-600 mt-1">Disponíveis para venda</p>
+              <div className="text-2xl font-bold">{products.length}</div>
+              <p className="text-xs text-gray-600 mt-1">{activeProducts.length} ativos</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-600" />
+              <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {(metrics.totalValue / 1000000).toFixed(1)}M
-              </div>
-              <p className="text-xs text-purple-600 mt-1">Em créditos</p>
+              <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
+              <p className="text-xs text-green-600 mt-1">Em produtos ativos</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Comissão Média</CardTitle>
-              <TrendingUp className="h-4 w-4 text-orange-600" />
+              <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.avgCommission.toFixed(1)}%</div>
-              <p className="text-xs text-orange-600 mt-1">Taxa média</p>
+              <div className="text-2xl font-bold">{averageCommission.toFixed(1)}%</div>
+              <p className="text-xs text-purple-600 mt-1">Taxa média</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6 lg:mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar produtos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as Categorias</SelectItem>
-                    <SelectItem value="Veículos">Veículos</SelectItem>
-                    <SelectItem value="Imóveis">Imóveis</SelectItem>
-                    <SelectItem value="Serviços">Serviços</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os Status</SelectItem>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
-          {isLoading ? (
-            <div className="col-span-full flex justify-center items-center h-32">
-              <div className="text-gray-500">Carregando produtos...</div>
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto encontrado</h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm || categoryFilter !== "all" || statusFilter !== "all"
-                  ? "Tente ajustar os filtros de busca"
-                  : "Comece criando seu primeiro produto de consórcio"
-                }
-              </p>
-              {!searchTerm && categoryFilter === "all" && statusFilter === "all" && (
-                <Button onClick={handleCreate}>
+        {/* Lista de produtos */}
+        {products.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <div className="text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">Nenhum produto cadastrado</h3>
+                <p className="text-sm mb-4">Comece criando seu primeiro produto de consórcio.</p>
+                <Button onClick={handleCreateProduct}>
                   <Plus className="w-4 h-4 mr-2" />
                   Criar Primeiro Produto
                 </Button>
-              )}
-            </div>
-          ) : (
-            filteredProducts.map((product) => (
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => (
               <ConsortiumCard
                 key={product.id}
                 product={product}
-                onView={() => handleView(product)}
-                onEdit={() => handleEdit(product)}
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Product Modal */}
+        {/* Modal */}
         <ProductModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          mode={modalMode}
+          open={modalOpen}
+          onOpenChange={setModalOpen}
           product={selectedProduct}
+          onSave={handleSaveProduct}
+          isLoading={isCreating || isUpdating}
         />
       </div>
     </div>

@@ -173,6 +173,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .replace(/\s+/g, '-')
           .substring(0, 50);
 
+        console.log('Creating initial setup for user:', data.user.id);
+
         const { data: setupResult, error: setupError } = await supabase.rpc(
           'create_initial_user_setup',
           {
@@ -192,9 +194,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return { error: setupError || new Error(result?.error) };
         }
 
-        // Se temos dados do escritório, criar o escritório
+        console.log('Setup successful, tenant_id:', result.tenant_id);
+
+        // Se temos dados do escritório e o setup foi bem-sucedido, criar o escritório
         if (officeData && result.tenant_id) {
-          const { error: officeError } = await supabase
+          console.log('Creating office for tenant:', result.tenant_id);
+          
+          const { data: officeResult, error: officeError } = await supabase
             .from('offices')
             .insert([{
               tenant_id: result.tenant_id,
@@ -205,11 +211,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               address: officeData.address,
               contact: officeData.contact,
               active: true,
-            }]);
+            }])
+            .select()
+            .single();
 
           if (officeError) {
             console.error('Error creating office:', officeError);
+            toast.error('Escritório criado com problema: ' + officeError.message);
             // Não falhar o cadastro por causa do escritório
+          } else {
+            console.log('Office created successfully:', officeResult);
+            
+            // Criar associação do usuário com o escritório
+            if (officeResult && result.user_id) {
+              const { error: officeUserError } = await supabase
+                .from('office_users')
+                .insert([{
+                  user_id: result.user_id,
+                  office_id: officeResult.id,
+                  tenant_id: result.tenant_id,
+                  role: 'admin',
+                  active: true,
+                }]);
+
+              if (officeUserError) {
+                console.error('Error creating office user association:', officeUserError);
+                toast.error('Erro ao associar usuário ao escritório: ' + officeUserError.message);
+              } else {
+                console.log('Office user association created successfully');
+              }
+            }
           }
         }
 

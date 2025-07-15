@@ -20,7 +20,7 @@ export const useVendedores = () => {
   const { toast } = useToast();
   const { activeTenant } = useAuth();
 
-  // Buscar todos os vendedores (profiles que são vendedores)
+  // Buscar todos os vendedores (profiles que são vendedores) - FILTRADO POR TENANT
   const { data: vendedores = [], isLoading } = useQuery({
     queryKey: ["vendedores", activeTenant?.tenant_id],
     queryFn: async () => {
@@ -28,39 +28,53 @@ export const useVendedores = () => {
         return [];
       }
 
-      console.log("Fetching vendedores...");
+      console.log("Fetching vendedores for tenant:", activeTenant.tenant_id);
       
-      // Buscar profiles básicos primeiro
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("full_name");
+      // Buscar apenas profiles que estão associados ao tenant através de office_users
+      const { data: officeUsers, error: officeUsersError } = await supabase
+        .from("office_users")
+        .select(`
+          user_id,
+          profiles!inner(*)
+        `)
+        .eq("tenant_id", activeTenant.tenant_id)
+        .eq("active", true);
 
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        throw profilesError;
+      if (officeUsersError) {
+        console.error("Error fetching office users:", officeUsersError);
+        throw officeUsersError;
       }
 
-      if (!profiles || profiles.length === 0) {
+      if (!officeUsers || officeUsers.length === 0) {
         return [];
       }
 
-      // Buscar vendas
+      // Extrair profiles dos office_users
+      const profiles = officeUsers.map(ou => ou.profiles).filter(Boolean);
+      const userIds = profiles.map(p => p.id);
+
+      if (userIds.length === 0) {
+        return [];
+      }
+
+      // Buscar vendas apenas para usuários do tenant atual
       const { data: salesData, error: salesError } = await supabase
         .from("sales")
         .select("id, seller_id")
-        .eq("tenant_id", activeTenant.tenant_id);
+        .eq("tenant_id", activeTenant.tenant_id)
+        .in("seller_id", userIds);
 
       if (salesError) {
         console.error("Error fetching sales:", salesError);
       }
 
-      // Buscar comissões
+      // Buscar comissões apenas para usuários do tenant atual
       const { data: commissionsData, error: commissionsError } = await supabase
         .from("commissions")
         .select("commission_amount, recipient_id")
         .eq("tenant_id", activeTenant.tenant_id)
-        .eq("recipient_type", "seller");
+        .eq("recipient_type", "seller")
+        .in("recipient_id", userIds);
 
       if (commissionsError) {
         console.error("Error fetching commissions:", commissionsError);
@@ -82,7 +96,7 @@ export const useVendedores = () => {
         } as VendedorData;
       });
 
-      console.log("Fetched vendedores:", processedData);
+      console.log("Fetched vendedores for tenant:", processedData);
       return processedData;
     },
     enabled: !!activeTenant?.tenant_id,

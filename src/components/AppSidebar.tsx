@@ -13,6 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
@@ -60,7 +62,8 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, activeTenant } = useAuth();
+  const { collapsed } = useSidebar();
 
   const handleSignOut = async () => {
     await signOut();
@@ -68,9 +71,30 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
+      <SidebarHeader>
+        <div className="p-2">
+          {!collapsed ? (
+            <div>
+              <h2 className="text-lg font-bold text-primary">ConsórcioPro</h2>
+              {activeTenant && (
+                <p className="text-sm text-muted-foreground mt-1 truncate">
+                  {activeTenant.tenant_name}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
+                <span className="text-white font-bold text-sm">CP</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+      
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>ConsórcioPro</SidebarGroupLabel>
+          {!collapsed && <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -85,7 +109,7 @@ export function AppSidebar() {
                       }
                     >
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -97,18 +121,31 @@ export function AppSidebar() {
       
       <SidebarFooter>
         <div className="p-2">
-          <div className="mb-2 text-sm text-muted-foreground">
-            {user?.email}
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleSignOut}
-            className="w-full"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
-          </Button>
+          {!collapsed ? (
+            <>
+              <div className="mb-2 text-sm text-muted-foreground truncate">
+                {user?.email}
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSignOut}
+                className="w-full"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
+            </>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSignOut}
+              className="w-full aspect-square p-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </SidebarFooter>
     </Sidebar>
