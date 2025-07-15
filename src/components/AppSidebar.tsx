@@ -1,28 +1,50 @@
+import {
+  BarChart3,
+  Building,
+  DollarSign,
+  FileText,
+  Package,
+  Settings,
+  ShoppingCart,
+  User,
+  Users,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-import { Home, Users, Building, UsersRound, Car, DollarSign, BarChart3, Settings, LogOut } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { ModeToggle } from "@/components/ModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  SidebarHeader,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+interface SidebarProps {
+  className?: string;
+}
+
+interface NavItem {
+  title: string;
+  url: string;
+  icon: any;
+}
 
 const items = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: Home,
+    icon: BarChart3,
+  },
+  {
+    title: "Vendas",
+    url: "/vendas",
+    icon: ShoppingCart,
   },
   {
     title: "Vendedores",
@@ -30,19 +52,19 @@ const items = [
     icon: Users,
   },
   {
-    title: "Escritórios",
-    url: "/escritorios",
-    icon: Building,
-  },
-  {
     title: "Clientes",
     url: "/clientes",
-    icon: UsersRound,
+    icon: User,
   },
   {
     title: "Consórcios",
     url: "/consorcios",
-    icon: Car,
+    icon: Package,
+  },
+  {
+    title: "Escritórios",
+    url: "/escritorios",
+    icon: Building,
   },
   {
     title: "Comissões",
@@ -52,7 +74,7 @@ const items = [
   {
     title: "Relatórios",
     url: "/relatorios",
-    icon: BarChart3,
+    icon: FileText,
   },
   {
     title: "Configurações",
@@ -61,94 +83,78 @@ const items = [
   },
 ];
 
-export function AppSidebar() {
-  const { signOut, user, activeTenant } = useAuth();
-  const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
+export function AppSidebar({ className }: SidebarProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
 
-  const handleSignOut = async () => {
-    await signOut();
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  const handleNavigation = (url: string) => {
+    navigate(url);
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="p-2">
-          {!isCollapsed ? (
-            <div>
-              <h2 className="text-lg font-bold text-primary">ConsórcioPro</h2>
-              {activeTenant && (
-                <p className="text-sm text-muted-foreground mt-1 truncate">
-                  {activeTenant.tenant_name}
-                </p>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Menu"
+          className={cn(
+            "mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden",
+            className
+          )}
+        >
+          <BarChart3 className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-full border-r md:w-4/5 lg:max-w-[280px]">
+        <SheetHeader className="text-left">
+          <SheetTitle>Argus 360</SheetTitle>
+        </SheetHeader>
+        <Separator className="my-4" />
+        <div className="flex flex-col gap-2">
+          {items.map((item: NavItem) => (
+            <Button
+              key={item.title}
+              variant="ghost"
+              className={cn(
+                "justify-start px-4",
+                pathname === item.url
+                  ? "bg-secondary text-secondary-foreground hover:bg-secondary"
+                  : "hover:bg-accent hover:text-accent-foreground"
               )}
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CP</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>}
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url}
-                      className={({ isActive }) =>
-                        isActive 
-                          ? "bg-accent text-accent-foreground font-medium" 
-                          : "hover:bg-accent hover:text-accent-foreground"
-                      }
-                    >
-                      <item.icon className="w-4 h-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarFooter>
-        <div className="p-2">
-          {!isCollapsed ? (
-            <>
-              <div className="mb-2 text-sm text-muted-foreground truncate">
-                {user?.email}
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSignOut}
-                className="w-full"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
-              </Button>
-            </>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleSignOut}
-              className="w-full aspect-square p-0"
+              onClick={() => handleNavigation(item.url)}
             >
-              <LogOut className="w-4 h-4" />
+              <item.icon className="mr-2 h-4 w-4" />
+              <span>{item.title}</span>
             </Button>
-          )}
+          ))}
         </div>
-      </SidebarFooter>
-    </Sidebar>
+        <Separator className="my-4" />
+        <div className="flex flex-col gap-2">
+          <Button variant="ghost" className="justify-start px-4">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Configurações</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="justify-start px-4"
+            onClick={() => signOut()}
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Sair</span>
+          </Button>
+        </div>
+        <Separator className="my-4" />
+        <div className="flex justify-center">
+          <ModeToggle />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

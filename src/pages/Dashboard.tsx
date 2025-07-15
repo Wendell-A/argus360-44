@@ -25,24 +25,99 @@ import {
   Pie,
   Cell
 } from "recharts";
-
-const salesData = [
-  { name: 'Jan', vendas: 12, meta: 15 },
-  { name: 'Fev', vendas: 19, meta: 18 },
-  { name: 'Mar', vendas: 8, meta: 12 },
-  { name: 'Abr', vendas: 15, meta: 14 },
-  { name: 'Mai', vendas: 22, meta: 20 },
-  { name: 'Jun', vendas: 18, meta: 16 },
-];
-
-const categoryData = [
-  { name: 'Carros', value: 45, color: '#3b82f6' },
-  { name: 'Motos', value: 25, color: '#10b981' },
-  { name: 'Imóveis', value: 20, color: '#f59e0b' },
-  { name: 'Outros', value: 10, color: '#ef4444' },
-];
+import { useSales } from "@/hooks/useSales";
+import { useVendedores } from "@/hooks/useVendedores";
+import { useConsortiumProducts } from "@/hooks/useConsortiumProducts";
+import { useCommissions } from "@/hooks/useCommissions";
+import { useMemo } from "react";
 
 export default function Dashboard() {
+  const { sales } = useSales();
+  const { vendedores } = useVendedores();
+  const { products } = useConsortiumProducts();
+  const { commissions } = useCommissions();
+
+  // Calcular métricas em tempo real
+  const metrics = useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    
+    const currentMonthSales = sales.filter(sale => {
+      const saleDate = new Date(sale.sale_date);
+      return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+    });
+
+    const approvedSales = sales.filter(sale => sale.status === 'approved');
+    const totalRevenue = approvedSales.reduce((sum, sale) => sum + (sale.sale_value || 0), 0);
+    const activeVendedores = vendedores.filter(v => {
+      const settings = v.settings as any || {};
+      return settings.active !== false;
+    }).length;
+
+    // Calcular progresso da meta (assumindo meta de 100 vendas/mês)
+    const monthlyGoal = 100;
+    const goalProgress = (currentMonthSales.length / monthlyGoal) * 100;
+
+    return {
+      currentMonthSales: currentMonthSales.length,
+      totalRevenue,
+      activeVendedores,
+      goalProgress: Math.min(goalProgress, 100),
+    };
+  }, [sales, vendedores]);
+
+  // Dados para gráfico de vendas por mês
+  const salesData = useMemo(() => {
+    const monthlyData = Array.from({ length: 6 }, (_, i) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (5 - i));
+      const month = date.toLocaleDateString('pt-BR', { month: 'short' });
+      
+      const monthSales = sales.filter(sale => {
+        const saleDate = new Date(sale.sale_date);
+        return saleDate.getMonth() === date.getMonth() && 
+               saleDate.getFullYear() === date.getFullYear();
+      });
+
+      return {
+        name: month,
+        vendas: monthSales.length,
+        meta: 15, // Meta fixa para exemplo
+      };
+    });
+
+    return monthlyData;
+  }, [sales]);
+
+  // Dados para gráfico de categorias
+  const categoryData = useMemo(() => {
+    const categoryCount = {};
+    
+    sales.forEach(sale => {
+      const product = products.find(p => p.id === sale.product_id);
+      if (product) {
+        categoryCount[product.category] = (categoryCount[product.category] || 0) + 1;
+      }
+    });
+
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    
+    return Object.entries(categoryCount).map(([category, count], index) => ({
+      name: category,
+      value: count,
+      color: colors[index % colors.length],
+    }));
+  }, [sales, products]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-4 sm:p-6 lg:p-8 xl:p-12 w-full max-w-none">
@@ -56,30 +131,30 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8 xl:mb-12">
           <MetricCard
             title="Vendas do Mês"
-            value="84"
+            value={metrics.currentMonthSales.toString()}
             change="+12%"
             changeType="positive"
             icon={TrendingUp}
           />
           <MetricCard
             title="Receita Total"
-            value="R$ 245.600"
+            value={formatCurrency(metrics.totalRevenue)}
             change="+8%"
             changeType="positive"
             icon={DollarSign}
           />
           <MetricCard
             title="Vendedores Ativos"
-            value="12"
+            value={metrics.activeVendedores.toString()}
             change="+2"
             changeType="positive"
             icon={Users}
           />
           <MetricCard
             title="Meta Mensal"
-            value="75%"
-            change="-5%"
-            changeType="negative"
+            value={`${metrics.goalProgress.toFixed(0)}%`}
+            change={metrics.goalProgress > 75 ? "+5%" : "-5%"}
+            changeType={metrics.goalProgress > 75 ? "positive" : "negative"}
             icon={Target}
           />
         </div>
@@ -120,23 +195,29 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-64 sm:h-80 lg:h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                {categoryData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Sem dados de vendas para exibir
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

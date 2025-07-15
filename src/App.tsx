@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,6 +12,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Vendedores from "./pages/Vendedores";
+import Vendas from "./pages/Vendas";
 import Escritorios from "./pages/Escritorios";
 import Clientes from "./pages/Clientes";
 import Consorcios from "./pages/Consorcios";
@@ -41,6 +41,7 @@ const App = () => (
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><ProtectedLayout><Dashboard /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/vendedores" element={<ProtectedRoute><ProtectedLayout><Vendedores /></ProtectedLayout></ProtectedRoute>} />
+            <Route path="/vendas" element={<ProtectedRoute><ProtectedLayout><Vendas /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/escritorios" element={<ProtectedRoute><ProtectedLayout><Escritorios /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/clientes" element={<ProtectedRoute><ProtectedLayout><Clientes /></ProtectedLayout></ProtectedRoute>} />
             <Route path="/consorcios" element={<ProtectedRoute><ProtectedLayout><Consorcios /></ProtectedLayout></ProtectedRoute>} />
