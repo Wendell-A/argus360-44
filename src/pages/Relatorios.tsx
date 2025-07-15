@@ -35,7 +35,7 @@ export default function Relatorios() {
   const activeClients = clients?.filter(client => client.status === 'active') || [];
   const prospectClients = clients?.filter(client => client.status === 'prospect') || [];
 
-  const activeVendedores = vendedores?.filter(vendedor => vendedor.active) || [];
+  const activeVendedores = vendedores?.filter(vendedor => vendedor.active_status !== false) || [];
 
   // Função para exportar dados (placeholder)
   const handleExportReport = () => {
