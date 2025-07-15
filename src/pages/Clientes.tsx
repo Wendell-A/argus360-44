@@ -30,7 +30,7 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { useClients } from "@/hooks/useClients";
+import { useClients, useDeleteClient } from "@/hooks/useClients";
 import { ClientModal } from "@/components/ClientModal";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,7 +42,8 @@ export default function Clientes() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   
-  const { data: clients = [], isLoading, deleteClient } = useClients();
+  const { data: clients = [], isLoading } = useClients();
+  const deleteClient = useDeleteClient();
   const { toast } = useToast();
 
   const filteredClients = clients.filter((client) => {
@@ -126,12 +127,12 @@ export default function Clientes() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 lg:p-8 w-full">
+      <div className="p-4 sm:p-6 lg:p-8 w-full max-w-none">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Clientes</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Gerencie sua base de clientes</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900">Clientes</h1>
+            <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1">Gerencie sua base de clientes</p>
           </div>
           <Button 
             onClick={handleCreate}
@@ -143,7 +144,7 @@ export default function Clientes() {
         </div>
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
@@ -236,7 +237,7 @@ export default function Clientes() {
         {/* Clients Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Lista de Clientes</CardTitle>
+            <CardTitle className="text-base sm:text-lg lg:text-xl">Lista de Clientes</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (

@@ -45,57 +45,57 @@ const categoryData = [
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 lg:p-8 w-full">
+      <div className="p-4 sm:p-6 lg:p-8 xl:p-12 w-full max-w-none">
         {/* Header */}
-        <div className="mb-6 lg:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Visão geral do seu negócio</p>
+        <div className="mb-6 lg:mb-8 xl:mb-12">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1">Visão geral do seu negócio</p>
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8 xl:mb-12">
           <MetricCard
             title="Vendas do Mês"
             value="84"
             change="+12%"
-            trend="up"
-            icon={<TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />}
+            changeType="positive"
+            icon={TrendingUp}
           />
           <MetricCard
             title="Receita Total"
             value="R$ 245.600"
             change="+8%"
-            trend="up"
-            icon={<DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />}
+            changeType="positive"
+            icon={DollarSign}
           />
           <MetricCard
             title="Vendedores Ativos"
             value="12"
             change="+2"
-            trend="up"
-            icon={<Users className="h-4 w-4 sm:h-5 sm:w-5" />}
+            changeType="positive"
+            icon={Users}
           />
           <MetricCard
             title="Meta Mensal"
             value="75%"
             change="-5%"
-            trend="down"
-            icon={<Target className="h-4 w-4 sm:h-5 sm:w-5" />}
+            changeType="negative"
+            icon={Target}
           />
         </div>
 
         {/* Charts Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8 xl:mb-12">
           {/* Sales Chart */}
           <Card className="xl:col-span-2">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                 Vendas vs Meta
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 sm:h-80">
+              <div className="h-64 sm:h-80 lg:h-96">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={salesData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -113,13 +113,13 @@ export default function Dashboard() {
           {/* Category Distribution */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                 Vendas por Categoria
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 sm:h-80">
+              <div className="h-64 sm:h-80 lg:h-96">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -145,13 +145,13 @@ export default function Dashboard() {
         {/* Performance Trend */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
               Tendência de Performance
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 sm:h-80">
+            <div className="h-64 sm:h-80 lg:h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={salesData}>
                   <CartesianGrid strokeDasharray="3 3" />
