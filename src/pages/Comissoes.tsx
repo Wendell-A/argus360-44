@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
 } from "@/components/ui/table";
 import {
   Select,
@@ -20,272 +20,318 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { 
   Search, 
   Filter, 
-  DollarSign, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle,
-  AlertCircle,
+  CheckCircle, 
+  DollarSign,
   Calendar,
-  Download
+  User,
 } from "lucide-react";
-import { useCommissions } from "@/hooks/useCommissions";
+import { useCommissions, useApproveCommission, usePayCommission } from "@/hooks/useCommissions";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-export default function Comissoes() {
+const Comissoes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
+  const [selectedCommission, setSelectedCommission] = useState<any>(null);
 
   const { commissions, isLoading } = useCommissions();
+  const { approveCommissionAsync, isApproving } = useApproveCommission();
+  const { payCommissionAsync, isPaying } = usePayCommission();
 
   const filteredCommissions = commissions.filter((commission) => {
     const matchesSearch = commission.recipient_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || commission.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    let matchesDate = true;
+    if (dateFilter === "vencidas") {
+      matchesDate = new Date(commission.due_date) < new Date() && commission.status === 'pending';
+    } else if (dateFilter === "este_mes") {
+      const today = new Date();
+      const commissionDate = new Date(commission.due_date);
+      matchesDate = commissionDate.getMonth() === today.getMonth() && 
+                   commissionDate.getFullYear() === today.getFullYear();
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
-  const metrics = {
-    total: commissions.reduce((sum, c) => sum + c.commission_amount, 0),
-    pending: commissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.commission_amount, 0),
-    paid: commissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.commission_amount, 0),
-    overdue: commissions.filter(c => c.status === 'overdue').reduce((sum, c) => sum + c.commission_amount, 0)
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      pending: { label: "Pendente", variant: "secondary" as const },
+      approved: { label: "Aprovada", variant: "default" as const },
+      paid: { label: "Paga", variant: "default" as const },
+      cancelled: { label: "Cancelada", variant: "destructive" as const },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      case 'approved': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleApprove = async (commissionId: string) => {
+    if (window.confirm("Tem certeza que deseja aprovar esta comissão?")) {
+      await approveCommissionAsync(commissionId);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'paid': return <CheckCircle className="w-3 h-3" />;
-      case 'pending': return <Clock className="w-3 h-3" />;
-      case 'overdue': return <AlertCircle className="w-3 h-3" />;
-      default: return <Clock className="w-3 h-3" />;
-    }
+  const handlePayment = async () => {
+    if (!selectedCommission || !paymentMethod) return;
+    
+    await payCommissionAsync({
+      commissionId: selectedCommission.id,
+      paymentMethod,
+      paymentReference,
+    });
+    
+    setSelectedCommission(null);
+    setPaymentMethod("");
+    setPaymentReference("");
   };
+
+  const totalCommissions = filteredCommissions.reduce((sum, comm) => sum + comm.commission_amount, 0);
+  const pendingCommissions = filteredCommissions.filter(c => c.status === 'pending').length;
+  const approvedCommissions = filteredCommissions.filter(c => c.status === 'approved').length;
+  const paidCommissions = filteredCommissions.filter(c => c.status === 'paid').length;
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-center">Carregando comissões...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 lg:p-8 w-full">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Comissões</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Gerencie pagamentos e comissões</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Download className="w-4 h-4 mr-2" />
-              Exportar
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-              <DollarSign className="w-4 h-4 mr-2" />
-              Processar Pagamentos
-            </Button>
-          </div>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Comissões</h1>
+      </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total em Comissões</CardTitle>
-              <DollarSign className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {(metrics.total / 1000).toFixed(1)}k
-              </div>
-              <p className="text-xs text-gray-600 mt-1">Este mês</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {(metrics.pending / 1000).toFixed(1)}k
-              </div>
-              <p className="text-xs text-yellow-600 mt-1">Aguardando pagamento</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pagas</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {(metrics.paid / 1000).toFixed(1)}k
-              </div>
-              <p className="text-xs text-green-600 mt-1">Já processadas</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Em Atraso</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                R$ {(metrics.overdue / 1000).toFixed(1)}k
-              </div>
-              <p className="text-xs text-red-600 mt-1">Vencidas</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6 lg:mb-8">
-          <CardContent className="pt-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por vendedor ou ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os Status</SelectItem>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="approved">Aprovado</SelectItem>
-                    <SelectItem value="paid">Pago</SelectItem>
-                    <SelectItem value="overdue">Em Atraso</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os Períodos</SelectItem>
-                    <SelectItem value="today">Hoje</SelectItem>
-                    <SelectItem value="week">Esta Semana</SelectItem>
-                    <SelectItem value="month">Este Mês</SelectItem>
-                    <SelectItem value="quarter">Este Trimestre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Comissões</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              R$ {totalCommissions.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
           </CardContent>
         </Card>
 
-        {/* Commissions Table */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Lista de Comissões</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-32">
-                <div className="text-gray-500">Carregando comissões...</div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[120px]">ID</TableHead>
-                      <TableHead className="min-w-[150px]">Vendedor</TableHead>
-                      <TableHead className="min-w-[120px]">Valor Base</TableHead>
-                      <TableHead className="min-w-[100px]">Taxa</TableHead>
-                      <TableHead className="min-w-[120px]">Comissão</TableHead>
-                      <TableHead className="min-w-[120px]">Vencimento</TableHead>
-                      <TableHead className="min-w-[100px]">Status</TableHead>
-                      <TableHead className="min-w-[150px]">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCommissions.map((commission) => (
-                      <TableRow key={commission.id} className="hover:bg-gray-50">
-                        <TableCell>
-                          <span className="font-mono text-sm">
-                            {commission.id.substring(0, 8)}...
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">
-                            {commission.recipient_id.substring(0, 8)}...
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-mono">
-                            R$ {commission.base_amount.toLocaleString('pt-BR', {
-                              minimumFractionDigits: 2
-                            })}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">
-                            {commission.commission_rate}%
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-mono font-medium text-green-600">
-                            R$ {commission.commission_amount.toLocaleString('pt-BR', {
-                              minimumFractionDigits: 2
-                            })}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-gray-400" />
-                            <span className="text-sm">
-                              {new Date(commission.due_date).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(commission.status || 'pending')}>
-                            <div className="flex items-center gap-1">
-                              {getStatusIcon(commission.status || 'pending')}
-                              {commission.status || 'pending'}
-                            </div>
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <Button variant="outline" size="sm" className="text-xs">
-                              Ver Detalhes
-                            </Button>
-                            {(commission.status === 'pending' || commission.status === 'approved') && (
-                              <Button variant="outline" size="sm" className="text-xs text-green-600">
-                                Pagar
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingCommissions}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aprovadas</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{approvedCommissions}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pagas</CardTitle>
+            <User className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{paidCommissions}</div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por vendedor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="approved">Aprovada</SelectItem>
+                <SelectItem value="paid">Paga</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={dateFilter} onValueChange={setDateFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Períodos</SelectItem>
+                <SelectItem value="este_mes">Este Mês</SelectItem>
+                <SelectItem value="vencidas">Vencidas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabela de Comissões */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Comissões</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Vendedor</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Valor Base</TableHead>
+                <TableHead>Taxa (%)</TableHead>
+                <TableHead>Valor Comissão</TableHead>
+                <TableHead>Vencimento</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCommissions.map((commission) => (
+                <TableRow key={commission.id}>
+                  <TableCell>{commission.recipient_id}</TableCell>
+                  <TableCell>
+                    {commission.sales?.clients?.name || 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    R$ {commission.base_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell>{commission.commission_rate}%</TableCell>
+                  <TableCell>
+                    R$ {commission.commission_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(commission.due_date), "dd/MM/yyyy", { locale: ptBR })}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(commission.status || 'pending')}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {commission.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApprove(commission.id)}
+                          disabled={isApproving}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Aprovar
+                        </Button>
+                      )}
+                      
+                      {commission.status === 'approved' && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              onClick={() => setSelectedCommission(commission)}
+                            >
+                              <DollarSign className="h-4 w-4 mr-1" />
+                              Pagar
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Registrar Pagamento</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="paymentMethod">Método de Pagamento</Label>
+                                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o método" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pix">PIX</SelectItem>
+                                    <SelectItem value="transferencia">Transferência</SelectItem>
+                                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                    <SelectItem value="cheque">Cheque</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="paymentReference">Referência do Pagamento</Label>
+                                <Input
+                                  id="paymentReference"
+                                  placeholder="Ex: Número da transação, cheque..."
+                                  value={paymentReference}
+                                  onChange={(e) => setPaymentReference(e.target.value)}
+                                />
+                              </div>
+                              
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedCommission(null);
+                                    setPaymentMethod("");
+                                    setPaymentReference("");
+                                  }}
+                                >
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  onClick={handlePayment}
+                                  disabled={isPaying || !paymentMethod}
+                                >
+                                  {isPaying ? "Registrando..." : "Registrar Pagamento"}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default Comissoes;

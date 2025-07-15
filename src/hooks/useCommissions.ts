@@ -1,113 +1,170 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
-export type Commission = Tables<'commissions'>;
-export type CommissionInsert = TablesInsert<'commissions'>;
-export type CommissionUpdate = TablesUpdate<'commissions'>;
-
-export function useCommissions() {
+export const useCommissions = () => {
   const { activeTenant } = useAuth();
+  const { toast } = useToast();
 
-  const query = useQuery({
-    queryKey: ['commissions', activeTenant?.tenant_id],
+  const {
+    data: commissions = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["commissions", activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
-        throw new Error('No tenant selected');
+        throw new Error("No active tenant");
       }
 
       const { data, error } = await supabase
-        .from('commissions')
+        .from("commissions")
         .select(`
           *,
-          sales:sale_id(
-            contract_number,
+          sales (
+            id,
             sale_value,
-            clients:client_id(name)
+            client_id,
+            seller_id,
+            sale_date,
+            clients (
+              name,
+              document
+            )
           )
         `)
-        .eq('tenant_id', activeTenant.tenant_id)
+        .eq("tenant_id", activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!activeTenant?.tenant_id,
   });
 
   return {
-    commissions: query.data || [],
-    isLoading: query.isLoading,
-    error: query.error,
-    refetch: query.refetch,
+    commissions,
+    isLoading,
+    error,
+    refetch,
   };
-}
+};
 
-export function useUpdateCommission() {
+export const useApproveCommission = () => {
   const queryClient = useQueryClient();
+  const { activeTenant } = useAuth();
+  const { toast } = useToast();
 
-  const mutation = useMutation({
-    mutationFn: async ({ id, ...updates }: CommissionUpdate & { id: string }) => {
+  const {
+    mutateAsync: approveCommissionAsync,
+    isPending: isApproving,
+    error,
+  } = useMutation({
+    mutationFn: async (commissionId: string) => {
+      if (!activeTenant?.tenant_id) {
+        throw new Error("No active tenant");
+      }
+
       const { data, error } = await supabase
-        .from('commissions')
-        .update(updates)
-        .eq('id', id)
+        .from("commissions")
+        .update({
+          status: 'approved',
+          approval_date: new Date().toISOString().split('T')[0],
+        })
+        .eq("id", commissionId)
+        .eq("tenant_id", activeTenant.tenant_id)
         .select()
         .single();
 
       if (error) throw error;
-      return data as Commission;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commissions'] });
+      queryClient.invalidateQueries({ queryKey: ["commissions"] });
+      toast({
+        title: "Comissão aprovada",
+        description: "A comissão foi aprovada com sucesso.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error approving commission:", error);
+      toast({
+        title: "Erro ao aprovar comissão",
+        description: "Não foi possível aprovar a comissão. Tente novamente.",
+        variant: "destructive",
+      });
     },
   });
 
   return {
-    updateCommission: mutation.mutate,
-    updateCommissionAsync: mutation.mutateAsync,
-    isUpdating: mutation.isPending,
-    error: mutation.error,
+    approveCommissionAsync,
+    isApproving,
+    error,
   };
-}
+};
 
-export function useCommissionStats() {
+export const usePayCommission = () => {
+  const queryClient = useQueryClient();
   const { activeTenant } = useAuth();
+  const { toast } = useToast();
 
-  const query = useQuery({
-    queryKey: ['commission_stats', activeTenant?.tenant_id],
-    queryFn: async () => {
+  const {
+    mutateAsync: payCommissionAsync,
+    isPending: isPaying,
+    error,
+  } = useMutation({
+    mutationFn: async ({ 
+      commissionId, 
+      paymentMethod, 
+      paymentReference 
+    }: { 
+      commissionId: string; 
+      paymentMethod: string; 
+      paymentReference?: string; 
+    }) => {
       if (!activeTenant?.tenant_id) {
-        throw new Error('No tenant selected');
+        throw new Error("No active tenant");
       }
 
       const { data, error } = await supabase
-        .from('commissions')
-        .select('status, commission_amount')
-        .eq('tenant_id', activeTenant.tenant_id);
+        .from("commissions")
+        .update({
+          status: 'paid',
+          payment_date: new Date().toISOString().split('T')[0],
+          payment_method: paymentMethod,
+          payment_reference: paymentReference,
+        })
+        .eq("id", commissionId)
+        .eq("tenant_id", activeTenant.tenant_id)
+        .select()
+        .single();
 
       if (error) throw error;
-
-      const stats = data.reduce((acc, commission) => {
-        acc.total += Number(commission.commission_amount);
-        acc.byStatus[commission.status || 'pending'] = 
-          (acc.byStatus[commission.status || 'pending'] || 0) + Number(commission.commission_amount);
-        return acc;
-      }, {
-        total: 0,
-        byStatus: {} as Record<string, number>
-      });
-
-      return stats;
+      return data;
     },
-    enabled: !!activeTenant?.tenant_id,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["commissions"] });
+      toast({
+        title: "Comissão paga",
+        description: "O pagamento da comissão foi registrado com sucesso.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error paying commission:", error);
+      toast({
+        title: "Erro ao registrar pagamento",
+        description: "Não foi possível registrar o pagamento. Tente novamente.",
+        variant: "destructive",
+      });
+    },
   });
 
   return {
-    stats: query.data,
-    isLoading: query.isLoading,
-    error: query.error,
+    payCommissionAsync,
+    isPaying,
+    error,
   };
-}
+};

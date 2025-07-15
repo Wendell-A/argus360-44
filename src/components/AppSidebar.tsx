@@ -18,19 +18,20 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarSeparator,
+} from "@/components/ui/sidebar";
 import { ModeToggle } from "@/components/ModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface SidebarProps {
-  className?: string;
-}
 
 interface NavItem {
   title: string;
@@ -86,74 +87,58 @@ const items = [
   },
 ];
 
-export function AppSidebar({ className }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
 
   const handleNavigation = (url: string) => {
     navigate(url);
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Menu"
-          className={cn(
-            "mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden",
-            className
-          )}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-full border-r md:w-4/5 lg:max-w-[280px]">
-        <SheetHeader className="text-left">
-          <SheetTitle>Argus 360</SheetTitle>
-        </SheetHeader>
-        <Separator className="my-4" />
-        <div className="flex flex-col gap-2">
-          {items.map((item: NavItem) => (
-            <Button
-              key={item.title}
-              variant="ghost"
-              className={cn(
-                "justify-start px-4",
-                pathname === item.url
-                  ? "bg-secondary text-secondary-foreground hover:bg-secondary"
-                  : "hover:bg-accent hover:text-accent-foreground"
-              )}
-              onClick={() => handleNavigation(item.url)}
-            >
-              <item.icon className="mr-2 h-4 w-4" />
-              <span>{item.title}</span>
-            </Button>
-          ))}
-        </div>
-        <Separator className="my-4" />
+    <Sidebar>
+      <SidebarHeader className="p-4">
+        <h2 className="text-lg font-semibold">Argus360</h2>
+      </SidebarHeader>
+      
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item: NavItem) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    isActive={pathname === item.url}
+                    onClick={() => handleNavigation(item.url)}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="p-4">
         <div className="flex flex-col gap-2">
           <Button
             variant="ghost"
-            className="justify-start px-4"
+            className="justify-start"
             onClick={() => signOut()}
           >
             <LogOut className="mr-2 h-4 w-4" />
             <span>Sair</span>
           </Button>
+          <SidebarSeparator />
+          <div className="flex justify-center">
+            <ModeToggle />
+          </div>
         </div>
-        <Separator className="my-4" />
-        <div className="flex justify-center">
-          <ModeToggle />
-        </div>
-      </SheetContent>
-    </Sheet>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
