@@ -34,7 +34,7 @@ export default function OfficeModal({
     name: "",
     type: "matriz" as "matriz" | "filial" | "representacao",
     cnpj: "",
-    parent_office_id: "",
+    parent_office_id: "none",
     address: {
       street: "",
       city: "",
@@ -62,7 +62,7 @@ export default function OfficeModal({
         name: office.name || "",
         type: office.type || "matriz",
         cnpj: office.cnpj || "",
-        parent_office_id: office.parent_office_id || "",
+        parent_office_id: office.parent_office_id || "none",
         address: {
           street: address.street || "",
           city: address.city || "",
@@ -84,7 +84,7 @@ export default function OfficeModal({
         name: "",
         type: "matriz",
         cnpj: "",
-        parent_office_id: "",
+        parent_office_id: "none",
         address: {
           street: "",
           city: "",
@@ -113,7 +113,7 @@ export default function OfficeModal({
       name: formData.name,
       type: formData.type,
       cnpj: formData.cnpj || null,
-      parent_office_id: formData.parent_office_id || null,
+      parent_office_id: formData.parent_office_id === "none" ? null : formData.parent_office_id,
       address: formData.address,
       contact: formData.contact,
       working_hours: formData.working_hours,
@@ -191,7 +191,7 @@ export default function OfficeModal({
                     <SelectValue placeholder="Selecione (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="none">Nenhum</SelectItem>
                     {availableParentOffices.map((parentOffice) => (
                       <SelectItem key={parentOffice.id} value={parentOffice.id}>
                         {parentOffice.name}
