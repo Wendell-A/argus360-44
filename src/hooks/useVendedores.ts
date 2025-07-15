@@ -20,7 +20,7 @@ export const useVendedores = () => {
   const { toast } = useToast();
   const { activeTenant } = useAuth();
 
-  // Buscar todos os vendedores (profiles que são vendedores) - FILTRADO POR TENANT
+  // Buscar todos os vendedores usando tenant_users como filtro principal
   const { data: vendedores = [], isLoading } = useQuery({
     queryKey: ["vendedores", activeTenant?.tenant_id],
     queryFn: async () => {
@@ -30,23 +30,25 @@ export const useVendedores = () => {
 
       console.log("Fetching vendedores for tenant:", activeTenant.tenant_id);
       
-      // Primeiro, buscar os usuários que pertencem ao tenant através de office_users
-      const { data: officeUsers, error: officeUsersError } = await supabase
-        .from("office_users")
+      // Buscar usuários que pertencem ao tenant através de tenant_users
+      const { data: tenantUsers, error: tenantUsersError } = await supabase
+        .from("tenant_users")
         .select("user_id")
         .eq("tenant_id", activeTenant.tenant_id)
         .eq("active", true);
 
-      if (officeUsersError) {
-        console.error("Error fetching office users:", officeUsersError);
-        throw officeUsersError;
+      if (tenantUsersError) {
+        console.error("Error fetching tenant users:", tenantUsersError);
+        throw tenantUsersError;
       }
 
-      if (!officeUsers || officeUsers.length === 0) {
+      if (!tenantUsers || tenantUsers.length === 0) {
+        console.log("No tenant users found for tenant:", activeTenant.tenant_id);
         return [];
       }
 
-      const userIds = officeUsers.map(ou => ou.user_id);
+      const userIds = tenantUsers.map(tu => tu.user_id);
+      console.log("Found user IDs for tenant:", userIds);
 
       // Buscar profiles desses usuários
       const { data: profiles, error: profilesError } = await supabase
@@ -60,6 +62,7 @@ export const useVendedores = () => {
       }
 
       if (!profiles || profiles.length === 0) {
+        console.log("No profiles found for user IDs:", userIds);
         return [];
       }
 
@@ -102,7 +105,7 @@ export const useVendedores = () => {
         } as VendedorData;
       });
 
-      console.log("Fetched vendedores for tenant:", processedData);
+      console.log("Processed vendedores data:", processedData);
       return processedData;
     },
     enabled: !!activeTenant?.tenant_id,
@@ -134,6 +137,21 @@ export const useVendedores = () => {
       if (profileError) {
         console.error("Error creating profile:", profileError);
         throw profileError;
+      }
+
+      // Garantir que o usuário está associado ao tenant
+      const { error: tenantUserError } = await supabase
+        .from("tenant_users")
+        .insert([{
+          user_id: profileData.id,
+          tenant_id: activeTenant.tenant_id,
+          role: "user",
+          active: true,
+        }]);
+
+      if (tenantUserError) {
+        console.error("Error creating tenant user:", tenantUserError);
+        // Não falhar a criação do vendedor por causa disso, mas logar o erro
       }
 
       // Se foi selecionado um escritório, criar a associação
