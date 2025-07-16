@@ -10,11 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
-import { Shield, Users, Settings, Search } from 'lucide-react';
+import { Shield, Users, Settings, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 const roleNames = {
   owner: 'Proprietário',
@@ -32,6 +33,8 @@ const roleDescriptions = {
   viewer: 'Apenas visualização'
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export default function Permissoes() {
   const { 
     allPermissions, 
@@ -43,28 +46,36 @@ export default function Permissoes() {
   
   const { activeTenant } = useAuth();
   
-  // Buscar usuários do tenant com profiles
-  const { data: tenantUsers = [] } = useQuery({
-    queryKey: ['tenant-users', activeTenant?.tenant_id],
+  // Buscar usuários do tenant com profiles usando query separada
+  const { data: tenantUsersData = [], isLoading: loadingUsers } = useQuery({
+    queryKey: ['tenant-users-with-profiles', activeTenant?.tenant_id],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) return [];
 
-      const { data, error } = await supabase
+      // Primeira query: buscar tenant_users
+      const { data: tenantUsers, error: tenantUsersError } = await supabase
         .from('tenant_users')
-        .select(`
-          *,
-          profiles!tenant_users_user_id_fkey (
-            id,
-            full_name,
-            email,
-            avatar_url
-          )
-        `)
+        .select('id, user_id, tenant_id, role, active, created_at, updated_at')
         .eq('tenant_id', activeTenant.tenant_id)
         .eq('active', true);
 
-      if (error) throw error;
-      return data;
+      if (tenantUsersError) throw tenantUsersError;
+      if (!tenantUsers?.length) return [];
+
+      // Segunda query: buscar profiles dos usuários
+      const userIds = tenantUsers.map(tu => tu.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combinar os dados
+      return tenantUsers.map(tenantUser => ({
+        ...tenantUser,
+        profiles: profiles?.find(p => p.id === tenantUser.user_id) || null
+      }));
     },
     enabled: !!activeTenant?.tenant_id,
   });
@@ -72,6 +83,7 @@ export default function Permissoes() {
   const [selectedRole, setSelectedRole] = useState<string>('user');
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
 
   // Agrupar permissões por módulo
@@ -110,15 +122,42 @@ export default function Permissoes() {
     }
   };
 
-  const filteredUsers = tenantUsers.filter(tenantUser => {
+  // Filtrar usuários com type guards
+  const filteredUsers = tenantUsersData.filter(tenantUser => {
     const profile = tenantUser.profiles;
-    if (!profile || !profile.full_name || !profile.email) return false;
     
-    return profile.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           profile.email.toLowerCase().includes(searchTerm.toLowerCase());
+    // Type guard para verificar se profile existe e tem as propriedades necessárias
+    if (!profile || 
+        typeof profile !== 'object' || 
+        !('full_name' in profile) || 
+        !('email' in profile) ||
+        !profile.full_name || 
+        !profile.email) {
+      return false;
+    }
+    
+    const fullName = String(profile.full_name);
+    const email = String(profile.email);
+    const searchLower = searchTerm.toLowerCase();
+    
+    return fullName.toLowerCase().includes(searchLower) ||
+           email.toLowerCase().includes(searchLower);
   });
 
-  if (isLoading) {
+  // Paginação
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  };
+
+  if (isLoading || loadingUsers) {
     return (
       <div className="container mx-auto py-6">
         <div className="flex items-center justify-center h-64">
@@ -246,7 +285,10 @@ export default function Permissoes() {
                     <Input
                       placeholder="Buscar usuários..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1); // Reset to first page when searching
+                      }}
                       className="pl-10"
                     />
                   </div>
@@ -263,36 +305,96 @@ export default function Permissoes() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredUsers.map(tenantUser => {
-                        const profile = tenantUser.profiles;
-                        if (!profile) return null;
-                        
-                        return (
-                          <TableRow key={tenantUser.id}>
-                            <TableCell className="font-medium">
-                              {profile.full_name || 'Sem nome'}
-                            </TableCell>
-                            <TableCell>{profile.email}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {roleNames[tenantUser.role as keyof typeof roleNames] || tenantUser.role}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSelectedUser(tenantUser.user_id)}
-                              >
-                                Gerenciar Permissões
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {paginatedUsers.length > 0 ? (
+                        paginatedUsers.map(tenantUser => {
+                          const profile = tenantUser.profiles;
+                          if (!profile || 
+                              typeof profile !== 'object' || 
+                              !('full_name' in profile) || 
+                              !('email' in profile)) {
+                            return null;
+                          }
+
+                          const fullName = String(profile.full_name || 'Sem nome');
+                          const email = String(profile.email);
+                          
+                          return (
+                            <TableRow key={tenantUser.id}>
+                              <TableCell className="font-medium">
+                                {fullName}
+                              </TableCell>
+                              <TableCell>{email}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {roleNames[tenantUser.role as keyof typeof roleNames] || tenantUser.role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedUser(tenantUser.user_id)}
+                                >
+                                  Gerenciar Permissões
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                            {searchTerm ? 'Nenhum usuário encontrado com os critérios de busca.' : 'Nenhum usuário encontrado.'}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* Paginação */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      Mostrando {startIndex + 1} a {Math.min(startIndex + ITEMS_PER_PAGE, filteredUsers.length)} de {filteredUsers.length} usuários
+                    </div>
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePreviousPage}
+                            disabled={currentPage === 1}
+                            className="gap-1 pl-2.5"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            Anterior
+                          </Button>
+                        </PaginationItem>
+                        
+                        <PaginationItem className="mx-2">
+                          <span className="text-sm font-medium">
+                            Página {currentPage} de {totalPages}
+                          </span>
+                        </PaginationItem>
+                        
+                        <PaginationItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleNextPage}
+                            disabled={currentPage === totalPages}
+                            className="gap-1 pr-2.5"
+                          >
+                            Próxima
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
