@@ -10,7 +10,6 @@ import {
   BarChart3, 
   FileText, 
   Settings,
-  Team,
   Briefcase,
   LogOut
 } from "lucide-react";
@@ -70,7 +69,7 @@ const menuItems = [
   {
     title: "Equipes",
     url: "/equipes",
-    icon: Team,
+    icon: Users,
   },
   {
     title: "Departamentos",
@@ -95,7 +94,7 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { user, activeTenant, userOffice, signOut } = useAuth();
+  const { user, activeTenant, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -122,6 +121,13 @@ export function AppSidebar() {
       .slice(0, 2);
   };
 
+  const getUserDisplayName = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name;
+    }
+    return user?.email || 'Usuário';
+  };
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b p-4">
@@ -131,23 +137,16 @@ export function AppSidebar() {
             {activeTenant?.tenant_name || 'Sistema'}
           </div>
           
-          {/* Nome do Escritório */}
-          {userOffice && (
-            <div className="text-sm text-muted-foreground">
-              {userOffice.name}
-            </div>
-          )}
-          
           {/* Avatar e informações do usuário */}
           <div className="flex items-center gap-3 pt-2">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="text-xs">
-                {getUserInitials(user?.full_name || user?.email || '')}
+                {getUserInitials(getUserDisplayName())}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-foreground truncate">
-                {user?.full_name || user?.email || 'Usuário'}
+                {getUserDisplayName()}
               </div>
             </div>
           </div>
