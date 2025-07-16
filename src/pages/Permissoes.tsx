@@ -53,7 +53,12 @@ export default function Permissoes() {
         .from('tenant_users')
         .select(`
           *,
-          profiles!inner(*)
+          profiles (
+            id,
+            full_name,
+            email,
+            avatar_url
+          )
         `)
         .eq('tenant_id', activeTenant.tenant_id)
         .eq('active', true);
@@ -110,7 +115,7 @@ export default function Permissoes() {
     if (!profile) return false;
     
     return profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           profile.email.toLowerCase().includes(searchTerm.toLowerCase());
+           profile.email?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   if (isLoading) {
