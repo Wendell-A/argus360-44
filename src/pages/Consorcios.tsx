@@ -64,7 +64,10 @@ export default function Consorcios() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>Carregando produtos...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando produtos...</p>
+        </div>
       </div>
     );
   }
@@ -72,7 +75,10 @@ export default function Consorcios() {
   if (!activeTenant) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div>Carregando informações do tenant...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando informações do tenant...</p>
+        </div>
       </div>
     );
   }
@@ -85,67 +91,68 @@ export default function Consorcios() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 lg:p-8 w-full">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
+      <div className="p-3 sm:p-4 md:p-6 lg:p-8 w-full">
+        {/* Header - Mobile Optimized */}
+        <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-6 lg:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">Consórcios</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Gerencie os produtos de consórcio</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">Consórcios</h1>
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 mt-1">Gerencie os produtos de consórcio</p>
           </div>
           <Button 
             onClick={handleCreateProduct}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto min-h-[44px] touch-manipulation"
+            size="lg"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Novo Produto
+            <span className="text-sm sm:text-base">Novo Produto</span>
           </Button>
         </div>
 
-        {/* Cards resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
+        {/* Cards resumo - Mobile Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
+          <Card className="min-h-[100px]">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total de Produtos</CardTitle>
               <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{products.length}</div>
+            <CardContent className="px-4 pb-4">
+              <div className="text-xl sm:text-2xl font-bold">{products.length}</div>
               <p className="text-xs text-gray-600 mt-1">{activeProducts.length} ativos</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+          <Card className="min-h-[100px]">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+              <CardTitle className="text-xs sm:text-sm font-medium">Valor Total</CardTitle>
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
+            <CardContent className="px-4 pb-4">
+              <div className="text-lg sm:text-2xl font-bold break-all">{formatCurrency(totalValue)}</div>
               <p className="text-xs text-green-600 mt-1">Em produtos ativos</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Comissão Média</CardTitle>
+          <Card className="min-h-[100px] sm:col-span-2 lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
+              <CardTitle className="text-xs sm:text-sm font-medium">Comissão Média</CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{averageCommission.toFixed(1)}%</div>
+            <CardContent className="px-4 pb-4">
+              <div className="text-xl sm:text-2xl font-bold">{averageCommission.toFixed(1)}%</div>
               <p className="text-xs text-purple-600 mt-1">Taxa média</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Lista de produtos */}
+        {/* Lista de produtos - Mobile Optimized */}
         {products.length === 0 ? (
           <Card>
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-6 sm:p-8 text-center">
               <div className="text-gray-500">
                 <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Nenhum produto cadastrado</h3>
-                <p className="text-sm mb-4">Comece criando seu primeiro produto de consórcio.</p>
-                <Button onClick={handleCreateProduct}>
+                <h3 className="text-base sm:text-lg font-medium mb-2">Nenhum produto cadastrado</h3>
+                <p className="text-sm mb-4 px-4">Comece criando seu primeiro produto de consórcio.</p>
+                <Button onClick={handleCreateProduct} className="min-h-[44px] touch-manipulation">
                   <Plus className="w-4 h-4 mr-2" />
                   Criar Primeiro Produto
                 </Button>
@@ -153,7 +160,7 @@ export default function Consorcios() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {products.map((product) => (
               <ConsortiumCard
                 key={product.id}
