@@ -21,10 +21,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, X } from "lucide-react";
 import SaleModal from "@/components/SaleModal";
 import { useSales, useCreateSale, useUpdateSale, useDeleteSale } from "@/hooks/useSales";
-import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Vendas() {
@@ -34,7 +33,6 @@ export default function Vendas() {
   const [saleToDelete, setSaleToDelete] = useState(null);
 
   const { sales, isLoading } = useSales();
-  const { clients } = useClients();
   const { createSaleAsync, isCreating } = useCreateSale();
   const { updateSaleAsync, isUpdating } = useUpdateSale();
   const { deleteSaleAsync, isDeleting } = useDeleteSale();
@@ -76,6 +74,46 @@ export default function Vendas() {
     }
   };
 
+  const handleApproveSale = async (sale) => {
+    try {
+      await updateSaleAsync({ 
+        id: sale.id, 
+        status: 'approved',
+        approval_date: new Date().toISOString().split('T')[0]
+      });
+      toast({
+        title: "Venda aprovada",
+        description: "A venda foi aprovada e as comissões foram geradas automaticamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao aprovar",
+        description: "Não foi possível aprovar a venda. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelSale = async (sale) => {
+    try {
+      await updateSaleAsync({ 
+        id: sale.id, 
+        status: 'cancelled',
+        cancellation_date: new Date().toISOString().split('T')[0]
+      });
+      toast({
+        title: "Venda cancelada",
+        description: "A venda foi cancelada com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao cancelar",
+        description: "Não foi possível cancelar a venda. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSave = async (data) => {
     try {
       if (selectedSale) {
@@ -93,6 +131,7 @@ export default function Vendas() {
       }
       setIsModalOpen(false);
     } catch (error) {
+      console.error('Erro ao salvar venda:', error);
       toast({
         title: "Erro ao salvar",
         description: "Não foi possível salvar a venda. Tente novamente.",
@@ -116,10 +155,11 @@ export default function Vendas() {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(value);
+    }).format(value || 0);
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
@@ -164,6 +204,7 @@ export default function Vendas() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Produto</TableHead>
                   <TableHead>Valor</TableHead>
+                  <TableHead>Comissão</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
@@ -179,6 +220,9 @@ export default function Vendas() {
                       {sale.consortium_products?.name || 'Produto não encontrado'}
                     </TableCell>
                     <TableCell>{formatCurrency(sale.sale_value)}</TableCell>
+                    <TableCell>
+                      {formatCurrency(sale.commission_amount)} ({sale.commission_rate}%)
+                    </TableCell>
                     <TableCell>{formatDate(sale.sale_date)}</TableCell>
                     <TableCell>{getStatusBadge(sale.status)}</TableCell>
                     <TableCell>
@@ -190,6 +234,28 @@ export default function Vendas() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        
+                        {sale.status === 'pending' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleApproveSale(sale)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCancelSale(sale)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                        
                         <Button
                           variant="outline"
                           size="sm"

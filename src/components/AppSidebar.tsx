@@ -1,23 +1,21 @@
 
-import {
-  BarChart3,
-  Building,
-  DollarSign,
-  FileText,
-  Package,
+import { 
+  Home, 
+  ShoppingCart, 
+  DollarSign, 
+  Users, 
+  UserCheck, 
+  Building, 
+  Building2, 
+  BarChart3, 
+  FileText, 
   Settings,
-  ShoppingCart,
-  User,
-  Users,
-  LogOut,
-  Shield,
+  Team,
+  Briefcase,
+  LogOut
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -29,22 +27,15 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/contexts/AuthContext";
-import { useOffices } from "@/hooks/useOffices";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
-interface NavItem {
-  title: string;
-  url: string;
-  icon: any;
-}
-
-const items = [
+const menuItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: BarChart3,
+    icon: Home,
   },
   {
     title: "Vendas",
@@ -52,39 +43,49 @@ const items = [
     icon: ShoppingCart,
   },
   {
-    title: "Vendedores",
-    url: "/vendedores",
-    icon: Users,
-  },
-  {
-    title: "Clientes",
-    url: "/clientes",
-    icon: User,
-  },
-  {
-    title: "Consórcios",
-    url: "/consorcios",
-    icon: Package,
-  },
-  {
-    title: "Escritórios",
-    url: "/escritorios",
-    icon: Building,
-  },
-  {
     title: "Comissões",
     url: "/comissoes",
     icon: DollarSign,
   },
   {
+    title: "Clientes",
+    url: "/clientes",
+    icon: Users,
+  },
+  {
+    title: "Vendedores",
+    url: "/vendedores",
+    icon: UserCheck,
+  },
+  {
+    title: "Consórcios",
+    url: "/consorcios",
+    icon: Building,
+  },
+  {
+    title: "Escritórios",
+    url: "/escritorios",
+    icon: Building2,
+  },
+  {
+    title: "Equipes",
+    url: "/equipes",
+    icon: Team,
+  },
+  {
+    title: "Departamentos",
+    url: "/departamentos",
+    icon: Briefcase,
+  },
+  {
     title: "Relatórios",
     url: "/relatorios",
-    icon: FileText,
+    icon: BarChart3,
   },
   {
     title: "Auditoria",
     url: "/auditoria",
-    icon: Shield,
+    icon: FileText,
   },
   {
     title: "Configurações",
@@ -94,93 +95,87 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { pathname } = useLocation();
+  const { user, activeTenant, userOffice, signOut } = useAuth();
   const navigate = useNavigate();
-  const { signOut, user, activeTenant } = useAuth();
-  const { offices } = useOffices();
-  const [userOffice, setUserOffice] = useState<any>(null);
-
-  // Buscar o escritório do usuário
-  useEffect(() => {
-    if (offices && offices.length > 0) {
-      // Por enquanto, pega o primeiro escritório (depois pode ser refinado)
-      setUserOffice(offices[0]);
-    }
-  }, [offices]);
+  const location = useLocation();
 
   const handleNavigation = (url: string) => {
     navigate(url);
   };
 
-  // Função para obter as iniciais do nome
-  const getInitials = (name: string | null | undefined): string => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map(n => n.charAt(0))
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
-  // Obter nome do usuário do perfil ou email
-  const getUserDisplayName = () => {
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name;
-    }
-    if (user?.email) {
-      return user.email.split('@')[0];
-    }
-    return "Usuário";
+  const getUserInitials = (name: string) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4 border-b">
-        <div className="space-y-3">
+      <SidebarHeader className="border-b p-4">
+        <div className="space-y-2">
           {/* Nome do Tenant */}
-          <div className="text-center">
-            <h2 className="text-lg font-bold text-primary">
-              {activeTenant?.tenant_name || "Argus360"}
-            </h2>
+          <div className="text-lg font-semibold text-foreground">
+            {activeTenant?.tenant_name || 'Sistema'}
           </div>
           
           {/* Nome do Escritório */}
           {userOffice && (
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                {userOffice.name}
-              </p>
+            <div className="text-sm text-muted-foreground">
+              {userOffice.name}
             </div>
           )}
           
-          {/* Avatar e Nome do Usuário */}
-          <div className="flex flex-col items-center space-y-2">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {getInitials(getUserDisplayName())}
+          {/* Avatar e informações do usuário */}
+          <div className="flex items-center gap-3 pt-2">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="text-xs">
+                {getUserInitials(user?.full_name || user?.email || '')}
               </AvatarFallback>
             </Avatar>
-            <div className="text-center">
-              <p className="text-sm font-medium">
-                {getUserDisplayName()}
-              </p>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-foreground truncate">
+                {user?.full_name || user?.email || 'Usuário'}
+              </div>
             </div>
           </div>
+          
+          {/* Botão de Logout */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="w-full mt-2"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item: NavItem) => (
+            <SidebarMenu className="space-y-1">
+              {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    isActive={pathname === item.url}
+                  <SidebarMenuButton 
                     onClick={() => handleNavigation(item.url)}
+                    isActive={location.pathname === item.url}
+                    className="w-full"
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
@@ -191,20 +186,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-4">
-        <div className="flex flex-col gap-2">
-          <SidebarSeparator />
-          <Button
-            variant="ghost"
-            className="justify-start w-full"
-            onClick={() => signOut()}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Sair</span>
-          </Button>
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }
