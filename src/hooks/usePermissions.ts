@@ -2,11 +2,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Tables } from '@/integrations/supabase/types';
+import { Tables, Enums } from '@/integrations/supabase/types';
 
 type Permission = Tables<'permissions'>;
 type RolePermission = Tables<'role_permissions'>;
 type UserPermission = Tables<'user_permissions'>;
+type UserRole = Enums<'user_role'>;
 
 interface PermissionCheck {
   module: string;
@@ -66,7 +67,7 @@ export const usePermissions = () => {
           *,
           permissions (*)
         `)
-        .eq('role', activeTenant.user_role)
+        .eq('role', activeTenant.user_role as UserRole)
         .eq('tenant_id', activeTenant.tenant_id);
 
       if (error) throw error;
@@ -176,7 +177,7 @@ export const usePermissions = () => {
       await supabase
         .from('role_permissions')
         .delete()
-        .eq('role', role)
+        .eq('role', role as UserRole)
         .eq('tenant_id', activeTenant.tenant_id);
 
       // Adicionar novas permissões
@@ -185,7 +186,7 @@ export const usePermissions = () => {
           .from('role_permissions')
           .insert(
             permissionIds.map(permissionId => ({
-              role: role as any,
+              role: role as UserRole,
               tenant_id: activeTenant.tenant_id,
               permission_id: permissionId,
             }))

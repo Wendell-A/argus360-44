@@ -1,3 +1,4 @@
+
 import {
   BrowserRouter,
   Routes,
@@ -6,8 +7,9 @@ import {
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PublicRoute } from "./components/auth/PublicRoute";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import { ProtectedLayout } from "./components/layout/ProtectedLayout";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Vendedores from "./pages/Vendedores";

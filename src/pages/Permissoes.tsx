@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useVendedores } from '@/hooks/useVendedores';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
 import { Shield, Users, Settings, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const roleNames = {
   owner: 'Proprietário',
@@ -39,7 +41,28 @@ export default function Permissoes() {
     revokeUserPermission 
   } = usePermissions();
   
-  const { vendedores } = useVendedores();
+  const { activeTenant } = useAuth();
+  
+  // Buscar usuários do tenant com profiles
+  const { data: tenantUsers = [] } = useQuery({
+    queryKey: ['tenant-users', activeTenant?.tenant_id],
+    queryFn: async () => {
+      if (!activeTenant?.tenant_id) return [];
+
+      const { data, error } = await supabase
+        .from('tenant_users')
+        .select(`
+          *,
+          profiles!inner(*)
+        `)
+        .eq('tenant_id', activeTenant.tenant_id)
+        .eq('active', true);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeTenant?.tenant_id,
+  });
   
   const [selectedRole, setSelectedRole] = useState<string>('user');
   const [selectedUser, setSelectedUser] = useState<string>('');
@@ -82,10 +105,13 @@ export default function Permissoes() {
     }
   };
 
-  const filteredUsers = vendedores.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = tenantUsers.filter(tenantUser => {
+    const profile = tenantUser.profiles;
+    if (!profile) return false;
+    
+    return profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           profile.email.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   if (isLoading) {
     return (
@@ -232,26 +258,33 @@ export default function Permissoes() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredUsers.map(user => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {roleNames[user.role as keyof typeof roleNames] || user.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedUser(user.id)}
-                            >
-                              Gerenciar Permissões
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredUsers.map(tenantUser => {
+                        const profile = tenantUser.profiles;
+                        if (!profile) return null;
+                        
+                        return (
+                          <TableRow key={tenantUser.id}>
+                            <TableCell className="font-medium">
+                              {profile.full_name || 'Sem nome'}
+                            </TableCell>
+                            <TableCell>{profile.email}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {roleNames[tenantUser.role as keyof typeof roleNames] || tenantUser.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedUser(tenantUser.user_id)}
+                              >
+                                Gerenciar Permissões
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
