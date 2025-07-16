@@ -1,16 +1,16 @@
-
 import { 
   Home, 
+  Users, 
+  UserPlus,
   ShoppingCart, 
   DollarSign, 
-  Users, 
-  UserCheck, 
-  Building, 
+  Package, 
   Building2, 
   BarChart3, 
   FileText, 
   Settings,
   Briefcase,
+  Shield,
   LogOut
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,11 +30,21 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
+const items = [
   {
     title: "Dashboard",
     url: "/dashboard",
     icon: Home,
+  },
+  {
+    title: "Vendedores",
+    url: "/vendedores",
+    icon: Users,
+  },
+  {
+    title: "Clientes",
+    url: "/clientes",
+    icon: UserPlus,
   },
   {
     title: "Vendas",
@@ -47,24 +57,24 @@ const menuItems = [
     icon: DollarSign,
   },
   {
-    title: "Clientes",
-    url: "/clientes",
-    icon: Users,
-  },
-  {
-    title: "Vendedores",
-    url: "/vendedores",
-    icon: UserCheck,
-  },
-  {
     title: "Consórcios",
     url: "/consorcios",
-    icon: Building,
+    icon: Package,
   },
   {
     title: "Escritórios",
     url: "/escritorios",
     icon: Building2,
+  },
+  {
+    title: "Relatórios",
+    url: "/relatorios",
+    icon: BarChart3,
+  },
+  {
+    title: "Auditoria",
+    url: "/auditoria",
+    icon: FileText,
   },
   {
     title: "Equipes",
@@ -77,14 +87,9 @@ const menuItems = [
     icon: Briefcase,
   },
   {
-    title: "Relatórios",
-    url: "/relatorios",
-    icon: BarChart3,
-  },
-  {
-    title: "Auditoria",
-    url: "/auditoria",
-    icon: FileText,
+    title: "Permissões",
+    url: "/permissoes",
+    icon: Shield,
   },
   {
     title: "Configurações",
@@ -169,7 +174,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {menuItems.map((item) => (
+              {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     onClick={() => handleNavigation(item.url)}

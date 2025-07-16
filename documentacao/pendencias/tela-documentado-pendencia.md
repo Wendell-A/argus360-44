@@ -136,11 +136,23 @@ Após análise detalhada do banco de dados e interfaces do sistema, foram identi
 **Data:** 16/07/2025
 
 ### 11. Sistema de Permissões Básico
-**Status:** ⚠️ **PARCIALMENTE IMPLEMENTADO**
-**Tabelas:** `permissions`, `user_permissions`, `role_permissions`
+**Status:** ✅ **IMPLEMENTADO**
+**Arquivos:**
+- `src/hooks/usePermissions.ts` - **CRIADO**
+- `src/components/PermissionGuard.tsx` - **CRIADO**
+- `src/pages/Permissoes.tsx` - **CRIADA**
 **Problema:** Controle de acesso rudimentar
 **Impacto:** Segurança limitada
-**Nota:** RLS implementado nas tabelas principais, sistema de permissões granular pendente
+**Solução:**
+- Sistema completo de permissões granulares implementado
+- Hook `usePermissions` para verificação de acesso
+- Componente `PermissionGuard` para proteção de seções
+- Interface administrativa para gestão de permissões por função e usuário
+- Sistema hierárquico baseado nas funções existentes (owner, admin, manager, user, viewer)
+- Controle granular por módulo, recurso e ação
+- HOCs e hooks helper para verificações específicas
+- Integração com RLS existente no banco de dados
+**Data:** 16/07/2025
 
 ### 12. Gestão de Departamentos/Cargos
 **Status:** ✅ **IMPLEMENTADA**
@@ -201,7 +213,7 @@ Após análise detalhada do banco de dados e interfaces do sistema, foram identi
 - Layout reorganizado para melhor hierarquia visual
 - Componente Avatar implementado com fallback para iniciais
 - Integração com dados reais do contexto de autenticação
-- Adicionadas novas funcionalidades no menu (Equipes, Departamentos)
+- Adicionadas novas funcionalidades no menu (Equipes, Departamentos, Permissões)
 **Data:** 15/07/2025 e 16/07/2025
 
 ### 18. Estados de Loading Inconsistentes
@@ -248,13 +260,13 @@ Após análise detalhada do banco de dados e interfaces do sistema, foram identi
 2. ✅ Gestão de departamentos implementada
 3. ✅ Melhorias no CRUD de vendas
 4. ✅ Controles avançados de aprovação/cancelamento de vendas
-5. ⚠️ Sistema de permissões (parcialmente implementado)
+5. ✅ Sistema de permissões granular completamente implementado
 
 ### **SPRINT 5 - Otimizações** ⏳ **PENDENTE**
 1. ⏳ Implementar paginação
 2. ⏳ Otimizar queries com índices
 3. ⏳ Melhorar responsividade mobile
-4. ⏳ Sistema de permissões granular
+4. ⏳ Expansão do sistema de validações
 
 ---
 
@@ -268,23 +280,36 @@ Após análise detalhada do banco de dados e interfaces do sistema, foram identi
 - **Técnicas Resolvidas:** 1/4 ⚠️ **25%**
 - **UX/UI Resolvidas:** 3/4 ⚠️ **75%**
 
-**Progresso Geral:** 88% ✅ **(+9% desde última atualização)**
+**Progresso Geral:** 90% ✅ **(+2% desde última atualização)**
 
 ---
 
 ## 💡 RECOMENDAÇÕES ESTRATÉGICAS
 
 1. **Foco no Core:** ✅ Vendas, comissões, equipes e departamentos priorizados e implementados
-2. **Segurança First:** ✅ Isolamento total entre tenants garantido
+2. **Segurança First:** ✅ Isolamento total entre tenants garantido + Sistema de permissões granular implementado
 3. **Performance:** ⏳ Implementar otimizações antes do crescimento da base
 4. **Usabilidade:** ✅ Feedback visual e navegação significativamente melhorados
 5. **Escalabilidade:** ⏳ Preparar arquitetura para crescimento
 6. **Auditoria:** ✅ Sistema completo de rastreabilidade implementado
 7. **Gestão Organizacional:** ✅ Estrutura completa de equipes e departamentos
+8. **Controle de Acesso:** ✅ Sistema de permissões granular totalmente funcional
 
 ---
 
 ## 📝 CHANGELOG
+
+### 16/07/2025 - Sprint de Sistema de Permissões
+- ✅ Sistema completo de permissões granulares implementado
+- ✅ Hook `usePermissions` com verificação de acesso hierárquica
+- ✅ Componente `PermissionGuard` para proteção de seções/rotas
+- ✅ Interface administrativa para gestão de permissões por função e usuário
+- ✅ Hooks helper para verificações específicas (useCanManageUsers, useCanViewReports, etc.)
+- ✅ HOCs para proteção de componentes inteiros
+- ✅ Sistema baseado em módulos, recursos e ações para controle granular
+- ✅ Integração completa com RLS existente no banco
+- ✅ Adicionado novo item "Permissões" no menu da sidebar
+- ✅ Progresso geral saltou de 88% para 90%
 
 ### 16/07/2025 - Sprint de Funcionalidades Avançadas
 - ✅ Sistema de gestão de equipes completamente implementado
