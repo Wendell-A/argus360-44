@@ -53,7 +53,7 @@ export default function Permissoes() {
         .from('tenant_users')
         .select(`
           *,
-          profiles (
+          profiles!tenant_users_user_id_fkey (
             id,
             full_name,
             email,
@@ -112,10 +112,10 @@ export default function Permissoes() {
 
   const filteredUsers = tenantUsers.filter(tenantUser => {
     const profile = tenantUser.profiles;
-    if (!profile) return false;
+    if (!profile || !profile.full_name || !profile.email) return false;
     
-    return profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           profile.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    return profile.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           profile.email.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   if (isLoading) {
