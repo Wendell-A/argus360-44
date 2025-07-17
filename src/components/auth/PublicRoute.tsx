@@ -1,13 +1,9 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-interface PublicRouteProps {
-  children: React.ReactNode;
-}
-
-export const PublicRoute = ({ children }: PublicRouteProps) => {
+export const PublicRoute = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -22,5 +18,5 @@ export const PublicRoute = ({ children }: PublicRouteProps) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,14 +50,23 @@ const Departamentos = () => {
   });
 
   const onSubmit = async (data: DepartmentFormData) => {
-    await createDepartment(data);
+    // Garantir que name seja uma string não vazia
+    const departmentData = {
+      name: data.name || '',
+      description: data.description || '',
+    };
+    await createDepartment(departmentData);
     setCreateModalOpen(false);
     form.reset();
   };
 
   const onEditSubmit = async (data: DepartmentFormData) => {
     if (editingDepartment) {
-      await updateDepartment({ id: editingDepartment.id, ...data });
+      const departmentData = {
+        name: data.name || '',
+        description: data.description || '',
+      };
+      await updateDepartment({ id: editingDepartment.id, ...departmentData });
       setEditModalOpen(false);
       setEditingDepartment(null);
       editForm.reset();

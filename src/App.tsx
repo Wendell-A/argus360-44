@@ -18,9 +18,9 @@ import Permissoes from '@/pages/Permissoes';
 import Configuracoes from '@/pages/Configuracoes';
 import Auditoria from '@/pages/Auditoria';
 import NotFound from '@/pages/NotFound';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import PublicRoute from '@/components/auth/PublicRoute';
-import ProtectedLayout from '@/components/layout/ProtectedLayout';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { PublicRoute } from '@/components/auth/PublicRoute';
+import { ProtectedLayout } from '@/components/layout/ProtectedLayout';
 import SimulacaoConsorcio from '@/pages/SimulacaoConsorcio';
 
 function App() {
