@@ -282,7 +282,6 @@ export type Database = {
           adjustment_index: string | null
           administration_fee: number
           advance_fee_rate: number | null
-          asset_value: number
           category: string
           commission_rate: number
           contemplation_modes: Json | null
@@ -296,7 +295,6 @@ export type Database = {
           min_admin_fee: number | null
           min_credit_value: number | null
           min_down_payment: number | null
-          monthly_fee: number
           name: string
           reserve_fund_rate: number | null
           settings: Json | null
@@ -308,7 +306,6 @@ export type Database = {
           adjustment_index?: string | null
           administration_fee: number
           advance_fee_rate?: number | null
-          asset_value: number
           category: string
           commission_rate: number
           contemplation_modes?: Json | null
@@ -322,7 +319,6 @@ export type Database = {
           min_admin_fee?: number | null
           min_credit_value?: number | null
           min_down_payment?: number | null
-          monthly_fee: number
           name: string
           reserve_fund_rate?: number | null
           settings?: Json | null
@@ -334,7 +330,6 @@ export type Database = {
           adjustment_index?: string | null
           administration_fee?: number
           advance_fee_rate?: number | null
-          asset_value?: number
           category?: string
           commission_rate?: number
           contemplation_modes?: Json | null
@@ -348,7 +343,6 @@ export type Database = {
           min_admin_fee?: number | null
           min_credit_value?: number | null
           min_down_payment?: number | null
-          monthly_fee?: number
           name?: string
           reserve_fund_rate?: number | null
           settings?: Json | null
