@@ -1,274 +1,195 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Car, Home, Wrench, Eye, Edit, Trash2 } from "lucide-react";
-import { ConsortiumProduct, useDeleteConsortiumProduct } from "@/hooks/useConsortiumProducts";
-import { toast } from "@/hooks/use-toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Eye, Edit, MoreHorizontal, Percent, Calculator, AlertCircle } from "lucide-react";
+import type { ExtendedConsortiumProduct } from "@/hooks/useConsortiumProducts";
 
 interface ConsortiumCardProps {
-  product: ConsortiumProduct;
-  onEdit: (product: ConsortiumProduct) => void;
-  onView: (product: ConsortiumProduct) => void;
+  product: ExtendedConsortiumProduct;
+  onEdit: (product: ExtendedConsortiumProduct) => void;
+  onView: (product: ExtendedConsortiumProduct) => void;
 }
 
-const categoryIcons = {
-  "Veículos": Car,
-  "Imóveis": Home,
-  "Serviços": Wrench,
-  "Máquinas": Wrench,
-  "Equipamentos": Wrench,
-};
+export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps) => {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
-};
-
-const formatPercentage = (value: number) => {
-  return `${value}%`;
-};
-
-export function ConsortiumCard({ product, onEdit, onView }: ConsortiumCardProps) {
-  const IconComponent = categoryIcons[product.category as keyof typeof categoryIcons] || Car;
-  const deleteMutation = useDeleteConsortiumProduct();
-  
-  // Simulando cotas para manter a UI atual - depois podemos adicionar essa funcionalidade
-  const totalCotas = 100 + Math.floor(Math.random() * 100);
-  const cotasVendidas = Math.floor(Math.random() * totalCotas);
-  const percentualVendido = Math.floor((cotasVendidas / totalCotas) * 100);
-
-  const handleDelete = async () => {
-    try {
-      await deleteMutation.mutateAsync(product.id);
-      toast({
-        title: "Produto excluído",
-        description: "O produto foi excluído com sucesso.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao excluir o produto.",
-        variant: "destructive",
-      });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'automovel':
+        return '🚗';
+      case 'imovel':
+        return '🏠';
+      case 'moto':
+        return '🏍️';
+      case 'caminhao':
+        return '🚛';
+      case 'servicos':
+        return '🛠️';
+      default:
+        return '📦';
+    }
+  };
+
+  const contemplationModes = product.contemplation_modes as string[] || [];
+  const contemplationLabels = {
+    'sorteio': 'Sorteio',
+    'lance_livre': 'Lance Livre',
+    'lance_fixo_50': 'Lance Fixo 50%',
+    'lance_fixo_25': 'Lance Fixo 25%'
+  };
+
   return (
-    <Card className="h-full">
+    <Card className="hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <IconComponent className="w-5 h-5 text-blue-600" />
-            </div>
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{getCategoryIcon(product.category)}</span>
             <div>
               <CardTitle className="text-lg">{product.name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{product.category}</p>
+              <p className="text-sm text-gray-600 capitalize">{product.category}</p>
             </div>
           </div>
-          <Badge 
-            variant={product.status === "active" ? "default" : "secondary"}
-            className={product.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-          >
-            {product.status === "active" ? "Ativo" : "Inativo"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={getStatusColor(product.status || 'active')}>
+              {product.status === 'active' ? 'Ativo' : 'Inativo'}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onView(product)}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Visualizar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(product)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        {/* Informações principais */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-muted-foreground">Valor do Bem</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Valor do Bem</p>
             <p className="font-semibold">{formatCurrency(product.asset_value)}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Prazo</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Prazo</p>
             <p className="font-semibold">{product.installments} meses</p>
           </div>
-          <div>
-            <p className="text-muted-foreground">Taxa Admin</p>
-            <p className="font-semibold text-red-600">{formatPercentage(product.administration_fee)}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Comissão</p>
-            <p className="font-semibold text-green-600">{formatPercentage(product.commission_rate)}</p>
-          </div>
         </div>
 
-        <div>
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-muted-foreground">Cotas Vendidas</span>
-            <span className="font-medium">{cotasVendidas}/{totalCotas}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full" 
-              style={{ width: `${percentualVendido}%` }}
-            ></div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">{percentualVendido}% vendido</p>
-        </div>
-
-        {product.description && (
+        {/* Faixa de crédito */}
+        {(product.min_credit_value || product.max_credit_value) && (
           <div>
-            <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Faixa de Crédito</p>
+            <p className="font-semibold">
+              {product.min_credit_value ? formatCurrency(product.min_credit_value) : 'N/A'} a {' '}
+              {product.max_credit_value ? formatCurrency(product.max_credit_value) : 'N/A'}
+            </p>
           </div>
         )}
 
-        <div className="flex gap-2 pt-2">
-          <Button variant="outline" size="sm" onClick={() => onView(product)} className="flex-1">
-            <Eye className="w-4 h-4 mr-1" />
-            Ver
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onEdit(product)} className="flex-1">
-            <Edit className="w-4 h-4 mr-1" />
-            Editar
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja excluir o produto "{product.name}"? Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+        {/* Taxas */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Taxa ADM</p>
+            <p className="font-semibold">{product.administration_fee}%</p>
+            {(product.min_admin_fee || product.max_admin_fee) && (
+              <p className="text-xs text-gray-400">
+                {product.min_admin_fee || 0}% - {product.max_admin_fee || 0}%
+              </p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Comissão</p>
+            <p className="font-semibold flex items-center gap-1">
+              <Percent className="w-3 h-3" />
+              {product.commission_rate}%
+            </p>
+          </div>
         </div>
+
+        {/* Taxas adicionais */}
+        <div className="grid grid-cols-3 gap-2">
+          {product.advance_fee_rate && product.advance_fee_rate > 0 && (
+            <div>
+              <p className="text-xs text-gray-500">Taxa Antecipada</p>
+              <p className="text-sm font-medium">{product.advance_fee_rate}%</p>
+            </div>
+          )}
+          {product.reserve_fund_rate && product.reserve_fund_rate > 0 && (
+            <div>
+              <p className="text-xs text-gray-500">Fundo Reserva</p>
+              <p className="text-sm font-medium">{product.reserve_fund_rate}%</p>
+            </div>
+          )}
+          {product.embedded_bid_rate && product.embedded_bid_rate > 0 && (
+            <div>
+              <p className="text-xs text-gray-500">Lance Embutido</p>
+              <p className="text-sm font-medium">{product.embedded_bid_rate}%</p>
+            </div>
+          )}
+        </div>
+
+        {/* Modalidades de contemplação */}
+        {contemplationModes.length > 0 && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Modalidades</p>
+            <div className="flex flex-wrap gap-1">
+              {contemplationModes.map((mode) => (
+                <Badge key={mode} variant="outline" className="text-xs">
+                  {contemplationLabels[mode as keyof typeof contemplationLabels] || mode}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Informações adicionais */}
+        <div className="flex justify-between items-center pt-2 border-t">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Calculator className="w-4 h-4" />
+            <span>Parcela: {formatCurrency(product.monthly_fee)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Reajuste: {product.adjustment_index || 'INCC'}</span>
+          </div>
+        </div>
+
+        {product.description && (
+          <div className="pt-2 border-t">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Descrição</p>
+            <p className="text-sm text-gray-700 line-clamp-2">{product.description}</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
-}
-
-export default ConsortiumCard;
-
-export function ConsortiumTableRow({ product, onEdit, onView }: ConsortiumCardProps) {
-  const IconComponent = categoryIcons[product.category as keyof typeof categoryIcons] || Car;
-  const deleteMutation = useDeleteConsortiumProduct();
-  
-  // Simulando cotas para manter a UI atual
-  const totalCotas = 100 + Math.floor(Math.random() * 100);
-  const cotasVendidas = Math.floor(Math.random() * totalCotas);
-  const percentualVendido = Math.floor((cotasVendidas / totalCotas) * 100);
-
-  const handleDelete = async () => {
-    try {
-      await deleteMutation.mutateAsync(product.id);
-      toast({
-        title: "Produto excluído",
-        description: "O produto foi excluído com sucesso.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao excluir o produto.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  return (
-    <>
-      <td>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <IconComponent className="w-4 h-4 text-blue-600" />
-          </div>
-          <div>
-            <p className="font-medium">{product.category}</p>
-            <p className="text-sm text-gray-600">{product.name}</p>
-          </div>
-        </div>
-      </td>
-      <td>
-        <span className="font-medium">{formatCurrency(product.asset_value)}</span>
-      </td>
-      <td>
-        <Badge variant="outline" className="bg-gray-50">
-          {product.installments} meses
-        </Badge>
-      </td>
-      <td>
-        <span className="text-red-600 font-medium">{formatPercentage(product.administration_fee)}</span>
-      </td>
-      <td>
-        <span className="text-green-600 font-medium">{formatPercentage(product.commission_rate)}</span>
-      </td>
-      <td>
-        <div>
-          <p className="font-medium">{cotasVendidas}/{totalCotas}</p>
-          <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
-            <div 
-              className="bg-blue-600 h-2 rounded-full" 
-              style={{ width: `${percentualVendido}%` }}
-            ></div>
-          </div>
-          <p className="text-xs text-gray-600 mt-1">{percentualVendido}%</p>
-        </div>
-      </td>
-      <td>
-        <Badge 
-          variant={product.status === "active" ? "default" : "secondary"}
-          className={product.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
-        >
-          {product.status === "active" ? "Ativo" : "Inativo"}
-        </Badge>
-      </td>
-      <td>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => onView(product)}>
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onEdit(product)}>
-            <Edit className="w-4 h-4" />
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja excluir o produto "{product.name}"? Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>
-                  Excluir
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </td>
-    </>
-  );
-}
+};

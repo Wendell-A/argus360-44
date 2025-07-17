@@ -151,6 +151,54 @@ export type Database = {
           },
         ]
       }
+      commission_payment_schedules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          installment_number: number
+          percentage: number
+          product_id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          installment_number: number
+          percentage: number
+          product_id: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          installment_number?: number
+          percentage?: number
+          product_id?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_commission_schedule_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "consortium_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_commission_schedule_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commissions: {
         Row: {
           approval_date: string | null
@@ -231,51 +279,78 @@ export type Database = {
       }
       consortium_products: {
         Row: {
+          adjustment_index: string | null
           administration_fee: number
+          advance_fee_rate: number | null
           asset_value: number
           category: string
           commission_rate: number
+          contemplation_modes: Json | null
           created_at: string | null
           description: string | null
+          embedded_bid_rate: number | null
           id: string
           installments: number
+          max_admin_fee: number | null
+          max_credit_value: number | null
+          min_admin_fee: number | null
+          min_credit_value: number | null
           min_down_payment: number | null
           monthly_fee: number
           name: string
+          reserve_fund_rate: number | null
           settings: Json | null
           status: string | null
           tenant_id: string
           updated_at: string | null
         }
         Insert: {
+          adjustment_index?: string | null
           administration_fee: number
+          advance_fee_rate?: number | null
           asset_value: number
           category: string
           commission_rate: number
+          contemplation_modes?: Json | null
           created_at?: string | null
           description?: string | null
+          embedded_bid_rate?: number | null
           id?: string
           installments: number
+          max_admin_fee?: number | null
+          max_credit_value?: number | null
+          min_admin_fee?: number | null
+          min_credit_value?: number | null
           min_down_payment?: number | null
           monthly_fee: number
           name: string
+          reserve_fund_rate?: number | null
           settings?: Json | null
           status?: string | null
           tenant_id: string
           updated_at?: string | null
         }
         Update: {
+          adjustment_index?: string | null
           administration_fee?: number
+          advance_fee_rate?: number | null
           asset_value?: number
           category?: string
           commission_rate?: number
+          contemplation_modes?: Json | null
           created_at?: string | null
           description?: string | null
+          embedded_bid_rate?: number | null
           id?: string
           installments?: number
+          max_admin_fee?: number | null
+          max_credit_value?: number | null
+          min_admin_fee?: number | null
+          min_credit_value?: number | null
           min_down_payment?: number | null
           monthly_fee?: number
           name?: string
+          reserve_fund_rate?: number | null
           settings?: Json | null
           status?: string | null
           tenant_id?: string
@@ -502,6 +577,54 @@ export type Database = {
           },
           {
             foreignKeyName: "positions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_chargeback_schedules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          max_payment_number: number
+          percentage: number
+          product_id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_payment_number: number
+          percentage: number
+          product_id: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_payment_number?: number
+          percentage?: number
+          product_id?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_chargeback_schedule_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "consortium_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_chargeback_schedule_tenant"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

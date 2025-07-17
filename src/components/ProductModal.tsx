@@ -1,399 +1,515 @@
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-  useCreateConsortiumProduct, 
-  useUpdateConsortiumProduct,
-  ConsortiumProduct 
-} from "@/hooks/useConsortiumProducts";
-import { toast } from "@/hooks/use-toast";
-
-const productSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  description: z.string().optional(),
-  category: z.string().min(1, "Categoria é obrigatória"),
-  asset_value: z.number().min(1, "Valor do bem deve ser maior que zero"),
-  installments: z.number().min(1, "Prazo deve ser maior que zero"),
-  monthly_fee: z.number().min(0, "Taxa mensal não pode ser negativa"),
-  administration_fee: z.number().min(0, "Taxa de administração não pode ser negativa"),
-  commission_rate: z.number().min(0, "Taxa de comissão não pode ser negativa"),
-  min_down_payment: z.number().min(0, "Entrada mínima não pode ser negativa").optional(),
-  status: z.enum(["active", "inactive"]),
-});
-
-type ProductFormData = z.infer<typeof productSchema>;
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Settings, Calculator, Percent, AlertCircle } from "lucide-react";
+import { CommissionScheduleModal } from "./CommissionScheduleModal";
+import { ChargebackScheduleModal } from "./ChargebackScheduleModal";
+import { CommissionBreakdown } from "./CommissionBreakdown";
+import { ChargebackInfo } from "./ChargebackInfo";
+import type { ExtendedConsortiumProduct } from "@/hooks/useConsortiumProducts";
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product?: ConsortiumProduct | null;
-  mode: "create" | "edit" | "view";
+  product?: ExtendedConsortiumProduct | null;
+  mode: "create" | "edit";
+  onSave?: (data: any) => void;
 }
 
-const categories = [
-  "Veículos",
-  "Imóveis", 
-  "Serviços",
-  "Máquinas",
-  "Equipamentos"
+const contemplationModeOptions = [
+  { id: "sorteio", label: "Sorteio" },
+  { id: "lance_livre", label: "Lance Livre" },
+  { id: "lance_fixo_50", label: "Lance Fixo 50%" },
+  { id: "lance_fixo_25", label: "Lance Fixo 25%" },
 ];
 
-export function ProductModal({ isOpen, onClose, product, mode }: ProductModalProps) {
-  const createMutation = useCreateConsortiumProduct();
-  const updateMutation = useUpdateConsortiumProduct();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      category: "",
-      asset_value: 0,
-      installments: 60,
-      monthly_fee: 0,
-      administration_fee: 0,
-      commission_rate: 0,
-      min_down_payment: 0,
-      status: "active",
-    },
+export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: ProductModalProps) => {
+  const [commissionModalOpen, setCommissionModalOpen] = useState(false);
+  const [chargebackModalOpen, setChargebackModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    category: "",
+    asset_value: "",
+    min_credit_value: "",
+    max_credit_value: "",
+    installments: "",
+    monthly_fee: "",
+    administration_fee: "",
+    min_admin_fee: "",
+    max_admin_fee: "",
+    advance_fee_rate: "",
+    reserve_fund_rate: "",
+    embedded_bid_rate: "",
+    commission_rate: "",
+    adjustment_index: "INCC",
+    contemplation_modes: [] as string[],
+    status: "active",
   });
 
   useEffect(() => {
-    if (product && isOpen) {
-      form.reset({
-        name: product.name,
+    if (product && mode === "edit") {
+      setFormData({
+        name: product.name || "",
         description: product.description || "",
-        category: product.category,
-        asset_value: product.asset_value,
-        installments: product.installments,
-        monthly_fee: product.monthly_fee,
-        administration_fee: product.administration_fee,
-        commission_rate: product.commission_rate,
-        min_down_payment: product.min_down_payment || 0,
-        status: product.status as "active" | "inactive",
+        category: product.category || "",
+        asset_value: product.asset_value?.toString() || "",
+        min_credit_value: product.min_credit_value?.toString() || "",
+        max_credit_value: product.max_credit_value?.toString() || "",
+        installments: product.installments?.toString() || "",
+        monthly_fee: product.monthly_fee?.toString() || "",
+        administration_fee: product.administration_fee?.toString() || "",
+        min_admin_fee: product.min_admin_fee?.toString() || "",
+        max_admin_fee: product.max_admin_fee?.toString() || "",
+        advance_fee_rate: product.advance_fee_rate?.toString() || "",
+        reserve_fund_rate: product.reserve_fund_rate?.toString() || "",
+        embedded_bid_rate: product.embedded_bid_rate?.toString() || "",
+        commission_rate: product.commission_rate?.toString() || "",
+        adjustment_index: product.adjustment_index || "INCC",
+        contemplation_modes: (product.contemplation_modes as string[]) || [],
+        status: product.status || "active",
       });
-    } else if (!product && isOpen) {
-      form.reset({
+    } else {
+      setFormData({
         name: "",
         description: "",
         category: "",
-        asset_value: 0,
-        installments: 60,
-        monthly_fee: 0,
-        administration_fee: 0,
-        commission_rate: 0,
-        min_down_payment: 0,
+        asset_value: "",
+        min_credit_value: "",
+        max_credit_value: "",
+        installments: "",
+        monthly_fee: "",
+        administration_fee: "",
+        min_admin_fee: "",
+        max_admin_fee: "",
+        advance_fee_rate: "",
+        reserve_fund_rate: "",
+        embedded_bid_rate: "",
+        commission_rate: "",
+        adjustment_index: "INCC",
+        contemplation_modes: [],
         status: "active",
       });
     }
-  }, [product, isOpen, form]);
+  }, [product, mode]);
 
-  const onSubmit = async (data: ProductFormData) => {
-    setIsSubmitting(true);
-    try {
-      // Ensure all required fields are present
-      const submitData = {
-        name: data.name,
-        description: data.description || null,
-        category: data.category,
-        asset_value: data.asset_value,
-        installments: data.installments,
-        monthly_fee: data.monthly_fee,
-        administration_fee: data.administration_fee,
-        commission_rate: data.commission_rate,
-        min_down_payment: data.min_down_payment || null,
-        status: data.status,
-      };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const data = {
+      name: formData.name,
+      description: formData.description || null,
+      category: formData.category,
+      asset_value: parseFloat(formData.asset_value),
+      min_credit_value: formData.min_credit_value ? parseFloat(formData.min_credit_value) : null,
+      max_credit_value: formData.max_credit_value ? parseFloat(formData.max_credit_value) : null,
+      installments: parseInt(formData.installments),
+      monthly_fee: parseFloat(formData.monthly_fee),
+      administration_fee: parseFloat(formData.administration_fee),
+      min_admin_fee: formData.min_admin_fee ? parseFloat(formData.min_admin_fee) : null,
+      max_admin_fee: formData.max_admin_fee ? parseFloat(formData.max_admin_fee) : null,
+      advance_fee_rate: formData.advance_fee_rate ? parseFloat(formData.advance_fee_rate) : 0,
+      reserve_fund_rate: formData.reserve_fund_rate ? parseFloat(formData.reserve_fund_rate) : 0,
+      embedded_bid_rate: formData.embedded_bid_rate ? parseFloat(formData.embedded_bid_rate) : 0,
+      commission_rate: parseFloat(formData.commission_rate),
+      adjustment_index: formData.adjustment_index,
+      contemplation_modes: formData.contemplation_modes,
+      status: formData.status,
+    };
 
-      if (mode === "edit" && product) {
-        await updateMutation.mutateAsync({ id: product.id, ...submitData });
-        toast({
-          title: "Produto atualizado",
-          description: "O produto foi atualizado com sucesso.",
-        });
-      } else if (mode === "create") {
-        await createMutation.mutateAsync(submitData);
-        toast({
-          title: "Produto criado",
-          description: "O produto foi criado com sucesso.",
-        });
-      }
-      onClose();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao salvar o produto.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+    if (onSave) {
+      onSave(data);
     }
   };
 
-  const isReadOnly = mode === "view";
+  const handleContemplationModeChange = (modeId: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      contemplation_modes: checked 
+        ? [...prev.contemplation_modes, modeId]
+        : prev.contemplation_modes.filter(id => id !== modeId)
+    }));
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "create" && "Novo Produto"}
-            {mode === "edit" && "Editar Produto"}
-            {mode === "view" && "Visualizar Produto"}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {mode === "create" ? "Criar Produto" : "Editar Produto"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled={isReadOnly} placeholder="Nome do produto" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form onSubmit={handleSubmit}>
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="basic">Básico</TabsTrigger>
+                <TabsTrigger value="financial">Financeiro</TabsTrigger>
+                <TabsTrigger value="commission">Comissões</TabsTrigger>
+                <TabsTrigger value="advanced">Avançado</TabsTrigger>
+              </TabsList>
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                      <FormControl>
+              <TabsContent value="basic" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      Informações Básicas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="name">Nome do Produto *</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="category">Categoria *</Label>
+                        <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="automovel">Automóvel</SelectItem>
+                            <SelectItem value="imovel">Imóvel</SelectItem>
+                            <SelectItem value="moto">Moto</SelectItem>
+                            <SelectItem value="caminhao">Caminhão</SelectItem>
+                            <SelectItem value="servicos">Serviços</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="description">Descrição</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Descrição detalhada do produto..."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="asset_value">Valor do Bem *</Label>
+                        <Input
+                          id="asset_value"
+                          type="number"
+                          step="0.01"
+                          value={formData.asset_value}
+                          onChange={(e) => setFormData(prev => ({ ...prev, asset_value: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="installments">Prazo (meses) *</Label>
+                        <Input
+                          id="installments"
+                          type="number"
+                          value={formData.installments}
+                          onChange={(e) => setFormData(prev => ({ ...prev, installments: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
+                          <SelectValue />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        <SelectContent>
+                          <SelectItem value="active">Ativo</SelectItem>
+                          <SelectItem value="inactive">Inativo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="financial" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calculator className="w-5 h-5" />
+                      Configurações Financeiras
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="min_credit_value">Faixa de Crédito - Mínimo</Label>
+                        <Input
+                          id="min_credit_value"
+                          type="number"
+                          step="0.01"
+                          value={formData.min_credit_value}
+                          onChange={(e) => setFormData(prev => ({ ...prev, min_credit_value: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="max_credit_value">Faixa de Crédito - Máximo</Label>
+                        <Input
+                          id="max_credit_value"
+                          type="number"
+                          step="0.01"
+                          value={formData.max_credit_value}
+                          onChange={(e) => setFormData(prev => ({ ...prev, max_credit_value: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="monthly_fee">Parcela Mensal *</Label>
+                        <Input
+                          id="monthly_fee"
+                          type="number"
+                          step="0.01"
+                          value={formData.monthly_fee}
+                          onChange={(e) => setFormData(prev => ({ ...prev, monthly_fee: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="advance_fee_rate">Taxa Antecipada (%)</Label>
+                        <Input
+                          id="advance_fee_rate"
+                          type="number"
+                          step="0.01"
+                          value={formData.advance_fee_rate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, advance_fee_rate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="administration_fee">Taxa ADM Base (%)</Label>
+                        <Input
+                          id="administration_fee"
+                          type="number"
+                          step="0.01"
+                          value={formData.administration_fee}
+                          onChange={(e) => setFormData(prev => ({ ...prev, administration_fee: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="min_admin_fee">Taxa ADM Mínima (%)</Label>
+                        <Input
+                          id="min_admin_fee"
+                          type="number"
+                          step="0.01"
+                          value={formData.min_admin_fee}
+                          onChange={(e) => setFormData(prev => ({ ...prev, min_admin_fee: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="max_admin_fee">Taxa ADM Máxima (%)</Label>
+                        <Input
+                          id="max_admin_fee"
+                          type="number"
+                          step="0.01"
+                          value={formData.max_admin_fee}
+                          onChange={(e) => setFormData(prev => ({ ...prev, max_admin_fee: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="reserve_fund_rate">Fundo de Reserva (%)</Label>
+                        <Input
+                          id="reserve_fund_rate"
+                          type="number"
+                          step="0.01"
+                          value={formData.reserve_fund_rate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, reserve_fund_rate: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="embedded_bid_rate">Lance Embutido (%)</Label>
+                        <Input
+                          id="embedded_bid_rate"
+                          type="number"
+                          step="0.01"
+                          value={formData.embedded_bid_rate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, embedded_bid_rate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="adjustment_index">Índice de Reajuste</Label>
+                      <Select value={formData.adjustment_index} onValueChange={(value) => setFormData(prev => ({ ...prev, adjustment_index: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="INCC">INCC</SelectItem>
+                          <SelectItem value="IPCA">IPCA</SelectItem>
+                          <SelectItem value="IGP-M">IGP-M</SelectItem>
+                          <SelectItem value="TR">TR</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="commission" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Percent className="w-5 h-5" />
+                      Configurações de Comissão
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="commission_rate">Taxa de Comissão Base (%)</Label>
+                      <Input
+                        id="commission_rate"
+                        type="number"
+                        step="0.01"
+                        value={formData.commission_rate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, commission_rate: e.target.value }))}
+                      />
+                    </div>
+
+                    {mode === "edit" && product && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setCommissionModalOpen(true)}
+                            className="w-full"
+                          >
+                            <Settings className="w-4 h-4 mr-2" />
+                            Gerenciar Cronograma de Comissões
+                          </Button>
+                        </div>
+                        <div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setChargebackModalOpen(true)}
+                            className="w-full"
+                          >
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            Gerenciar Cronograma de Estornos
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {mode === "edit" && product && formData.asset_value && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <CommissionBreakdown 
+                          productId={product.id} 
+                          saleValue={parseFloat(formData.asset_value)} 
+                        />
+                        <ChargebackInfo 
+                          productId={product.id} 
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="advanced" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Modalidades de Contemplação</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      {contemplationModeOptions.map((mode) => (
+                        <div key={mode.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={mode.id}
+                            checked={formData.contemplation_modes.includes(mode.id)}
+                            onCheckedChange={(checked) => handleContemplationModeChange(mode.id, checked as boolean)}
+                          />
+                          <Label htmlFor={mode.id}>{mode.label}</Label>
+                        </div>
+                      ))}
+                    </div>
+
+                    {formData.contemplation_modes.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.contemplation_modes.map((modeId) => {
+                          const mode = contemplationModeOptions.find(m => m.id === modeId);
+                          return mode ? (
+                            <Badge key={modeId} variant="secondary">
+                              {mode.label}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                {mode === "create" ? "Criar Produto" : "Salvar Alterações"}
+              </Button>
             </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} disabled={isReadOnly} placeholder="Descrição do produto" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="asset_value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor do Bem (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        disabled={isReadOnly}
-                        placeholder="0,00" 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="installments"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prazo (meses)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        disabled={isReadOnly}
-                        placeholder="60" 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="monthly_fee"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Taxa Mensal (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        disabled={isReadOnly}
-                        placeholder="0,00" 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="administration_fee"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Taxa de Administração (%)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        disabled={isReadOnly}
-                        placeholder="0,00" 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="commission_rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Taxa de Comissão (%)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        disabled={isReadOnly}
-                        placeholder="0,00" 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="min_down_payment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Entrada Mínima (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        disabled={isReadOnly}
-                        placeholder="0,00" 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {!isReadOnly && (
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Salvando..." : mode === "create" ? "Criar" : "Salvar"}
-                </Button>
-              </DialogFooter>
-            )}
           </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modais auxiliares */}
+      {mode === "edit" && product && (
+        <>
+          <CommissionScheduleModal
+            isOpen={commissionModalOpen}
+            onClose={() => setCommissionModalOpen(false)}
+            productId={product.id}
+            productName={product.name}
+          />
+          
+          <ChargebackScheduleModal
+            isOpen={chargebackModalOpen}
+            onClose={() => setChargebackModalOpen(false)}
+            productId={product.id}
+            productName={product.name}
+          />
+        </>
+      )}
+    </>
   );
-}
+};

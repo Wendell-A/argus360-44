@@ -9,6 +9,19 @@ export type ConsortiumProduct = Database["public"]["Tables"]["consortium_product
 type ConsortiumProductInsert = Database["public"]["Tables"]["consortium_products"]["Insert"];
 type ConsortiumProductUpdate = Database["public"]["Tables"]["consortium_products"]["Update"];
 
+// Tipo estendido para incluir os novos campos
+export interface ExtendedConsortiumProduct extends ConsortiumProduct {
+  min_credit_value: number | null;
+  max_credit_value: number | null;
+  advance_fee_rate: number | null;
+  min_admin_fee: number | null;
+  max_admin_fee: number | null;
+  reserve_fund_rate: number | null;
+  embedded_bid_rate: number | null;
+  adjustment_index: string | null;
+  contemplation_modes: any[] | null;
+}
+
 export const useConsortiumProducts = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -39,7 +52,7 @@ export const useConsortiumProducts = () => {
       }
 
       console.log("Fetched consortium products:", data);
-      return data as ConsortiumProduct[];
+      return data as ExtendedConsortiumProduct[];
     },
     enabled: !!activeTenant?.tenant_id,
   });
