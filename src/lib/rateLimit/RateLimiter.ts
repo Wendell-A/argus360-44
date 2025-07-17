@@ -1,4 +1,6 @@
 
+import { monitoring } from '@/lib/monitoring';
+
 interface RateLimitEntry {
   count: number;
   resetTime: number;

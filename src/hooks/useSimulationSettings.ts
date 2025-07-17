@@ -13,6 +13,7 @@ export const useSimulationSettings = () => {
   const { data: settings, isLoading } = useCachedQuery(
     ['simulation-settings', activeTenant?.tenant_id],
     {
+      queryKey: ['simulation-settings', activeTenant?.tenant_id],
       queryFn: async () => {
         if (!activeTenant?.tenant_id) return getDefaultRates();
 

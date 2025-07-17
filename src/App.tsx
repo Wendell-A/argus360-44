@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Landing from '@/pages/Landing';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
 import Dashboard from '@/pages/Dashboard';
 import Vendas from '@/pages/Vendas';
 import Clientes from '@/pages/Clientes';
@@ -17,9 +18,9 @@ import Permissoes from '@/pages/Permissoes';
 import Configuracoes from '@/pages/Configuracoes';
 import Auditoria from '@/pages/Auditoria';
 import NotFound from '@/pages/NotFound';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import PublicRoute from '@/components/PublicRoute';
-import ProtectedLayout from '@/components/ProtectedLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import PublicRoute from '@/components/auth/PublicRoute';
+import ProtectedLayout from '@/components/layout/ProtectedLayout';
 import SimulacaoConsorcio from '@/pages/SimulacaoConsorcio';
 
 function App() {
