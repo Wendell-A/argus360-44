@@ -1,46 +1,82 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, TrendingUp, TrendingDown, Target, Settings } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, Target, Settings, Save, DollarSign } from 'lucide-react';
 import { FinancingCalculator } from '@/lib/financial/FinancingCalculator';
 import { ConsortiumCalculator } from '@/lib/financial/ConsortiumCalculator';
 import { useSimulationSettings } from '@/hooks/useSimulationSettings';
 import { formatCurrency } from '@/lib/utils';
+import { ProductSelector } from '@/components/ProductSelector';
+import { ConsortiumBidAnalysis } from '@/components/ConsortiumBidAnalysis';
+import { ConsortiumDetailedStatement } from '@/components/ConsortiumDetailedStatement';
+import { BankFinancingOptions } from '@/components/BankFinancingOptions';
+import { getBankRates } from '@/lib/financial/InterestRates';
+import type { ExtendedConsortiumProduct } from '@/hooks/useConsortiumProducts';
 
 const SimulacaoConsorcio = () => {
   const { settings } = useSimulationSettings();
-  const [assetValue, setAssetValue] = useState<number>(50000);
+  const [creditValue, setCreditValue] = useState<number>(50000);
   const [installments, setInstallments] = useState<number>(60);
   const [downPayment, setDownPayment] = useState<number>(0);
   const [assetType, setAssetType] = useState<'vehicle' | 'real_estate'>('vehicle');
+  const [selectedProduct, setSelectedProduct] = useState<ExtendedConsortiumProduct | null>(null);
+  const [adminRate, setAdminRate] = useState<number>(0.25);
+  const [fundRate, setFundRate] = useState<number>(0.15);
+  const [selectedBank, setSelectedBank] = useState<string>('CAIXA');
+  const [financingRate, setFinancingRate] = useState<number>(1.12);
+
+  // Atualizar dados quando um produto for selecionado
+  useEffect(() => {
+    if (selectedProduct) {
+      setInstallments(selectedProduct.installments);
+      setAdminRate(selectedProduct.administration_fee);
+      setFundRate(selectedProduct.reserve_fund_rate || 0.15);
+      
+      // Se há faixa de crédito definida, usar valor médio
+      if (selectedProduct.min_credit_value && selectedProduct.max_credit_value) {
+        setCreditValue((selectedProduct.min_credit_value + selectedProduct.max_credit_value) / 2);
+      }
+    }
+  }, [selectedProduct]);
+
+  // Inicializar taxa do banco padrão
+  useEffect(() => {
+    const bankRates = getBankRates();
+    const defaultBank = bankRates.find(b => b.name === 'CAIXA');
+    if (defaultBank) {
+      setFinancingRate(defaultBank.monthlyRate);
+    }
+  }, []);
+
+  const handleBankSelect = (bankName: string, rate: number) => {
+    setSelectedBank(bankName);
+    setFinancingRate(rate);
+  };
 
   // Cálculos
-  const financingRate = assetType === 'vehicle' ? settings.vehicleFinancingRate : settings.realEstateFinancingRate;
-  
   const priceCalculation = FinancingCalculator.calculatePrice(
-    assetValue - downPayment,
+    creditValue - downPayment,
     financingRate,
     installments
   );
   
   const sacCalculation = FinancingCalculator.calculateSAC(
-    assetValue - downPayment,
+    creditValue - downPayment,
     financingRate,
     installments
   );
   
   const consortiumCalculation = ConsortiumCalculator.calculate({
-    assetValue,
+    assetValue: creditValue,
     installments,
     downPayment,
-    adminRate: settings.consortiumAdminRate,
-    fundRate: settings.consortiumFundRate
+    adminRate,
+    fundRate
   });
 
   const ComparisonCard = ({ 
@@ -81,7 +117,7 @@ const SimulacaoConsorcio = () => {
             <p className="font-semibold">{formatCurrency(totalAmount)}</p>
           </div>
           <div>
-            <Label className="text-muted-foreground">Total de Juros</Label>
+            <Label className="text-muted-foreground">Total de Juros/Taxas</Label>
             <p className="font-semibold text-destructive">{formatCurrency(totalInterest)}</p>
           </div>
         </div>
@@ -129,19 +165,25 @@ const SimulacaoConsorcio = () => {
               </Select>
             </div>
 
+            <ProductSelector
+              category={assetType === 'vehicle' ? 'automovel' : 'imovel'}
+              onProductSelect={setSelectedProduct}
+              selectedProduct={selectedProduct}
+            />
+
             <div>
-              <Label htmlFor="assetValue">Valor do Bem</Label>
+              <Label htmlFor="creditValue">Valor do Crédito</Label>
               <Input
-                id="assetValue"
+                id="creditValue"
                 type="number"
-                value={assetValue}
-                onChange={(e) => setAssetValue(Number(e.target.value))}
+                value={creditValue}
+                onChange={(e) => setCreditValue(Number(e.target.value))}
                 placeholder="0"
               />
             </div>
 
             <div>
-              <Label htmlFor="downPayment">Entrada (Opcional)</Label>
+              <Label htmlFor="downPayment">Valor de Entrada/Lance</Label>
               <Input
                 id="downPayment"
                 type="number"
@@ -151,34 +193,70 @@ const SimulacaoConsorcio = () => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="installments">Prazo (meses)</Label>
-              <Select value={installments.toString()} onValueChange={(value) => setInstallments(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="36">36 meses</SelectItem>
-                  <SelectItem value="48">48 meses</SelectItem>
-                  <SelectItem value="60">60 meses</SelectItem>
-                  <SelectItem value="72">72 meses</SelectItem>
-                  <SelectItem value="84">84 meses</SelectItem>
-                  <SelectItem value="96">96 meses</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!selectedProduct && (
+              <>
+                <div>
+                  <Label htmlFor="installments">Prazo (meses)</Label>
+                  <Select value={installments.toString()} onValueChange={(value) => setInstallments(Number(value))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="36">36 meses</SelectItem>
+                      <SelectItem value="48">48 meses</SelectItem>
+                      <SelectItem value="60">60 meses</SelectItem>
+                      <SelectItem value="72">72 meses</SelectItem>
+                      <SelectItem value="84">84 meses</SelectItem>
+                      <SelectItem value="96">96 meses</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="adminRate">Taxa Administração (%)</Label>
+                  <Input
+                    id="adminRate"
+                    type="number"
+                    step="0.01"
+                    value={adminRate}
+                    onChange={(e) => setAdminRate(Number(e.target.value))}
+                  />
+                </div>
+              </>
+            )}
 
             <div className="pt-4 border-t">
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>Taxa de Financiamento: {financingRate}% a.m.</p>
-                <p>Taxa Admin. Consórcio: {settings.consortiumAdminRate}% a.m.</p>
+                <p>Taxa Admin. Consórcio: {adminRate}% a.m.</p>
+                <p>Banco Selecionado: {selectedBank}</p>
+                <p>Taxa Financiamento: {financingRate.toFixed(2)}% a.m.</p>
               </div>
             </div>
+
+            <Button className="w-full" size="lg">
+              <Save className="w-4 h-4 mr-2" />
+              Registrar Orçamento
+            </Button>
           </CardContent>
         </Card>
 
         {/* Resultados */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Opções de Financiamento */}
+          <BankFinancingOptions
+            selectedBank={selectedBank}
+            onBankSelect={handleBankSelect}
+          />
+
+          {/* Análise de Lance */}
+          {downPayment > 0 && (
+            <ConsortiumBidAnalysis
+              downPayment={downPayment}
+              creditValue={creditValue}
+              minimumBidPercentages={[25, 50]}
+            />
+          )}
+
           {/* Comparação Principal */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <ComparisonCard
@@ -192,7 +270,7 @@ const SimulacaoConsorcio = () => {
             />
             
             <ComparisonCard
-              title="Financiamento Price"
+              title={`Financiamento ${selectedBank}`}
               monthlyPayment={priceCalculation.monthlyPayment}
               totalAmount={priceCalculation.totalAmount}
               totalInterest={priceCalculation.totalInterest}
@@ -208,72 +286,35 @@ const SimulacaoConsorcio = () => {
             />
           </div>
 
+          {/* Extrato Detalhado */}
+          <ConsortiumDetailedStatement
+            consortiumData={consortiumCalculation}
+            financingData={priceCalculation}
+          />
+
           {/* Detalhes do Consórcio */}
           <Card>
             <CardHeader>
-              <CardTitle>Detalhes do Consórcio</CardTitle>
+              <CardTitle>Informações do Consórcio</CardTitle>
               <CardDescription>
-                Informações específicas sobre o consórcio
+                Detalhes específicos sobre o consórcio simulado
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <Label className="text-sm text-muted-foreground">Carta de Crédito</Label>
                   <p className="text-lg font-semibold">{formatCurrency(consortiumCalculation.creditLetter)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Previsão Contemplação</Label>
-                  <p className="text-lg font-semibold">{consortiumCalculation.monthsToContemplate}º mês</p>
+                  <Label className="text-sm text-muted-foreground">Taxa Mensal Admin</Label>
+                  <p className="text-lg font-semibold">{formatCurrency(consortiumCalculation.adminFee)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Probabilidade</Label>
-                  <p className="text-lg font-semibold">{consortiumCalculation.contemplationProbability.toFixed(1)}%</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Economia vs Price</Label>
+                  <Label className="text-sm text-muted-foreground">Economia vs {selectedBank}</Label>
                   <p className="text-lg font-semibold text-green-600">
                     {formatCurrency(priceCalculation.totalAmount - consortiumCalculation.totalCost)}
                   </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Vantagens do Consórcio */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Por que escolher Consórcio?</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Sem juros, apenas taxa de administração</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Parcelas fixas durante todo o período</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Possibilidade de contemplação antecipada</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Não compromete renda para financiamento</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Economia significativa no longo prazo</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm">Flexibilidade nas condições de pagamento</span>
-                  </div>
                 </div>
               </div>
             </CardContent>

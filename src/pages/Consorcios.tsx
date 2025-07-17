@@ -99,14 +99,13 @@ export default function Consorcios() {
   }
 
   const activeProducts = products.filter(p => p.status === 'active');
-  const totalValue = products.reduce((sum, p) => sum + p.asset_value, 0);
   const averageCommission = products.length > 0 
     ? products.reduce((sum, p) => sum + p.commission_rate, 0) / products.length 
     : 0;
 
   // Métricas adicionais
   const totalCreditRange = products.reduce((sum, p) => {
-    const max = p.max_credit_value || p.asset_value;
+    const max = p.max_credit_value || 0;
     return sum + max;
   }, 0);
 
@@ -153,11 +152,11 @@ export default function Consorcios() {
 
           <Card className="min-h-[100px]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-              <CardTitle className="text-xs sm:text-sm font-medium">Valor Total</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Valor Total Crédito</CardTitle>
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <div className="text-lg sm:text-2xl font-bold break-all">{formatCurrency(totalValue)}</div>
+              <div className="text-lg sm:text-2xl font-bold break-all">{formatCurrency(totalCreditRange)}</div>
               <p className="text-xs text-green-600 mt-1">Em produtos ativos</p>
             </CardContent>
           </Card>

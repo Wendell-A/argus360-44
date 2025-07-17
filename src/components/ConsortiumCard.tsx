@@ -96,12 +96,12 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
         {/* Informações principais */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Valor do Bem</p>
-            <p className="font-semibold">{formatCurrency(product.asset_value)}</p>
-          </div>
-          <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">Prazo</p>
             <p className="font-semibold">{product.installments} meses</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Taxa ADM</p>
+            <p className="font-semibold">{product.administration_fee}%</p>
           </div>
         </div>
 
@@ -116,24 +116,13 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
           </div>
         )}
 
-        {/* Taxas */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Taxa ADM</p>
-            <p className="font-semibold">{product.administration_fee}%</p>
-            {(product.min_admin_fee || product.max_admin_fee) && (
-              <p className="text-xs text-gray-400">
-                {product.min_admin_fee || 0}% - {product.max_admin_fee || 0}%
-              </p>
-            )}
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Comissão</p>
-            <p className="font-semibold flex items-center gap-1">
-              <Percent className="w-3 h-3" />
-              {product.commission_rate}%
-            </p>
-          </div>
+        {/* Comissão */}
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Comissão</p>
+          <p className="font-semibold flex items-center gap-1">
+            <Percent className="w-3 h-3" />
+            {product.commission_rate}%
+          </p>
         </div>
 
         {/* Taxas adicionais */}
@@ -174,10 +163,6 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
 
         {/* Informações adicionais */}
         <div className="flex justify-between items-center pt-2 border-t">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Calculator className="w-4 h-4" />
-            <span>Parcela: {formatCurrency(product.monthly_fee)}</span>
-          </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <span>Reajuste: {product.adjustment_index || 'INCC'}</span>
           </div>
