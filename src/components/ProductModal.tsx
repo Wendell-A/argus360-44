@@ -39,11 +39,9 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
     name: "",
     description: "",
     category: "",
-    asset_value: "",
     min_credit_value: "",
     max_credit_value: "",
     installments: "",
-    monthly_fee: "",
     administration_fee: "",
     min_admin_fee: "",
     max_admin_fee: "",
@@ -62,11 +60,9 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
         name: product.name || "",
         description: product.description || "",
         category: product.category || "",
-        asset_value: product.asset_value?.toString() || "",
         min_credit_value: product.min_credit_value?.toString() || "",
         max_credit_value: product.max_credit_value?.toString() || "",
         installments: product.installments?.toString() || "",
-        monthly_fee: product.monthly_fee?.toString() || "",
         administration_fee: product.administration_fee?.toString() || "",
         min_admin_fee: product.min_admin_fee?.toString() || "",
         max_admin_fee: product.max_admin_fee?.toString() || "",
@@ -83,11 +79,9 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
         name: "",
         description: "",
         category: "",
-        asset_value: "",
         min_credit_value: "",
         max_credit_value: "",
         installments: "",
-        monthly_fee: "",
         administration_fee: "",
         min_admin_fee: "",
         max_admin_fee: "",
@@ -109,11 +103,9 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
       name: formData.name,
       description: formData.description || null,
       category: formData.category,
-      asset_value: parseFloat(formData.asset_value),
       min_credit_value: formData.min_credit_value ? parseFloat(formData.min_credit_value) : null,
       max_credit_value: formData.max_credit_value ? parseFloat(formData.max_credit_value) : null,
       installments: parseInt(formData.installments),
-      monthly_fee: parseFloat(formData.monthly_fee),
       administration_fee: parseFloat(formData.administration_fee),
       min_admin_fee: formData.min_admin_fee ? parseFloat(formData.min_admin_fee) : null,
       max_admin_fee: formData.max_admin_fee ? parseFloat(formData.max_admin_fee) : null,
@@ -214,17 +206,6 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="asset_value">Valor do Bem *</Label>
-                        <Input
-                          id="asset_value"
-                          type="number"
-                          step="0.01"
-                          value={formData.asset_value}
-                          onChange={(e) => setFormData(prev => ({ ...prev, asset_value: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
                         <Label htmlFor="installments">Prazo (meses) *</Label>
                         <Input
                           id="installments"
@@ -234,19 +215,18 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
                           required
                         />
                       </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="status">Status</Label>
-                      <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">Ativo</SelectItem>
-                          <SelectItem value="inactive">Inativo</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div>
+                        <Label htmlFor="status">Status</Label>
+                        <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Ativo</SelectItem>
+                            <SelectItem value="inactive">Inativo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -286,17 +266,6 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="monthly_fee">Parcela Mensal *</Label>
-                        <Input
-                          id="monthly_fee"
-                          type="number"
-                          step="0.01"
-                          value={formData.monthly_fee}
-                          onChange={(e) => setFormData(prev => ({ ...prev, monthly_fee: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div>
                         <Label htmlFor="advance_fee_rate">Taxa Antecipada (%)</Label>
                         <Input
                           id="advance_fee_rate"
@@ -304,6 +273,17 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
                           step="0.01"
                           value={formData.advance_fee_rate}
                           onChange={(e) => setFormData(prev => ({ ...prev, advance_fee_rate: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="commission_rate">Taxa de Comissão (%)</Label>
+                        <Input
+                          id="commission_rate"
+                          type="number"
+                          step="0.01"
+                          value={formData.commission_rate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, commission_rate: e.target.value }))}
+                          required
                         />
                       </div>
                     </div>
@@ -317,6 +297,7 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
                           step="0.01"
                           value={formData.administration_fee}
                           onChange={(e) => setFormData(prev => ({ ...prev, administration_fee: e.target.value }))}
+                          required
                         />
                       </div>
                       <div>
@@ -391,17 +372,6 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="commission_rate">Taxa de Comissão Base (%)</Label>
-                      <Input
-                        id="commission_rate"
-                        type="number"
-                        step="0.01"
-                        value={formData.commission_rate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, commission_rate: e.target.value }))}
-                      />
-                    </div>
-
                     {mode === "edit" && product && (
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -429,11 +399,11 @@ export const ProductModal = ({ isOpen, onClose, product, mode, onSave }: Product
                       </div>
                     )}
 
-                    {mode === "edit" && product && formData.asset_value && (
+                    {mode === "edit" && product && formData.max_credit_value && (
                       <div className="grid grid-cols-2 gap-4">
                         <CommissionBreakdown 
                           productId={product.id} 
-                          saleValue={parseFloat(formData.asset_value)} 
+                          saleValue={parseFloat(formData.max_credit_value)} 
                         />
                         <ChargebackInfo 
                           productId={product.id} 
