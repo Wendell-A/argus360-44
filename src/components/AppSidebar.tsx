@@ -1,195 +1,236 @@
-import { 
-  Home, 
-  Users, 
-  UserPlus,
-  ShoppingCart, 
-  DollarSign, 
-  Package, 
-  Building2, 
-  BarChart3, 
-  FileText, 
-  Settings,
+import React, { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+import {
+  Calendar,
+  ChevronUp,
+  Home,
+  Users,
+  ShoppingCart,
+  UserCheck,
+  DollarSign,
+  Target,
+  Calculator,
+  BarChart3,
+  Building2,
+  Users2,
   Briefcase,
   Shield,
-  LogOut
+  Settings,
+  History
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-
-const items = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Vendedores",
-    url: "/vendedores",
-    icon: Users,
-  },
-  {
-    title: "Clientes",
-    url: "/clientes",
-    icon: UserPlus,
-  },
-  {
-    title: "Vendas",
-    url: "/vendas",
-    icon: ShoppingCart,
-  },
-  {
-    title: "Comissões",
-    url: "/comissoes",
-    icon: DollarSign,
-  },
-  {
-    title: "Consórcios",
-    url: "/consorcios",
-    icon: Package,
-  },
-  {
-    title: "Escritórios",
-    url: "/escritorios",
-    icon: Building2,
-  },
-  {
-    title: "Relatórios",
-    url: "/relatorios",
-    icon: BarChart3,
-  },
-  {
-    title: "Auditoria",
-    url: "/auditoria",
-    icon: FileText,
-  },
-  {
-    title: "Equipes",
-    url: "/equipes",
-    icon: Users,
-  },
-  {
-    title: "Departamentos",
-    url: "/departamentos",
-    icon: Briefcase,
-  },
-  {
-    title: "Permissões",
-    url: "/permissoes",
-    icon: Shield,
-  },
-  {
-    title: "Configurações",
-    url: "/configuracoes",
-    icon: Settings,
-  },
-];
 
 export function AppSidebar() {
   const { user, activeTenant, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
 
-  const handleNavigation = (url: string) => {
-    navigate(url);
-  };
+  const menuItems = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: "Vendas",
+      url: "/vendas", 
+      icon: ShoppingCart,
+    },
+    {
+      title: "Clientes",
+      url: "/clientes",
+      icon: Users,
+    },
+    {
+      title: "Vendedores", 
+      url: "/vendedores",
+      icon: UserCheck,
+    },
+    {
+      title: "Comissões",
+      url: "/comissoes",
+      icon: DollarSign,
+    },
+    {
+      title: "Consórcios",
+      url: "/consorcios",
+      icon: Target,
+    },
+    {
+      title: "Simulação",
+      url: "/simulacao-consorcio",
+      icon: Calculator,
+    },
+    {
+      title: "Relatórios",
+      url: "/relatorios",
+      icon: BarChart3,
+    },
+  ];
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-    }
-  };
-
-  const getUserInitials = (name: string) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const getUserDisplayName = () => {
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name;
-    }
-    return user?.email || 'Usuário';
-  };
+  const managementItems = [
+    {
+      title: "Escritórios",
+      url: "/escritorios",
+      icon: Building2,
+    },
+    {
+      title: "Equipes",
+      url: "/equipes", 
+      icon: Users2,
+    },
+    {
+      title: "Departamentos",
+      url: "/departamentos",
+      icon: Briefcase,
+    },
+    {
+      title: "Permissões",
+      url: "/permissoes",
+      icon: Shield,
+    },
+    {
+      title: "Configurações",
+      url: "/configuracoes",
+      icon: Settings,
+    },
+    {
+      title: "Auditoria",
+      url: "/auditoria",
+      icon: History,
+    },
+  ];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b p-4">
-        <div className="space-y-2">
-          {/* Nome do Tenant */}
-          <div className="text-lg font-semibold text-foreground">
-            {activeTenant?.tenant_name || 'Sistema'}
-          </div>
-          
-          {/* Avatar e informações do usuário */}
-          <div className="flex items-center gap-3 pt-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs">
-                {getUserInitials(getUserDisplayName())}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-foreground truncate">
-                {getUserDisplayName()}
-              </div>
-            </div>
-          </div>
-          
-          {/* Botão de Logout */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="w-full mt-2"
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-menu"
           >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
-          </Button>
-        </div>
-      </SidebarHeader>
+            <line x1="4" x2="20" y1="12" y2="12" />
+            <line x1="4" x2="20" y1="6" y2="6" />
+            <line x1="4" x2="20" y1="18" y2="18" />
+          </svg>
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-full sm:w-64 flex flex-col gap-4">
+        <SheetHeader className="text-left">
+          <SheetTitle>Menu</SheetTitle>
+          <SheetDescription>
+            Navegue pelas funcionalidades do sistema.
+          </SheetDescription>
+        </SheetHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    onClick={() => handleNavigation(item.url)}
-                    isActive={location.pathname === item.url}
-                    className="w-full"
+        <div className="flex flex-col gap-2">
+          {menuItems.map((item) => (
+            <Button
+              key={item.title}
+              variant="ghost"
+              className="justify-start"
+              onClick={() => navigate(item.url)}
+            >
+              <item.icon className="mr-2 h-4 w-4" />
+              <span>{item.title}</span>
+            </Button>
+          ))}
+        </div>
+
+        <Accordion type="single" collapsible>
+          <AccordionItem value="management">
+            <AccordionTrigger
+              onClick={() => setIsManagementOpen(!isManagementOpen)}
+            >
+              Gerenciamento
+              <ChevronUp className="h-4 w-4" />
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-2">
+                {managementItems.map((item) => (
+                  <Button
+                    key={item.title}
+                    variant="ghost"
+                    className="justify-start"
+                    onClick={() => navigate(item.url)}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="mr-2 h-4 w-4" />
                     <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+                  </Button>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
+        <div className="mt-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="w-full justify-start gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.user_metadata?.avatar_url as string} />
+                  <AvatarFallback>
+                    {user?.user_metadata?.full_name
+                      ?.split(" ")
+                      .map((n: string) => n?.[0])
+                      .join("")
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span>
+                  {user?.user_metadata?.full_name}
+                  <br />
+                  <span className="text-xs text-muted-foreground">
+                    {activeTenant?.tenant_name}
+                  </span>
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuItem>Perfil</DropdownMenuItem>
+              <DropdownMenuItem>Configurações</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => signOut()}>
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
