@@ -35,7 +35,7 @@ export class ConsortiumCalculator {
     
     // NOVA FÓRMULA CORRIGIDA: Valor × (1 + Taxa Admin) ÷ Parcelas
     // Aplicamos a taxa administrativa sobre o valor total e dividimos pelas parcelas
-    const totalWithAdminFee = creditValue * (1 + adminRate / 100);
+    const totalWithAdminFee = creditLetter * (1 + adminRate / 100);
     const monthlyPayment = totalWithAdminFee / installments;
     
     // Cálculo das taxas para compatibilidade com relatórios existentes
