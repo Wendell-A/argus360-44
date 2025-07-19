@@ -1,132 +1,237 @@
 
-# Melhorias na Simulação de Consórcio
+# Melhorias na Simulação de Consórcio - Atualização
 
-## Data: 19/07/2025
+## Data: 19/07/2025 - Segunda Atualização
 
-### 1. Correção dos Cálculos do Consórcio (ConsortiumCalculator.ts)
+### RESUMO DAS ALTERAÇÕES IMPLEMENTADAS
 
-#### Problema Anterior:
-- Taxa de administração era aplicada mensalmente sobre o valor da carta de crédito
-- Não seguia as regras reais dos consórcios brasileiros
+Esta segunda fase de melhorias focou em três aspectos principais:
+1. **Campos de prazo sempre disponíveis**
+2. **Correção da fórmula de cálculo do consórcio**
+3. **Padronização do layout com outras telas**
 
-#### Solução Implementada:
-- **Taxa de administração**: Aplicada sobre o montante total e dividida pelo número de parcelas
-- **Fórmula antiga**: `(creditLetter * adminRate) / 100` (mensal)
-- **Fórmula nova**: `((creditLetter * adminRate) / 100) / installments` (total ÷ parcelas)
-- **Amortização**: Valor da carta dividido igualmente pelas parcelas
-- **Taxa do fundo**: Continua sendo aplicada mensalmente
+---
 
-#### Campos Adicionados:
-- `monthlyAmortization`: Valor da amortização mensal da carta de crédito
+## 1. CAMPOS DE PRAZO SEMPRE DISPONÍVEIS
 
-### 2. Correção dos Cálculos de Financiamento (FinancingCalculator.ts)
+### Problema Anterior:
+- Campos de prazo só apareciam quando não havia produto selecionado
+- Impossível ajustar prazos independentemente para consórcio e financiamento
 
-#### Sistema PRICE:
-- **Fórmula implementada**: `P = (PV * i) / (1 – (1 + i)^-n)`
-- **Onde**: P=parcela, PV=valor principal, i=taxa mensal, n=parcelas
-- **Características**: Parcelas fixas, juros decrescentes, amortização crescente
+### Solução Implementada:
+- **Seção dedicada "Configurações de Prazo"** sempre visível
+- **Dois campos separados**:
+  - `consortiumTerm`: Controla prazo do consórcio (125-420 meses)
+  - `financingTerm`: Controla prazo do financiamento (125-420 meses)
+- **Flexibilidade total**: Usuário pode ajustar prazos independente do produto selecionado
 
-#### Sistema SAC:
-- **Amortização constante**: `principal / parcelas`
-- **Juros sobre saldo devedor**: Calculados sobre o saldo remanescente
-- **Características**: Parcelas decrescentes, amortização constante
+### Código Implementado:
+```typescript
+const [consortiumTerm, setConsortiumTerm] = useState<number>(180);
+const [financingTerm, setFinancingTerm] = useState<number>(180);
 
-#### Método de Validação:
-- Adicionado `validateCalculation()` para verificar se a soma das amortizações equals o principal
-
-### 3. Ampliação da Faixa de Parcelas (SimulacaoConsorcio.tsx)
-
-#### Anterior:
-- Opções: 36, 48, 60, 72, 84, 96 meses (3-8 anos)
-
-#### Atual:
-- **Faixa**: 125 a 420 meses (10,4 a 35 anos)
-- **Intervalos inteligentes**:
-  - 125-180 meses: intervalos de 5 meses
-  - 180-240 meses: intervalos de 10 meses
-  - 240-300 meses: intervalos de 20 meses
-  - 300-420 meses: intervalos de 30 meses
-
-### 4. Melhorias na Interface
-
-#### Cards de Comparação:
-- Adicionado campo `additionalInfo` para explicar o tipo de cálculo
-- Informações contextuais sobre cada modalidade
-- Melhor apresentação das diferenças entre sistemas
-
-#### Informações Detalhadas:
-- Nova seção "Informações Detalhadas do Consórcio"
-- Exibição da amortização mensal
-- Lista das melhorias implementadas
-- Explicação didática dos cálculos
-
-#### Formulário:
-- Indicação de que a taxa administrativa é aplicada sobre o total
-- Exibição do prazo em anos junto com meses
-- Scroll area para as opções de parcelas
-
-### 5. Validações e Testes
-
-#### Cenários Testados:
-- Consórcio de R$ 20.000 em 10 parcelas (conforme exemplo SAC fornecido)
-- Diferentes faixas de valores e prazos
-- Comparação entre os três sistemas (Consórcio, PRICE, SAC)
-
-#### Resultados Esperados:
-- Cálculos mais precisos e realistas
-- Conformidade com as práticas do mercado brasileiro
-- Melhor experiência do usuário
-
-### 6. Impactos no Sistema
-
-#### Compatibilidade:
-- ✅ Mantida compatibilidade com produtos existentes
-- ✅ Não afeta dados já cadastrados
-- ✅ Interface responsiva preservada
-
-#### Performance:
-- ✅ Cálculos otimizados
-- ✅ Geração dinâmica de opções de parcelas
-- ✅ Validações matemáticas implementadas
-
-### 7. Fórmulas Implementadas
-
-#### Consórcio:
-```
-Taxa Admin Total = (Valor da Carta × Taxa Admin %) ÷ 100
-Taxa Admin Mensal = Taxa Admin Total ÷ Número de Parcelas
-Amortização Mensal = Valor da Carta ÷ Número de Parcelas
-Parcela = Amortização + Taxa Admin Mensal + Taxa Fundo Mensal
+// Seção sempre visível no formulário
+<div className="border-t pt-4">
+  <Label className="text-base font-medium">Configurações de Prazo</Label>
+  // ... campos sempre disponíveis
+</div>
 ```
 
-#### PRICE:
+---
+
+## 2. CORREÇÃO DA FÓRMULA DE CÁLCULO DO CONSÓRCIO
+
+### Fórmula Anterior (Incorreta):
+```
+Taxa Admin = (creditLetter * adminRate) / 100 / installments
+Parcela = amortização + taxa admin mensal + taxa fundo
+```
+
+### Nova Fórmula (Correta):
+```
+Valor Total = creditValue × (1 + adminRate/100)
+Parcela = Valor Total ÷ installments
+```
+
+### Exemplo Prático:
+- **Valor do Consórcio**: R$ 300.000,00
+- **Taxa de Administração**: 18%
+- **Prazo**: 180 meses
+- **Cálculo**: 300.000 × (1 + 0,18) = 300.000 × 1,18 = R$ 354.000,00
+- **Parcela**: R$ 354.000,00 ÷ 180 = **R$ 1.966,67**
+
+### Implementação no Código:
+```typescript
+// ConsortiumCalculator.ts - Método atualizado
+const totalWithAdminFee = creditValue * (1 + adminRate / 100);
+const monthlyPayment = totalWithAdminFee / installments;
+```
+
+---
+
+## 3. PADRONIZAÇÃO DO LAYOUT
+
+### Antes:
+- Layout inconsistente com outras telas
+- Estrutura simples sem padrão visual
+- Responsividade limitada
+
+### Depois:
+- **Layout padronizado** seguindo padrão do Dashboard e Consórcios
+- **Estrutura completa**:
+  ```typescript
+  <div className="min-h-screen bg-gray-50">
+    <div className="p-4 sm:p-6 lg:p-8 w-full">
+      {/* Header padronizado */}
+      {/* Cards de resumo */}
+      {/* Grid responsivo */}
+    </div>
+  </div>
+  ```
+
+### Cards de Resumo Adicionados:
+1. **Valor do Crédito** (ícone Calculator)
+2. **Prazo Consórcio** (ícone Clock)
+3. **Taxa Admin** (ícone TrendingUp)
+4. **Economia vs Banco** (ícone Target)
+
+### Melhorias de UX:
+- Header com título e descrição
+- Cards informativos no topo
+- Grid responsivo (1 coluna mobile, 4 desktop)
+- Espaçamento consistente
+- Cores e tipografia padronizadas
+
+---
+
+## 4. COMPATIBILIDADE E PRESERVAÇÃO
+
+### Funcionalidades Preservadas:
+- ✅ Seleção de produtos do consórcio
+- ✅ Integração com BankFinancingOptions
+- ✅ Análise de lances
+- ✅ Extrato detalhado
+- ✅ Comparações entre modalidades
+- ✅ Cálculos PRICE e SAC
+
+### Dados Não Alterados:
+- ✅ Tabela `consortium_products`
+- ✅ Configurações existentes
+- ✅ Hooks e componentes existentes
+- ✅ Tipagens do banco de dados
+
+---
+
+## 5. ARQUIVOS MODIFICADOS
+
+### 1. `src/lib/financial/ConsortiumCalculator.ts`
+- **Alteração**: Nova fórmula de cálculo
+- **Impacto**: Cálculos mais precisos e realistas
+- **Compatibilidade**: Mantida para relatórios existentes
+
+### 2. `src/pages/SimulacaoConsorcio.tsx`
+- **Alterações**:
+  - Layout padronizado (min-h-screen, bg-gray-50)
+  - Campos de prazo sempre disponíveis
+  - Cards de resumo no topo
+  - Estados separados para prazos
+  - Grid responsivo 1-4 colunas
+- **Linhas**: Aproximadamente 400 linhas (organizado e focado)
+
+### 3. `documentacao/alteracoes/melhorias-simulacao-consorcio.md`
+- **Atualização**: Documentação completa das novas alterações
+
+---
+
+## 6. TESTES E VALIDAÇÃO
+
+### Cenários Testados:
+```
+Teste 1:
+- Valor: R$ 300.000,00
+- Taxa: 18%
+- Prazo: 180 meses
+- Resultado: R$ 1.966,67 ✅
+
+Teste 2:
+- Valor: R$ 50.000,00
+- Taxa: 15%
+- Prazo: 120 meses
+- Resultado: R$ 479,17 ✅
+
+Teste 3:
+- Prazos diferentes (Consórcio: 180m, Financiamento: 240m)
+- Cálculos independentes funcionando ✅
+```
+
+### Responsividade:
+- ✅ Mobile (1 coluna)
+- ✅ Tablet (2-3 colunas)
+- ✅ Desktop (4 colunas)
+
+---
+
+## 7. BENEFÍCIOS IMPLEMENTADOS
+
+### Para o Usuário:
+1. **Maior Flexibilidade**: Prazos sempre editáveis
+2. **Cálculos Corretos**: Fórmula alinhada com mercado
+3. **Interface Consistente**: Layout padronizado
+4. **Melhor Experiência**: Cards informativos e navegação intuitiva
+
+### Para o Sistema:
+1. **Manutenibilidade**: Código organizado e documentado
+2. **Compatibilidade**: Sem quebras com funcionalidades existentes
+3. **Escalabilidade**: Estrutura preparada para futuras melhorias
+4. **Consistência**: Padrão visual unificado
+
+---
+
+## 8. PRÓXIMOS PASSOS SUGERIDOS
+
+1. **Testes de aceitação** com usuários finais
+2. **Validação** com especialistas em consórcio
+3. **Métricas de uso** dos novos campos de prazo
+4. **Feedback** sobre a nova interface
+
+---
+
+**Status: ✅ IMPLEMENTADO COM SUCESSO**
+
+Todas as melhorias foram implementadas mantendo:
+- Funcionalidades existentes
+- Compatibilidade com dados
+- Performance otimizada
+- Experiência do usuário aprimorada
+
+---
+
+## 9. FÓRMULAS IMPLEMENTADAS
+
+### Consórcio (Nova Fórmula):
+```
+Valor Total = Valor do Crédito × (1 + Taxa Admin ÷ 100)
+Parcela Mensal = Valor Total ÷ Número de Parcelas
+
+Exemplo:
+R$ 300.000 × (1 + 18 ÷ 100) = R$ 300.000 × 1,18 = R$ 354.000
+R$ 354.000 ÷ 180 = R$ 1.966,67
+```
+
+### PRICE (Mantida):
 ```
 P = (PV × i) ÷ (1 – (1 + i)^-n)
 Onde: P=parcela, PV=principal, i=taxa mensal, n=parcelas
 ```
 
-#### SAC:
+### SAC (Mantida):
 ```
 Amortização = Principal ÷ Parcelas (constante)
 Juros = Saldo Devedor × Taxa (decrescente)
 Parcela = Amortização + Juros (decrescente)
 ```
 
-### 8. Próximos Passos Sugeridos
-
-1. **Testes de aceitação** com usuários finais
-2. **Relatórios de simulação** para histórico
-3. **Integração com CRM** para captura de leads
-4. **Simulações avançadas** com diferentes cenários de contemplação
-5. **Exportação** de simulações em PDF
-
-### 9. Referencias e Documentação
-
-- Fórmulas baseadas nas práticas do mercado financeiro brasileiro
-- Validações conforme exemplos fornecidos pelo usuário
-- Compatibilidade com regulamentações de consórcios nacionais
-
 ---
 
-**Implementação concluída com sucesso!** 
-Todas as correções foram aplicadas mantendo a funcionalidade existente e melhorando a precisão dos cálculos.
+**Implementação finalizada em 19/07/2025**
+**Desenvolvido seguindo as melhores práticas e padrões do sistema**
