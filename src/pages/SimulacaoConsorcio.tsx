@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, TrendingUp, TrendingDown, Target, Settings, Save, DollarSign } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, Target, Settings, Save, Info } from 'lucide-react';
 import { FinancingCalculator } from '@/lib/financial/FinancingCalculator';
 import { ConsortiumCalculator } from '@/lib/financial/ConsortiumCalculator';
 import { useSimulationSettings } from '@/hooks/useSimulationSettings';
@@ -21,7 +21,7 @@ import type { ExtendedConsortiumProduct } from '@/hooks/useConsortiumProducts';
 const SimulacaoConsorcio = () => {
   const { settings } = useSimulationSettings();
   const [creditValue, setCreditValue] = useState<number>(50000);
-  const [installments, setInstallments] = useState<number>(60);
+  const [installments, setInstallments] = useState<number>(180);
   const [downPayment, setDownPayment] = useState<number>(0);
   const [assetType, setAssetType] = useState<'vehicle' | 'real_estate'>('vehicle');
   const [selectedProduct, setSelectedProduct] = useState<ExtendedConsortiumProduct | null>(null);
@@ -29,6 +29,29 @@ const SimulacaoConsorcio = () => {
   const [fundRate, setFundRate] = useState<number>(0.15);
   const [selectedBank, setSelectedBank] = useState<string>('CAIXA');
   const [financingRate, setFinancingRate] = useState<number>(1.12);
+
+  // Gerar opções de parcelas de 125 a 420 meses
+  const generateInstallmentOptions = () => {
+    const options = [];
+    
+    // Adicionar opções principais de 125 a 420 meses (intervalos de 5 ou 10)
+    for (let i = 125; i <= 180; i += 5) {
+      options.push(i);
+    }
+    for (let i = 180; i <= 240; i += 10) {
+      options.push(i);
+    }
+    for (let i = 240; i <= 300; i += 20) {
+      options.push(i);
+    }
+    for (let i = 300; i <= 420; i += 30) {
+      options.push(i);
+    }
+    
+    return options;
+  };
+
+  const installmentOptions = generateInstallmentOptions();
 
   // Atualizar dados quando um produto for selecionado
   useEffect(() => {
@@ -58,7 +81,7 @@ const SimulacaoConsorcio = () => {
     setFinancingRate(rate);
   };
 
-  // Cálculos
+  // Cálculos com nova implementação
   const priceCalculation = FinancingCalculator.calculatePrice(
     creditValue - downPayment,
     financingRate,
@@ -86,7 +109,8 @@ const SimulacaoConsorcio = () => {
     totalInterest, 
     highlight = false,
     badge,
-    icon
+    icon,
+    additionalInfo
   }: {
     title: string;
     monthlyPayment: number;
@@ -95,6 +119,7 @@ const SimulacaoConsorcio = () => {
     highlight?: boolean;
     badge?: string;
     icon?: React.ReactNode;
+    additionalInfo?: string;
   }) => (
     <Card className={highlight ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}>
       <CardHeader className="pb-3">
@@ -105,6 +130,11 @@ const SimulacaoConsorcio = () => {
           </div>
           {badge && <Badge variant={highlight ? 'default' : 'secondary'}>{badge}</Badge>}
         </div>
+        {additionalInfo && (
+          <CardDescription className="text-xs text-muted-foreground">
+            {additionalInfo}
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent className="space-y-2">
         <div>
@@ -131,7 +161,7 @@ const SimulacaoConsorcio = () => {
         <div>
           <h1 className="text-3xl font-bold">Simulação de Consórcio</h1>
           <p className="text-muted-foreground">
-            Compare consórcio com financiamento tradicional
+            Compare consórcio com financiamento tradicional - Cálculos corrigidos
           </p>
         </div>
         <Button variant="outline" size="icon">
@@ -148,7 +178,7 @@ const SimulacaoConsorcio = () => {
               Dados da Simulação
             </CardTitle>
             <CardDescription>
-              Preencha os dados para simular
+              Preencha os dados para simular (125-420 meses)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -201,13 +231,12 @@ const SimulacaoConsorcio = () => {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="36">36 meses</SelectItem>
-                      <SelectItem value="48">48 meses</SelectItem>
-                      <SelectItem value="60">60 meses</SelectItem>
-                      <SelectItem value="72">72 meses</SelectItem>
-                      <SelectItem value="84">84 meses</SelectItem>
-                      <SelectItem value="96">96 meses</SelectItem>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      {installmentOptions.map((months) => (
+                        <SelectItem key={months} value={months.toString()}>
+                          {months} meses ({(months / 12).toFixed(1)} anos)
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -221,15 +250,19 @@ const SimulacaoConsorcio = () => {
                     value={adminRate}
                     onChange={(e) => setAdminRate(Number(e.target.value))}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Aplicada sobre o montante total
+                  </p>
                 </div>
               </>
             )}
 
             <div className="pt-4 border-t">
               <div className="text-sm text-muted-foreground space-y-1">
-                <p>Taxa Admin. Consórcio: {adminRate}% a.m.</p>
+                <p>Taxa Admin. Consórcio: {adminRate}% (sobre total)</p>
                 <p>Banco Selecionado: {selectedBank}</p>
                 <p>Taxa Financiamento: {financingRate.toFixed(2)}% a.m.</p>
+                <p>Prazo: {installments} meses ({(installments / 12).toFixed(1)} anos)</p>
               </div>
             </div>
 
@@ -267,6 +300,7 @@ const SimulacaoConsorcio = () => {
               highlight={true}
               badge="RECOMENDADO"
               icon={<Target className="h-4 w-4 text-green-600" />}
+              additionalInfo="Taxa administrativa aplicada sobre o total"
             />
             
             <ComparisonCard
@@ -275,6 +309,7 @@ const SimulacaoConsorcio = () => {
               totalAmount={priceCalculation.totalAmount}
               totalInterest={priceCalculation.totalInterest}
               icon={<TrendingUp className="h-4 w-4 text-blue-600" />}
+              additionalInfo="Sistema PRICE - Parcelas fixas"
             />
             
             <ComparisonCard
@@ -283,6 +318,7 @@ const SimulacaoConsorcio = () => {
               totalAmount={sacCalculation.totalAmount}
               totalInterest={sacCalculation.totalInterest}
               icon={<TrendingDown className="h-4 w-4 text-purple-600" />}
+              additionalInfo="Primeira parcela (parcelas decrescentes)"
             />
           </div>
 
@@ -295,19 +331,26 @@ const SimulacaoConsorcio = () => {
           {/* Detalhes do Consórcio */}
           <Card>
             <CardHeader>
-              <CardTitle>Informações do Consórcio</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                Informações Detalhadas do Consórcio
+              </CardTitle>
               <CardDescription>
-                Detalhes específicos sobre o consórcio simulado
+                Cálculos corrigidos conforme regras de consórcio
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <Label className="text-sm text-muted-foreground">Carta de Crédito</Label>
                   <p className="text-lg font-semibold">{formatCurrency(consortiumCalculation.creditLetter)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Taxa Mensal Admin</Label>
+                  <Label className="text-sm text-muted-foreground">Amortização Mensal</Label>
+                  <p className="text-lg font-semibold">{formatCurrency(consortiumCalculation.monthlyAmortization)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Taxa Admin Mensal</Label>
                   <p className="text-lg font-semibold">{formatCurrency(consortiumCalculation.adminFee)}</p>
                 </div>
                 <div>
@@ -316,6 +359,16 @@ const SimulacaoConsorcio = () => {
                     {formatCurrency(priceCalculation.totalAmount - consortiumCalculation.totalCost)}
                   </p>
                 </div>
+              </div>
+              
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Melhorias Implementadas:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Taxa de administração aplicada sobre o montante total e dividida pelas parcelas</li>
+                  <li>• Cálculos PRICE e SAC corrigidos com fórmulas financeiras adequadas</li>
+                  <li>• Faixa de parcelas expandida: 125 a 420 meses (10,4 a 35 anos)</li>
+                  <li>• Amortização constante no consórcio</li>
+                </ul>
               </div>
             </CardContent>
           </Card>

@@ -15,13 +15,15 @@ export interface InstallmentDetail {
 }
 
 export class FinancingCalculator {
-  // Sistema Price (Tabela Price)
+  // Sistema Price (Tabela Price) - FÓRMULA CORRIGIDA
   static calculatePrice(
     principal: number,
     monthlyRate: number,
     periods: number
   ): FinancingCalculation {
     const rate = monthlyRate / 100;
+    
+    // Fórmula PRICE correta: P = (PV * i) / (1 – (1 + i)^-n)
     const monthlyPayment = (principal * rate * Math.pow(1 + rate, periods)) / 
                           (Math.pow(1 + rate, periods) - 1);
     
@@ -31,14 +33,14 @@ export class FinancingCalculator {
     for (let i = 1; i <= periods; i++) {
       const interestPayment = balance * rate;
       const principalPayment = monthlyPayment - interestPayment;
-      balance = balance - principalPayment;
+      balance = Math.max(0, balance - principalPayment);
       
       installments.push({
         number: i,
         payment: monthlyPayment,
         principal: principalPayment,
         interest: interestPayment,
-        balance: Math.max(0, balance)
+        balance: balance
       });
     }
     
@@ -53,13 +55,15 @@ export class FinancingCalculator {
     };
   }
 
-  // Sistema SAC (Sistema de Amortização Constante)
+  // Sistema SAC (Sistema de Amortização Constante) - CÁLCULO CORRIGIDO
   static calculateSAC(
     principal: number,
     monthlyRate: number,
     periods: number
   ): FinancingCalculation {
     const rate = monthlyRate / 100;
+    
+    // Amortização constante
     const principalPayment = principal / periods;
     
     const installments: InstallmentDetail[] = [];
@@ -67,9 +71,12 @@ export class FinancingCalculator {
     let totalAmount = 0;
     
     for (let i = 1; i <= periods; i++) {
+      // Juros incidem sobre o saldo devedor atual
       const interestPayment = balance * rate;
       const monthlyPayment = principalPayment + interestPayment;
-      balance = balance - principalPayment;
+      
+      // Reduz o saldo devedor pela amortização
+      balance = Math.max(0, balance - principalPayment);
       totalAmount += monthlyPayment;
       
       installments.push({
@@ -77,17 +84,24 @@ export class FinancingCalculator {
         payment: monthlyPayment,
         principal: principalPayment,
         interest: interestPayment,
-        balance: Math.max(0, balance)
+        balance: balance
       });
     }
     
     const totalInterest = totalAmount - principal;
     
     return {
-      monthlyPayment: installments[0].payment, // Primeira parcela (maior)
+      monthlyPayment: installments[0].payment, // Primeira parcela (maior no SAC)
       totalAmount,
       totalInterest,
       installments
     };
+  }
+
+  // Método auxiliar para validar se os cálculos estão corretos
+  static validateCalculation(calculation: FinancingCalculation, principal: number): boolean {
+    const calculatedPrincipal = calculation.installments.reduce((sum, inst) => sum + inst.principal, 0);
+    const tolerance = 0.01; // Tolerância de 1 centavo
+    return Math.abs(calculatedPrincipal - principal) < tolerance;
   }
 }

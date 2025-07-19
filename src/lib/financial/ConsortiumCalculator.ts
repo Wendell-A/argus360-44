@@ -17,6 +17,7 @@ export interface ConsortiumCalculation {
   totalFundCost: number;
   totalCost: number;
   installments: number;
+  monthlyAmortization: number;
 }
 
 export class ConsortiumCalculator {
@@ -32,19 +33,22 @@ export class ConsortiumCalculator {
     // Valor da carta de crédito (valor do bem menos entrada)
     const creditLetter = assetValue - downPayment;
     
-    // Taxa de administração mensal sobre a carta de crédito
-    const adminFee = (creditLetter * adminRate) / 100;
+    // CORREÇÃO: Taxa de administração é aplicada sobre o montante total e dividida pelas parcelas
+    // Taxa administrativa total sobre o valor da carta de crédito
+    const totalAdminCost = (creditLetter * adminRate) / 100;
+    const adminFee = totalAdminCost / installments;
     
-    // Taxa do fundo de reserva mensal sobre a carta de crédito
+    // Taxa do fundo de reserva mensal sobre a carta de crédito (esta continua mensal)
     const fundFee = (creditLetter * fundRate) / 100;
-    
-    // Parcela mensal (carta de crédito / número de parcelas + taxas)
-    const creditInstallment = creditLetter / installments;
-    const monthlyPayment = creditInstallment + adminFee + fundFee;
-    
-    // Custos totais
-    const totalAdminCost = adminFee * installments;
     const totalFundCost = fundFee * installments;
+    
+    // Amortização mensal da carta de crédito
+    const monthlyAmortization = creditLetter / installments;
+    
+    // Parcela mensal total (amortização + taxa admin + taxa fundo)
+    const monthlyPayment = monthlyAmortization + adminFee + fundFee;
+    
+    // Custo total do consórcio
     const totalCost = creditLetter + totalAdminCost + totalFundCost;
 
     return {
@@ -56,7 +60,8 @@ export class ConsortiumCalculator {
       totalAdminCost,
       totalFundCost,
       totalCost,
-      installments
+      installments,
+      monthlyAmortization
     };
   }
 }
