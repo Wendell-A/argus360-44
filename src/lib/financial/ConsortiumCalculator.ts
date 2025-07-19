@@ -49,8 +49,8 @@ export class ConsortiumCalculator {
     // Amortização mensal da carta de crédito (para referência)
     const monthlyAmortization = creditLetter / installments;
     
-    // Custo total usando a nova fórmula
-    const totalCost = totalWithAdminFee + totalFundCost;
+    // Custo total = parcela mensal × número de parcelas + fundo de reserva
+    const totalCost = (monthlyPayment * installments) + totalFundCost;
 
     return {
       creditValue: assetValue,

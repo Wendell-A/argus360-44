@@ -205,10 +205,14 @@ export type Database = {
           base_amount: number
           commission_amount: number
           commission_rate: number
+          commission_type: string | null
           created_at: string | null
           due_date: string
           id: string
+          installment_amount: number | null
+          installment_number: number | null
           notes: string | null
+          parent_commission_id: string | null
           payment_date: string | null
           payment_method: string | null
           payment_reference: string | null
@@ -218,6 +222,7 @@ export type Database = {
           settings: Json | null
           status: string | null
           tenant_id: string
+          total_installments: number | null
           updated_at: string | null
         }
         Insert: {
@@ -225,10 +230,14 @@ export type Database = {
           base_amount: number
           commission_amount: number
           commission_rate: number
+          commission_type?: string | null
           created_at?: string | null
           due_date: string
           id?: string
+          installment_amount?: number | null
+          installment_number?: number | null
           notes?: string | null
+          parent_commission_id?: string | null
           payment_date?: string | null
           payment_method?: string | null
           payment_reference?: string | null
@@ -238,6 +247,7 @@ export type Database = {
           settings?: Json | null
           status?: string | null
           tenant_id: string
+          total_installments?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -245,10 +255,14 @@ export type Database = {
           base_amount?: number
           commission_amount?: number
           commission_rate?: number
+          commission_type?: string | null
           created_at?: string | null
           due_date?: string
           id?: string
+          installment_amount?: number | null
+          installment_number?: number | null
           notes?: string | null
+          parent_commission_id?: string | null
           payment_date?: string | null
           payment_method?: string | null
           payment_reference?: string | null
@@ -258,6 +272,7 @@ export type Database = {
           settings?: Json | null
           status?: string | null
           tenant_id?: string
+          total_installments?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -273,6 +288,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_commissions_parent"
+            columns: ["parent_commission_id"]
+            isOneToOne: false
+            referencedRelation: "commissions"
             referencedColumns: ["id"]
           },
         ]
@@ -831,6 +853,60 @@ export type Database = {
           },
           {
             foreignKeyName: "sales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_commissions: {
+        Row: {
+          commission_rate: number
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_sale_value: number | null
+          min_sale_value: number | null
+          product_id: string
+          seller_id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          commission_rate: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_sale_value?: number | null
+          min_sale_value?: number | null
+          product_id: string
+          seller_id: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_sale_value?: number | null
+          min_sale_value?: number | null
+          product_id?: string
+          seller_id?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_seller_commissions_product"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "consortium_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_seller_commissions_tenant"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
