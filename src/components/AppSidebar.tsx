@@ -15,7 +15,8 @@ import {
   UsersIcon,
   Building,
   LogOut,
-  Calculator
+  Calculator,
+  Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -52,6 +53,7 @@ const managementItems = [
   { title: "Escritórios", url: "/escritorios", icon: Building },
   { title: "Equipes", url: "/equipes", icon: UsersIcon },
   { title: "Departamentos", url: "/departamentos", icon: Building2 },
+  { title: "Cargos", url: "/cargos", icon: Briefcase },
 ];
 
 const configItems = [
@@ -139,7 +141,6 @@ export function AppSidebar() {
                 avatarUrl={currentUser?.avatar_url}
                 fullName={currentUser?.full_name || 'Usuário'}
                 size="md"
-                className="shrink-0"
               />
               {!collapsed && currentUser && (
                 <div className="flex-1 min-w-0">

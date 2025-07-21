@@ -22,7 +22,6 @@ const SimulacaoConsorcio = () => {
   const [selectedProduct, setSelectedProduct] = useState<ExtendedConsortiumProduct | null>(null);
   const [adminRate, setAdminRate] = useState<number>(18);
   const [inccRate, setInccRate] = useState<number>(0.5);
-  const [fundRate, setFundRate] = useState<number>(0.15);
 
   // Estados para Financiamento
   const [financingValue, setFinancingValue] = useState<number>(300000);
@@ -52,7 +51,6 @@ const SimulacaoConsorcio = () => {
     if (selectedProduct) {
       setConsortiumTerm(selectedProduct.installments);
       setAdminRate(selectedProduct.administration_fee);
-      setFundRate(selectedProduct.reserve_fund_rate || 0.15);
       
       if (selectedProduct.min_credit_value && selectedProduct.max_credit_value) {
         setConsortiumCreditValue((selectedProduct.min_credit_value + selectedProduct.max_credit_value) / 2);
@@ -88,7 +86,6 @@ const SimulacaoConsorcio = () => {
     installments: consortiumTerm,
     downPayment: 0,
     adminRate,
-    fundRate,
     inccRate
   });
 
@@ -272,10 +269,6 @@ const SimulacaoConsorcio = () => {
                   <div className="flex justify-between">
                     <span>Ajuste INCC:</span>
                     <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.inccAdjustment)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Fundo de Reserva:</span>
-                    <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.totalFundCost)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
                     <span>Total a Pagar:</span>

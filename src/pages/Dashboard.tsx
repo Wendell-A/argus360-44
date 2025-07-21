@@ -1,332 +1,354 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MetricCard } from "@/components/MetricCard";
+import React from 'react';
 import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  DollarSign,
-  Target,
-  Calendar,
-  BarChart3,
-  Activity
-} from "lucide-react";
-import {
-  LineChart,
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Calendar, TrendingUp, DollarSign, Users, Target, Award, ShoppingCart, BarChart3 } from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  LineChart, 
   Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell
-} from "recharts";
-import { useSales } from "@/hooks/useSales";
-import { useVendedores } from "@/hooks/useVendedores";
-import { useConsortiumProducts } from "@/hooks/useConsortiumProducts";
-import { useCommissions } from "@/hooks/useCommissions";
-import { useGoals } from "@/hooks/useGoals";
-import { useMemo } from "react";
+} from 'recharts';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGoals, useGoalStats } from '@/hooks/useGoals';
 
-export default function Dashboard() {
-  const { sales } = useSales();
-  const { vendedores } = useVendedores();
-  const { products } = useConsortiumProducts();
-  const { commissions } = useCommissions();
-  const { goals } = useGoals();
+interface MetricCardProps {
+  title: string;
+  value: string;
+  description: string;
+  icon: React.ReactNode;
+  trend: number;
+}
 
-  // Calcular métricas em tempo real
-  const metrics = useMemo(() => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
-    const currentMonthSales = sales.filter(sale => {
-      const saleDate = new Date(sale.sale_date);
-      return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
-    });
+const MetricCard: React.FC<MetricCardProps> = ({ title, value, description, icon, trend }) => {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <CardDescription>
+          {description}
+          {trend !== 0 && (
+            <span className={`ml-2 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {trend > 0 ? '▲' : '▼'} {Math.abs(trend)}%
+            </span>
+          )}
+        </CardDescription>
+      </CardContent>
+    </Card>
+  );
+};
 
-    const approvedSales = sales.filter(sale => sale.status === 'approved');
-    const totalRevenue = approvedSales.reduce((sum, sale) => sum + (sale.sale_value || 0), 0);
-    const activeVendedores = vendedores.filter(v => {
-      const settings = v.settings as any || {};
-      return settings.active !== false;
-    }).length;
+const Dashboard = () => {
+  const { activeTenant } = useAuth();
+  const { goals, isLoading: goalsLoading } = useGoals();
+  const { goalStats, isLoading: statsLoading } = useGoalStats();
 
-    // Calcular progresso das metas ativas
-    const activeGoals = goals.filter(goal => 
-      goal.status === 'active' && 
-      new Date(goal.period_start) <= new Date() && 
-      new Date(goal.period_end) >= new Date()
+  // Dados mock para os gráficos (enquanto a API não está pronta)
+  const mockVendasMensais = [
+    { month: 'Jan', vendas: 45000, comissoes: 4500 },
+    { month: 'Fev', vendas: 52000, comissoes: 5200 },
+    { month: 'Mar', vendas: 48000, comissoes: 4800 },
+    { month: 'Abr', vendas: 55000, comissoes: 5500 },
+    { month: 'Mai', vendas: 60000, comissoes: 6000 },
+    { month: 'Jun', vendas: 58000, comissoes: 5800 },
+  ];
+
+  // Calcular estatísticas reais das metas
+  const totalGoals = goals.length;
+  const activeGoals = goals.filter(goal => goal.status === 'active').length;
+  const completedGoals = goals.filter(goal => goal.current_amount >= goal.target_amount).length;
+  const goalCompletionRate = activeGoals > 0 ? (completedGoals / activeGoals) * 100 : 0;
+
+  // Calcular progresso médio das metas ativas
+  const activeGoalsList = goals.filter(goal => goal.status === 'active');
+  const averageProgress = activeGoalsList.length > 0 
+    ? activeGoalsList.reduce((sum, goal) => sum + (goal.current_amount / goal.target_amount), 0) / activeGoalsList.length * 100
+    : 0;
+
+  // Preparar dados para o gráfico de vendas mensais com cores corretas
+  const vendasMensais = [
+    { month: 'Jul', vendas: 35000, meta: 40000 },
+    { month: 'Ago', vendas: 42000, meta: 45000 },
+    { month: 'Set', vendas: 38000, meta: 42000 },
+    { month: 'Out', vendas: 51000, meta: 48000 },
+    { month: 'Nov', vendas: 47000, meta: 50000 },
+    { month: 'Dez', vendas: 49000, meta: 52000 },
+  ];
+
+  const comissoesMensais = [
+    { month: 'Jul', comissoes: 3500, meta: 4000 },
+    { month: 'Ago', comissoes: 4200, meta: 4500 },
+    { month: 'Set', comissoes: 3800, meta: 4200 },
+    { month: 'Out', comissoes: 5100, meta: 4800 },
+    { month: 'Nov', comissoes: 4700, meta: 5000 },
+    { month: 'Dez', comissoes: 4900, meta: 5200 },
+  ];
+
+  // Dados para o gráfico de pizza dos vendedores
+  const topVendedores = [
+    { name: 'João Silva', value: 85000, color: '#10b981' },
+    { name: 'Maria Santos', value: 72000, color: '#3b82f6' },
+    { name: 'Pedro Costa', value: 68000, color: '#f59e0b' },
+    { name: 'Ana Oliveira', value: 54000, color: '#ef4444' },
+  ];
+
+  // Vendas recentes (simuladas)
+  const vendasRecentes = [
+    { 
+      cliente: 'Carlos Mendes', 
+      vendedor: 'João Silva', 
+      valor: 'R$ 280.000', 
+      comissao: 'R$ 14.000',
+      data: '2 dias atrás'
+    },
+    { 
+      cliente: 'Lucia Ferreira', 
+      vendedor: 'Maria Santos', 
+      valor: 'R$ 320.000', 
+      comissao: 'R$ 16.000',
+      data: '3 dias atrás'
+    },
+    { 
+      cliente: 'Roberto Lima', 
+      vendedor: 'Pedro Costa', 
+      valor: 'R$ 450.000', 
+      comissao: 'R$ 22.500',
+      data: '5 dias atrás'
+    },
+  ];
+
+  if (goalsLoading || statsLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
     );
-
-    const totalGoalProgress = activeGoals.length > 0 ? 
-      activeGoals.reduce((sum, goal) => sum + (goal.current_amount / goal.target_amount), 0) / activeGoals.length * 100 : 0;
-
-    return {
-      currentMonthSales: currentMonthSales.length,
-      totalRevenue,
-      activeVendedores,
-      goalProgress: Math.min(totalGoalProgress, 100),
-      activeGoalsCount: activeGoals.length,
-    };
-  }, [sales, vendedores, goals]);
-
-  // Dados para gráfico de vendas por mês
-  const salesData = useMemo(() => {
-    const monthlyData = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - (5 - i));
-      const month = date.toLocaleDateString('pt-BR', { month: 'short' });
-      
-      const monthSales = sales.filter(sale => {
-        const saleDate = new Date(sale.sale_date);
-        return saleDate.getMonth() === date.getMonth() && 
-               saleDate.getFullYear() === date.getFullYear();
-      });
-
-      // Buscar meta do mês correspondente
-      const monthGoals = goals.filter(goal => {
-        const goalStart = new Date(goal.period_start);
-        const goalEnd = new Date(goal.period_end);
-        return goalStart <= date && goalEnd >= date && goal.status === 'active';
-      });
-
-      const monthlyGoalTarget = monthGoals.reduce((sum, goal) => sum + goal.target_amount, 0);
-
-      return {
-        name: month,
-        vendas: monthSales.length,
-        meta: monthlyGoalTarget > 0 ? monthlyGoalTarget / 10000 : 15, // Dividir por 10000 para ajustar escala
-      };
-    });
-
-    return monthlyData;
-  }, [sales, goals]);
-
-  // Dados para gráfico de categorias
-  const categoryData = useMemo(() => {
-    const categoryCount = {};
-    
-    sales.forEach(sale => {
-      const product = products.find(p => p.id === sale.product_id);
-      if (product) {
-        categoryCount[product.category] = (categoryCount[product.category] || 0) + 1;
-      }
-    });
-
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-    
-    return Object.entries(categoryCount).map(([category, count], index) => ({
-      name: category,
-      value: count,
-      color: colors[index % colors.length],
-    }));
-  }, [sales, products]);
-
-  // Dados para gráfico de metas
-  const goalsData = useMemo(() => {
-    const activeGoals = goals.filter(goal => 
-      goal.status === 'active' && 
-      new Date(goal.period_start) <= new Date() && 
-      new Date(goal.period_end) >= new Date()
-    );
-
-    return activeGoals.map(goal => ({
-      name: goal.goal_type === 'office' ? 'Escritório' : 'Individual',
-      atual: goal.current_amount,
-      meta: goal.target_amount,
-      progresso: Math.min((goal.current_amount / goal.target_amount) * 100, 100),
-    }));
-  }, [goals]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 lg:p-8 xl:p-12 w-full max-w-none">
+    <div className="min-h-screen bg-background">
+      <div className="p-4 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="mb-6 lg:mb-8 xl:mb-12">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1">Visão geral do seu negócio</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Janeiro 2024
+            </p>
+          </div>
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8 xl:mb-12">
+        {/* Métricas Principais */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <MetricCard
             title="Vendas do Mês"
-            value={metrics.currentMonthSales.toString()}
-            change="+12%"
-            changeType="positive"
-            icon={TrendingUp}
+            value="47"
+            description="vendas realizadas"
+            icon={<TrendingUp className="h-4 w-4" />}
+            trend={12}
           />
           <MetricCard
-            title="Receita Total"
-            value={formatCurrency(metrics.totalRevenue)}
-            change="+8%"
-            changeType="positive"
-            icon={DollarSign}
+            title="Comissões Pagas"
+            value="R$ 234.500"
+            description="valor total pago"
+            icon={<DollarSign className="h-4 w-4" />}
+            trend={8}
           />
           <MetricCard
             title="Vendedores Ativos"
-            value={metrics.activeVendedores.toString()}
-            change="+2"
-            changeType="positive"
-            icon={Users}
+            value="24"
+            description="vendedores em atividade"
+            icon={<Users className="h-4 w-4" />}
+            trend={2}
           />
           <MetricCard
-            title="Progresso das Metas"
-            value={`${metrics.goalProgress.toFixed(0)}%`}
-            change={metrics.goalProgress > 75 ? "+5%" : "-5%"}
-            changeType={metrics.goalProgress > 75 ? "positive" : "negative"}
-            icon={Target}
+            title="Meta Mensal"
+            value={`${goalCompletionRate.toFixed(1)}%`}
+            description="da meta atingida"
+            icon={<Target className="h-4 w-4" />}
+            trend={goalCompletionRate >= 80 ? 15 : -5}
           />
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8 xl:mb-12">
-          {/* Sales Chart */}
-          <Card className="xl:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
-                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-                Vendas vs Meta
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Gráfico de Vendas Mensais */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Vendas Mensais
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 sm:h-80 lg:h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="vendas" fill="#3b82f6" name="Vendas" />
-                    <Bar dataKey="meta" fill="#e5e7eb" name="Meta" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={vendasMensais}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="vendas" fill="#10b981" name="Vendas" />
+                  <Bar dataKey="meta" fill="#3b82f6" name="Meta" />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Category Distribution */}
+          {/* Gráfico de Comissões */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
-                <Activity className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-                Vendas por Categoria
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Evolução das Comissões
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 sm:h-80 lg:h-96">
-                {categoryData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    Sem dados de vendas para exibir
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={comissoesMensais}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="comissoes" stroke="#10b981" strokeWidth={2} name="Comissões" />
+                  <Line type="monotone" dataKey="meta" stroke="#3b82f6" strokeWidth={2} name="Meta" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Seção Inferior - Top Vendedores e Vendas Recentes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Vendedores */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Top Vendedores
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={topVendedores}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {topVendedores.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Vendas Recentes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Vendas Recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {vendasRecentes.map((venda, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                    <div>
+                      <div className="font-medium">{venda.cliente}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Vendedor: {venda.vendedor}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">{venda.valor}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Comissão: {venda.comissao}
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {venda.data}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Goals and Performance */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8 xl:mb-12">
-          {/* Goals Progress */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
-                <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-                Progresso das Metas
+        {/* Estatísticas das Metas */}
+        {totalGoals > 0 && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Estatísticas das Metas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 sm:h-80 lg:h-96">
-                {goalsData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={goalsData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                      <Bar dataKey="atual" fill="#10b981" name="Atual" />
-                      <Bar dataKey="meta" fill="#e5e7eb" name="Meta" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    Nenhuma meta ativa encontrada
-                  </div>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{totalGoals}</div>
+                  <div className="text-sm text-muted-foreground">Total de Metas</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{activeGoals}</div>
+                  <div className="text-sm text-muted-foreground">Metas Ativas</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{completedGoals}</div>
+                  <div className="text-sm text-muted-foreground">Metas Concluídas</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">{averageProgress.toFixed(1)}%</div>
+                  <div className="text-sm text-muted-foreground">Progresso Médio</div>
+                </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Performance Trend */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-                Tendência de Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 sm:h-80 lg:h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="vendas" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      name="Vendas"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="meta" 
-                      stroke="#10b981" 
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      name="Meta"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
     </div>
   );
+};
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 }
+
+export default Dashboard;

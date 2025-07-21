@@ -4,7 +4,6 @@ export interface ConsortiumCalculationParams {
   installments: number;
   downPayment?: number;
   adminRate: number;
-  fundRate: number;
   inccRate?: number; // Taxa INCC anual
 }
 
@@ -13,9 +12,7 @@ export interface ConsortiumCalculation {
   creditLetter: number;
   monthlyPayment: number;
   adminFee: number;
-  fundFee: number;
   totalAdminCost: number;
-  totalFundCost: number;
   totalCost: number;
   installments: number;
   monthlyAmortization: number;
@@ -30,7 +27,6 @@ export class ConsortiumCalculator {
       installments,
       downPayment = 0,
       adminRate,
-      fundRate,
       inccRate = 0
     } = params;
 
@@ -40,25 +36,17 @@ export class ConsortiumCalculator {
     // Cálculo da taxa administrativa total
     const totalAdminCost = (creditLetter * adminRate) / 100;
     
-    // Valor base da parcela (carta de crédito + taxa administrativa) dividido pelas parcelas
-    const baseMonthlyPayment = (creditLetter + totalAdminCost) / installments;
-    
-    // Taxa do fundo de reserva mensal sobre a carta de crédito
-    const fundFee = (creditLetter * fundRate) / 100;
-    const totalFundCost = fundFee * installments;
-    
     // Cálculo do ajuste INCC (aplicado anualmente sobre o saldo devedor)
     // Aproximação: INCC aplicado sobre o valor médio do saldo devedor
     const averageBalance = creditLetter / 2; // Saldo médio durante o período
     const yearsInContract = installments / 12;
     const inccAdjustment = (averageBalance * (inccRate / 100)) * yearsInContract;
     
-    // Parcela mensal final: parcela base + fundo de reserva + ajuste INCC mensal
-    const monthlyInccAdjustment = inccAdjustment / installments;
-    const monthlyPayment = baseMonthlyPayment + fundFee + monthlyInccAdjustment;
-    
     // Valor total com INCC
-    const totalWithIncc = creditLetter + totalAdminCost + totalFundCost + inccAdjustment;
+    const totalWithIncc = creditLetter + totalAdminCost + inccAdjustment;
+    
+    // Parcela mensal: (carta de crédito + taxa administrativa + ajuste INCC) / número de parcelas
+    const monthlyPayment = totalWithIncc / installments;
     
     // Amortização mensal da carta de crédito (para referência)
     const monthlyAmortization = creditLetter / installments;
@@ -74,9 +62,7 @@ export class ConsortiumCalculator {
       creditLetter,
       monthlyPayment,
       adminFee,
-      fundFee,
       totalAdminCost,
-      totalFundCost,
       totalCost,
       installments,
       monthlyAmortization,
