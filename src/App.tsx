@@ -4,7 +4,7 @@ import {
   Routes,
   Route,
 } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -27,9 +27,9 @@ import Permissoes from "./pages/Permissoes";
 import Configuracoes from "./pages/Configuracoes";
 import Auditoria from "./pages/Auditoria";
 import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import PublicRoute from "./components/auth/PublicRoute";
-import ProtectedLayout from "./components/layout/ProtectedLayout";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { PublicRoute } from "./components/auth/PublicRoute";
+import { ProtectedLayout } from "./components/layout/ProtectedLayout";
 import Cargos from "./pages/Cargos";
 
 // Configurar QueryClient
@@ -52,7 +52,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <ThemeProvider>
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Landing />} />
