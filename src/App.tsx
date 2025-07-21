@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ProtectedLayout } from "@/components/layout/ProtectedLayout";
 
 // Pages
 import Index from "@/pages/Index";
@@ -49,23 +50,25 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
-              {/* Protected Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/vendas" element={<Vendas />} />
-              <Route path="/clientes" element={<Clientes />} />
-              <Route path="/vendedores" element={<Vendedores />} />
-              <Route path="/comissoes" element={<Comissoes />} />
-              <Route path="/metas" element={<Metas />} />
-              <Route path="/consorcios" element={<Consorcios />} />
-              <Route path="/simulacao-consorcio" element={<SimulacaoConsorcio />} />
-              <Route path="/relatorios" element={<Relatorios />} />
-              <Route path="/escritorios" element={<Escritorios />} />
-              <Route path="/equipes" element={<Equipes />} />
-              <Route path="/departamentos" element={<Departamentos />} />
-              <Route path="/permissoes" element={<Permissoes />} />
-              <Route path="/configuracoes" element={<Configuracoes />} />
-              <Route path="/auditoria" element={<Auditoria />} />
+              {/* Protected Routes with Layout */}
+              <Route path="/" element={<ProtectedLayout />}>
+                <Route index element={<Index />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="vendas" element={<Vendas />} />
+                <Route path="clientes" element={<Clientes />} />
+                <Route path="vendedores" element={<Vendedores />} />
+                <Route path="comissoes" element={<Comissoes />} />
+                <Route path="metas" element={<Metas />} />
+                <Route path="consorcios" element={<Consorcios />} />
+                <Route path="simulacao-consorcio" element={<SimulacaoConsorcio />} />
+                <Route path="relatorios" element={<Relatorios />} />
+                <Route path="escritorios" element={<Escritorios />} />
+                <Route path="equipes" element={<Equipes />} />
+                <Route path="departamentos" element={<Departamentos />} />
+                <Route path="permissoes" element={<Permissoes />} />
+                <Route path="configuracoes" element={<Configuracoes />} />
+                <Route path="auditoria" element={<Auditoria />} />
+              </Route>
 
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
