@@ -57,14 +57,14 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
+    <Card className="hover:shadow-lg transition-shadow duration-200 bg-card border-border">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
             <span className="text-2xl">{getCategoryIcon(product.category)}</span>
             <div>
-              <CardTitle className="text-lg">{product.name}</CardTitle>
-              <p className="text-sm text-gray-600 capitalize">{product.category}</p>
+              <CardTitle className="text-lg text-card-foreground">{product.name}</CardTitle>
+              <p className="text-sm text-muted-foreground capitalize">{product.category}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -77,7 +77,7 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-card border-border">
                 <DropdownMenuItem onClick={() => onView(product)}>
                   <Eye className="w-4 h-4 mr-2" />
                   Visualizar
@@ -96,20 +96,20 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
         {/* Informações principais */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Prazo</p>
-            <p className="font-semibold">{product.installments} meses</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Prazo</p>
+            <p className="font-semibold text-card-foreground">{product.installments} meses</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Taxa ADM</p>
-            <p className="font-semibold">{product.administration_fee}%</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Taxa ADM</p>
+            <p className="font-semibold text-card-foreground">{product.administration_fee}%</p>
           </div>
         </div>
 
         {/* Faixa de crédito */}
         {(product.min_credit_value || product.max_credit_value) && (
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Faixa de Crédito</p>
-            <p className="font-semibold">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Faixa de Crédito</p>
+            <p className="font-semibold text-card-foreground">
               {product.min_credit_value ? formatCurrency(product.min_credit_value) : 'N/A'} a {' '}
               {product.max_credit_value ? formatCurrency(product.max_credit_value) : 'N/A'}
             </p>
@@ -118,8 +118,8 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
 
         {/* Comissão */}
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Comissão</p>
-          <p className="font-semibold flex items-center gap-1">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Comissão</p>
+          <p className="font-semibold flex items-center gap-1 text-card-foreground">
             <Percent className="w-3 h-3" />
             {product.commission_rate}%
           </p>
@@ -129,20 +129,20 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
         <div className="grid grid-cols-3 gap-2">
           {product.advance_fee_rate && product.advance_fee_rate > 0 && (
             <div>
-              <p className="text-xs text-gray-500">Taxa Antecipada</p>
-              <p className="text-sm font-medium">{product.advance_fee_rate}%</p>
+              <p className="text-xs text-muted-foreground">Taxa Antecipada</p>
+              <p className="text-sm font-medium text-card-foreground">{product.advance_fee_rate}%</p>
             </div>
           )}
           {product.reserve_fund_rate && product.reserve_fund_rate > 0 && (
             <div>
-              <p className="text-xs text-gray-500">Fundo Reserva</p>
-              <p className="text-sm font-medium">{product.reserve_fund_rate}%</p>
+              <p className="text-xs text-muted-foreground">Fundo Reserva</p>
+              <p className="text-sm font-medium text-card-foreground">{product.reserve_fund_rate}%</p>
             </div>
           )}
           {product.embedded_bid_rate && product.embedded_bid_rate > 0 && (
             <div>
-              <p className="text-xs text-gray-500">Lance Embutido</p>
-              <p className="text-sm font-medium">{product.embedded_bid_rate}%</p>
+              <p className="text-xs text-muted-foreground">Lance Embutido</p>
+              <p className="text-sm font-medium text-card-foreground">{product.embedded_bid_rate}%</p>
             </div>
           )}
         </div>
@@ -150,10 +150,10 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
         {/* Modalidades de contemplação */}
         {contemplationModes.length > 0 && (
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Modalidades</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Modalidades</p>
             <div className="flex flex-wrap gap-1">
               {contemplationModes.map((mode) => (
-                <Badge key={mode} variant="outline" className="text-xs">
+                <Badge key={mode} variant="outline" className="text-xs bg-secondary text-secondary-foreground border-border">
                   {contemplationLabels[mode as keyof typeof contemplationLabels] || mode}
                 </Badge>
               ))}
@@ -162,16 +162,16 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
         )}
 
         {/* Informações adicionais */}
-        <div className="flex justify-between items-center pt-2 border-t">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex justify-between items-center pt-2 border-t border-border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Reajuste: {product.adjustment_index || 'INCC'}</span>
           </div>
         </div>
 
         {product.description && (
-          <div className="pt-2 border-t">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Descrição</p>
-            <p className="text-sm text-gray-700 line-clamp-2">{product.description}</p>
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Descrição</p>
+            <p className="text-sm text-card-foreground line-clamp-2">{product.description}</p>
           </div>
         )}
       </CardContent>
