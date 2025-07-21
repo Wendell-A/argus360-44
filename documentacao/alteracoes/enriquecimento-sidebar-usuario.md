@@ -1,114 +1,119 @@
 
 # Enriquecimento do Sidebar com Dados do Usuário
 
-## Resumo das Alterações
-Esta implementação enriqueceu o `AppSidebar.tsx` com dados completos do usuário e tenant, além de adicionar funcionalidade de logout seguro.
+## Resumo
+Implementação de melhorias no AppSidebar.tsx para exibir informações completas do usuário logado e dados do tenant, incluindo foto/iniciais, nome, cargo, departamento e escritório.
 
 ## Alterações Realizadas
 
-### 1. Correção de Erros de Build
-**Arquivo**: `src/hooks/useCurrentUser.ts`
-- **Problema**: Erro de tipagem na propriedade `office`
-- **Solução**: Corrigida tipagem para retornar `undefined` quando não há office
-- **Mudança**: Busca separada para departamento e tratamento adequado de dados nulos
+### 1. Hook useCurrentUser (`src/hooks/useCurrentUser.ts`)
+**Criado:** Hook personalizado para buscar dados completos do usuário logado
 
-### 2. Hook `useCurrentUser`
-**Arquivo**: `src/hooks/useCurrentUser.ts`
-- **Funcionalidade**: Busca dados completos do usuário logado
-- **Dados retornados**:
-  - ID, email e nome completo
-  - URL do avatar ou iniciais
-  - Escritório (id, nome, tipo)
-  - Departamento (id, nome)
-  - Cargo/role do usuário
-- **Integração**: Com `AuthContext` para tenant ativo
+**Funcionalidades:**
+- Busca dados do usuário na tabela `office_users` com relacionamento para `offices`
+- Busca dados do departamento na tabela `departments`
+- Retorna informações consolidadas do usuário (nome, email, cargo, escritório, departamento)
+- Utiliza React Query para cache e gerenciamento de estado
+- Tratamento de erros adequado
 
-### 3. Componente `UserAvatar`
-**Arquivo**: `src/components/UserAvatar.tsx`
-- **Funcionalidade**: Exibe avatar do usuário ou iniciais
-- **Props**: `avatarUrl`, `fullName`, `size`
-- **Tamanhos**: sm, md, lg
-- **Fallback**: Iniciais do nome quando não há avatar
+**Correções aplicadas:**
+- **v1.1:** Corrigido erro de tipagem "Type instantiation is excessively deep" através da simplificação das interfaces TypeScript
+- Separação das interfaces `OfficeData` e `DepartmentData` para evitar referências circulares
+- Tipagem explícita da função `queryFn` como `Promise<CurrentUserData>`
 
-### 4. Enriquecimento do Sidebar
-**Arquivo**: `src/components/AppSidebar.tsx`
+**Dados retornados:**
+```typescript
+interface CurrentUserData {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url?: string;
+  office?: OfficeData;
+  department?: DepartmentData;
+  role?: string;
+}
+```
 
-#### Dados do Tenant
-- Nome do tenant substituindo "Argus360"
-- Mantido fallback para "Argus360" quando não há tenant
+### 2. Componente UserAvatar (`src/components/UserAvatar.tsx`)
+**Criado:** Componente para exibir avatar do usuário ou iniciais
 
-#### Seção do Usuário
-- **Avatar**: Foto ou iniciais do usuário
-- **Nome**: Nome completo do usuário
-- **Cargo**: Role traduzido (Administrador, Gerente, Vendedor, Usuário)
-- **Departamento**: Nome do departamento (se existir)
-- **Escritório**: Nome do escritório (se existir)
-- **Loading**: Skeleton durante carregamento
+**Funcionalidades:**
+- Exibe foto do usuário se disponível
+- Fallback para iniciais do nome (primeiras letras do primeiro e último nome)
+- Design consistente com o tema do sistema
+- Tamanhos configuráveis (sm, md, lg)
 
-#### Função de Logout Seguro
-- **Botão**: Adicionado no footer do sidebar
-- **Funcionalidade**:
-  - Chama `signOut()` do `AuthContext`
-  - Limpa cache local (localStorage, sessionStorage)
-  - Redireciona para `/auth/login`
-  - Tratamento de erro com redirecionamento forçado
-- **Segurança**: Logout completo mesmo em caso de erro
+**Props:**
+- `user`: dados do usuário atual
+- `size`: tamanho do avatar ('sm' | 'md' | 'lg')
 
-### 5. Melhorias na Interface
-- **Responsividade**: Elementos se adaptam ao estado collapsed/expanded
-- **Estados de Loading**: Skeletons durante carregamento
-- **Truncamento**: Textos longos são truncados adequadamente
-- **Hierarquia Visual**: Informações organizadas por importância
+### 3. AppSidebar Atualizado (`src/components/AppSidebar.tsx`)
+**Modificado:** Enriquecimento com dados do usuário e tenant
 
-## Componentes Afetados
+**Novas funcionalidades adicionadas:**
+- **Seção de Perfil do Usuário:**
+  - Avatar/iniciais do usuário
+  - Nome completo
+  - Cargo/função
+  - Departamento (se disponível)
+  - Escritório atual
+- **Nome do Tenant:** Substituição de "Argos360" pelo nome real do tenant
+- **Botão de Logout:** Implementação segura de logout com limpeza de cache
 
-### Arquivos Criados
-- `src/hooks/useCurrentUser.ts`
-- `src/components/UserAvatar.tsx`
+**Segurança do Logout:**
+- Chama `signOut()` do AuthContext (limpa tokens do Supabase)
+- Invalida todas as queries do React Query
+- Redirecionamento automático para página de login
+- Prevenção contra ataques de sessão
 
-### Arquivos Modificados
-- `src/components/AppSidebar.tsx`
+**Layout preservado:**
+- Mantidas todas as funcionalidades existentes
+- Menu de navegação inalterado
+- Apenas adicionadas as novas seções de informações do usuário
 
-### Dependências Utilizadas
-- `@tanstack/react-query` para cache de dados
-- `lucide-react` para ícones
-- `react-router-dom` para navegação
-- Componentes UI existentes (Button, Skeleton, etc.)
+## Estrutura de Dados Utilizadas
 
-## Banco de Dados Consultado
+### Tabelas do Banco de Dados:
+1. **office_users:** Relacionamento usuário-escritório com cargo
+2. **offices:** Dados dos escritórios (nome, tipo)
+3. **departments:** Departamentos disponíveis
+4. **profiles:** Perfil básico do usuário (via AuthContext)
 
-### Tabelas
-- `office_users`: Relação usuário-escritório com role
-- `offices`: Dados do escritório (nome, tipo)
-- `departments`: Dados do departamento
-- `tenant_users`: Relação usuário-tenant (via AuthContext)
+### Fluxo de Dados:
+1. AuthContext fornece dados básicos do usuário e tenant
+2. useCurrentUser busca dados complementares via Supabase
+3. Componentes exibem informações consolidadas
 
-### Campos Utilizados
-- **office_users**: `user_id`, `tenant_id`, `role`, `active`
-- **offices**: `id`, `name`, `type`
-- **departments**: `id`, `name`, `active`
+## Arquivos Criados/Modificados
 
-## Segurança Implementada
+### Criados:
+- `src/hooks/useCurrentUser.ts` - Hook para dados do usuário
+- `src/components/UserAvatar.tsx` - Componente de avatar
+- `documentacao/alteracoes/enriquecimento-sidebar-usuario.md` - Esta documentação
 
-### Autenticação
-- Verificação de usuário logado antes de buscar dados
-- Verificação de tenant ativo
-- RLS (Row Level Security) nas consultas
+### Modificados:
+- `src/components/AppSidebar.tsx` - Adicionadas seções de perfil e logout
 
-### Logout Seguro
-- Limpeza completa de sessão
-- Remoção de dados locais
-- Redirecionamento forçado em caso de erro
-- Prevenção de ataques de sessão
+## Considerações Técnicas
 
-## Estados e Loading
-- Loading states com componentes Skeleton
-- Tratamento de erros nas consultas
-- Fallbacks para dados não encontrados
-- Refetch automático quando contexto muda
+### Performance:
+- Cache automático via React Query
+- Queries condicionais (só executa se usuário logado)
+- Reutilização de dados em diferentes componentes
+
+### Segurança:
+- RLS (Row Level Security) nas consultas Supabase
+- Logout seguro com limpeza completa de sessão
+- Validação de permissões via tenant_id
+
+### Manutenibilidade:
+- Hooks reutilizáveis
+- Componentes pequenos e focados
+- Tipagem TypeScript completa
+- Documentação detalhada
 
 ## Próximos Passos Sugeridos
-1. Implementar cache TTL para dados do usuário
-2. Adicionar menu dropdown no avatar para configurações
-3. Implementar notificações de logout
-4. Adicionar confirmação antes do logout
+1. Implementar cache local para avatar do usuário
+2. Adicionar configurações de perfil do usuário
+3. Implementar upload de foto de perfil
+4. Adicionar indicadores de status online/offline

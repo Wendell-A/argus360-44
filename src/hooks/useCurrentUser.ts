@@ -3,20 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface OfficeData {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface DepartmentData {
+  id: string;
+  name: string;
+}
+
 interface CurrentUserData {
   id: string;
   email: string;
   full_name: string;
   avatar_url?: string;
-  office?: {
-    id: string;
-    name: string;
-    type: string;
-  };
-  department?: {
-    id: string;
-    name: string;
-  };
+  office?: OfficeData;
+  department?: DepartmentData;
   role?: string;
 }
 
@@ -25,7 +29,7 @@ export function useCurrentUser() {
 
   const query = useQuery({
     queryKey: ['current-user', user?.id, activeTenant?.tenant_id],
-    queryFn: async () => {
+    queryFn: async (): Promise<CurrentUserData> => {
       if (!user?.id || !activeTenant?.tenant_id) {
         throw new Error('User or tenant not found');
       }
@@ -51,7 +55,7 @@ export function useCurrentUser() {
       }
 
       // Buscar departamento se o usuário tiver escritório
-      let departmentData = null;
+      let departmentData: DepartmentData | null = null;
       if (userData?.offices) {
         const { data: deptData, error: deptError } = await supabase
           .from('departments')
@@ -76,10 +80,7 @@ export function useCurrentUser() {
           name: userData.offices.name,
           type: userData.offices.type
         } : undefined,
-        department: departmentData ? {
-          id: departmentData.id,
-          name: departmentData.name
-        } : undefined,
+        department: departmentData || undefined,
         role: userData?.role || 'user',
       };
 
