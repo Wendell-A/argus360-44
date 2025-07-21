@@ -202,13 +202,12 @@ export default function Metas() {
 
       {/* Confirm Delete */}
       <ConfirmDialog
-        isOpen={!!deleteGoalId}
-        onClose={() => setDeleteGoalId(null)}
+        open={!!deleteGoalId}
+        onOpenChange={(open) => !open && setDeleteGoalId(null)}
         title="Excluir Meta"
         description="Tem certeza que deseja excluir esta meta? Esta ação não pode ser desfeita."
         onConfirm={handleDeleteGoal}
         isLoading={deleteGoal.isPending}
-        variant="destructive"
       />
     </div>
   );

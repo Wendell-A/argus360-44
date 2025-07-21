@@ -65,9 +65,9 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={cn("transition-all duration-200 bg-white border-r", collapsed ? "w-14" : "w-64")}>
+    <Sidebar className={cn("transition-all duration-200", collapsed ? "w-14" : "w-64")}>
       <SidebarContent className="bg-white border-r">
-        <div className="p-4 border-b bg-white">
+        <div className="p-4 border-b">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Building2 className="h-5 w-5 text-white" />
@@ -82,7 +82,7 @@ export function AppSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-600">Principal</SidebarGroupLabel>
+          <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -108,7 +108,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-600">Gestão</SidebarGroupLabel>
+          <SidebarGroupLabel>Gestão</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {managementItems.map((item) => (
@@ -134,7 +134,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-600">Sistema</SidebarGroupLabel>
+          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {configItems.map((item) => (
@@ -159,7 +159,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-4 border-t bg-white">
+        <div className="mt-auto p-4 border-t">
           <SidebarTrigger className="w-full" />
         </div>
       </SidebarContent>
