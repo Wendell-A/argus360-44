@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, 
@@ -28,6 +27,10 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { UserAvatar } from "@/components/UserAvatar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -56,12 +59,24 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const { activeTenant } = useAuth();
+  const { currentUser, isLoading } = useCurrentUser();
 
   const isActive = (path: string) => {
     if (path === "/dashboard") {
       return location.pathname === "/dashboard";
     }
     return location.pathname.startsWith(path);
+  };
+
+  const getRoleDisplayName = (role?: string) => {
+    const roleMap: Record<string, string> = {
+      admin: 'Administrador',
+      manager: 'Gerente',
+      seller: 'Vendedor',
+      user: 'Usuário'
+    };
+    return roleMap[role || 'user'] || 'Usuário';
   };
 
   return (
@@ -73,12 +88,56 @@ export function AppSidebar() {
               <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
             {!collapsed && (
-              <div>
-                <h2 className="text-lg font-semibold text-sidebar-foreground">Argus360</h2>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-semibold text-sidebar-foreground truncate">
+                  {activeTenant?.tenant_name || 'Argus360'}
+                </h2>
                 <p className="text-xs text-sidebar-foreground/70">Sistema de Vendas</p>
               </div>
             )}
           </div>
+        </div>
+
+        <div className="p-4 border-b border-sidebar-border">
+          {isLoading ? (
+            <div className="flex items-center space-x-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              {!collapsed && (
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center space-x-3">
+              <UserAvatar 
+                avatarUrl={currentUser?.avatar_url}
+                fullName={currentUser?.full_name || 'Usuário'}
+                size="md"
+              />
+              {!collapsed && currentUser && (
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-sidebar-foreground truncate">
+                    {currentUser.full_name}
+                  </div>
+                  <div className="text-xs text-sidebar-foreground/70 truncate">
+                    {getRoleDisplayName(currentUser.role)}
+                  </div>
+                  {currentUser.department && (
+                    <div className="text-xs text-sidebar-foreground/60 truncate">
+                      {currentUser.department.name}
+                    </div>
+                  )}
+                  {currentUser.office && (
+                    <div className="text-xs text-sidebar-foreground/60 truncate">
+                      {currentUser.office.name}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <SidebarGroup>
