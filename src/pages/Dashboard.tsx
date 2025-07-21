@@ -29,6 +29,7 @@ import { useSales } from "@/hooks/useSales";
 import { useVendedores } from "@/hooks/useVendedores";
 import { useConsortiumProducts } from "@/hooks/useConsortiumProducts";
 import { useCommissions } from "@/hooks/useCommissions";
+import { useGoals } from "@/hooks/useGoals";
 import { useMemo } from "react";
 
 export default function Dashboard() {
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const { vendedores } = useVendedores();
   const { products } = useConsortiumProducts();
   const { commissions } = useCommissions();
+  const { goals } = useGoals();
 
   // Calcular métricas em tempo real
   const metrics = useMemo(() => {
@@ -54,17 +56,24 @@ export default function Dashboard() {
       return settings.active !== false;
     }).length;
 
-    // Calcular progresso da meta (assumindo meta de 100 vendas/mês)
-    const monthlyGoal = 100;
-    const goalProgress = (currentMonthSales.length / monthlyGoal) * 100;
+    // Calcular progresso das metas ativas
+    const activeGoals = goals.filter(goal => 
+      goal.status === 'active' && 
+      new Date(goal.period_start) <= new Date() && 
+      new Date(goal.period_end) >= new Date()
+    );
+
+    const totalGoalProgress = activeGoals.length > 0 ? 
+      activeGoals.reduce((sum, goal) => sum + (goal.current_amount / goal.target_amount), 0) / activeGoals.length * 100 : 0;
 
     return {
       currentMonthSales: currentMonthSales.length,
       totalRevenue,
       activeVendedores,
-      goalProgress: Math.min(goalProgress, 100),
+      goalProgress: Math.min(totalGoalProgress, 100),
+      activeGoalsCount: activeGoals.length,
     };
-  }, [sales, vendedores]);
+  }, [sales, vendedores, goals]);
 
   // Dados para gráfico de vendas por mês
   const salesData = useMemo(() => {
@@ -79,15 +88,24 @@ export default function Dashboard() {
                saleDate.getFullYear() === date.getFullYear();
       });
 
+      // Buscar meta do mês correspondente
+      const monthGoals = goals.filter(goal => {
+        const goalStart = new Date(goal.period_start);
+        const goalEnd = new Date(goal.period_end);
+        return goalStart <= date && goalEnd >= date && goal.status === 'active';
+      });
+
+      const monthlyGoalTarget = monthGoals.reduce((sum, goal) => sum + goal.target_amount, 0);
+
       return {
         name: month,
         vendas: monthSales.length,
-        meta: 15, // Meta fixa para exemplo
+        meta: monthlyGoalTarget > 0 ? monthlyGoalTarget / 10000 : 15, // Dividir por 10000 para ajustar escala
       };
     });
 
     return monthlyData;
-  }, [sales]);
+  }, [sales, goals]);
 
   // Dados para gráfico de categorias
   const categoryData = useMemo(() => {
@@ -108,6 +126,22 @@ export default function Dashboard() {
       color: colors[index % colors.length],
     }));
   }, [sales, products]);
+
+  // Dados para gráfico de metas
+  const goalsData = useMemo(() => {
+    const activeGoals = goals.filter(goal => 
+      goal.status === 'active' && 
+      new Date(goal.period_start) <= new Date() && 
+      new Date(goal.period_end) >= new Date()
+    );
+
+    return activeGoals.map(goal => ({
+      name: goal.goal_type === 'office' ? 'Escritório' : 'Individual',
+      atual: goal.current_amount,
+      meta: goal.target_amount,
+      progresso: Math.min((goal.current_amount / goal.target_amount) * 100, 100),
+    }));
+  }, [goals]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -151,7 +185,7 @@ export default function Dashboard() {
             icon={Users}
           />
           <MetricCard
-            title="Meta Mensal"
+            title="Progresso das Metas"
             value={`${metrics.goalProgress.toFixed(0)}%`}
             change={metrics.goalProgress > 75 ? "+5%" : "-5%"}
             changeType={metrics.goalProgress > 75 ? "positive" : "negative"}
@@ -223,42 +257,75 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Performance Trend */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
-              Tendência de Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 sm:h-80 lg:h-96">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="vendas" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    name="Vendas"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="meta" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    name="Meta"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Goals and Performance */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 xl:gap-8 mb-6 lg:mb-8 xl:mb-12">
+          {/* Goals Progress */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
+                Progresso das Metas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 sm:h-80 lg:h-96">
+                {goalsData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={goalsData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                      <Bar dataKey="atual" fill="#10b981" name="Atual" />
+                      <Bar dataKey="meta" fill="#e5e7eb" name="Meta" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Nenhuma meta ativa encontrada
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Performance Trend */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg lg:text-xl">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
+                Tendência de Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 sm:h-80 lg:h-96">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={salesData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="vendas" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      name="Vendas"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="meta" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      name="Meta"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

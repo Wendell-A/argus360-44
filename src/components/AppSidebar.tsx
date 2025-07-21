@@ -98,11 +98,17 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={cn("transition-all duration-200", collapsed ? "w-14" : "w-64")} variant="sidebar">
+    <Sidebar 
+      className={cn(
+        "transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )} 
+      variant="sidebar"
+    >
       <SidebarContent className="bg-sidebar border-r border-sidebar-border">
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center shrink-0">
               <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
             {!collapsed && (
@@ -119,7 +125,7 @@ export function AppSidebar() {
         <div className="p-4 border-b border-sidebar-border">
           {isLoading ? (
             <div className="flex items-center space-x-3">
-              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
               {!collapsed && (
                 <div className="flex-1 space-y-1">
                   <Skeleton className="h-4 w-24" />
@@ -133,6 +139,7 @@ export function AppSidebar() {
                 avatarUrl={currentUser?.avatar_url}
                 fullName={currentUser?.full_name || 'Usuário'}
                 size="md"
+                className="shrink-0"
               />
               {!collapsed && currentUser && (
                 <div className="flex-1 min-w-0">
@@ -159,16 +166,23 @@ export function AppSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Principal
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={collapsed ? item.title : undefined}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)} 
+                    tooltip={collapsed ? item.title : undefined}
+                  >
                     <Link
                       to={item.url}
                       className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                        "flex items-center rounded-lg transition-colors",
+                        collapsed ? "justify-center p-3" : "justify-start space-x-3 px-3 py-2",
                         isActive(item.url)
                           ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
                           : "text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -185,16 +199,23 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Gestão</SidebarGroupLabel>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Gestão
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {managementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={collapsed ? item.title : undefined}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)} 
+                    tooltip={collapsed ? item.title : undefined}
+                  >
                     <Link
                       to={item.url}
                       className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                        "flex items-center rounded-lg transition-colors",
+                        collapsed ? "justify-center p-3" : "justify-start space-x-3 px-3 py-2",
                         isActive(item.url)
                           ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
                           : "text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -211,16 +232,23 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
+            Sistema
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {configItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={collapsed ? item.title : undefined}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)} 
+                    tooltip={collapsed ? item.title : undefined}
+                  >
                     <Link
                       to={item.url}
                       className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                        "flex items-center rounded-lg transition-colors",
+                        collapsed ? "justify-center p-3" : "justify-start space-x-3 px-3 py-2",
                         isActive(item.url)
                           ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
                           : "text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -237,11 +265,17 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
-          <SidebarMenuButton asChild tooltip={collapsed ? "Sair" : undefined}>
+          <SidebarMenuButton 
+            asChild 
+            tooltip={collapsed ? "Sair" : undefined}
+          >
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className={cn(
+                "w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                collapsed ? "justify-center p-3" : "justify-start"
+              )}
             >
               <LogOut className="h-4 w-4 shrink-0" />
               {!collapsed && <span className="ml-2">Sair</span>}

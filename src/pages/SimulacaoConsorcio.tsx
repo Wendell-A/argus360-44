@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calculator, Building2, DollarSign, TrendingUp, TrendingDown, Target, Settings, Save, Info, Clock, FileText } from 'lucide-react';
+import { Calculator, Building2, DollarSign, TrendingUp, Target, Settings, FileText } from 'lucide-react';
 import { FinancingCalculator } from '@/lib/financial/FinancingCalculator';
 import { ConsortiumCalculator } from '@/lib/financial/ConsortiumCalculator';
 import { formatCurrency } from '@/lib/utils';
@@ -17,21 +17,21 @@ import type { ExtendedConsortiumProduct } from '@/hooks/useConsortiumProducts';
 
 const SimulacaoConsorcio = () => {
   // Estados para Consórcio
-  const [consortiumCreditValue, setConsortiumCreditValue] = useState<number>(50000);
+  const [consortiumCreditValue, setConsortiumCreditValue] = useState<number>(300000);
   const [consortiumTerm, setConsortiumTerm] = useState<number>(180);
   const [selectedProduct, setSelectedProduct] = useState<ExtendedConsortiumProduct | null>(null);
   const [adminRate, setAdminRate] = useState<number>(18);
-  const [inccRate, setInccRate] = useState<number>(0.8);
+  const [inccRate, setInccRate] = useState<number>(0.5);
   const [fundRate, setFundRate] = useState<number>(0.15);
 
   // Estados para Financiamento
-  const [financingValue, setFinancingValue] = useState<number>(50000);
-  const [downPayment, setDownPayment] = useState<number>(17500); // 35% mínimo
+  const [financingValue, setFinancingValue] = useState<number>(300000);
+  const [downPayment, setDownPayment] = useState<number>(105000); // 35% mínimo
   const [financingTerm, setFinancingTerm] = useState<number>(180);
   const [selectedBank, setSelectedBank] = useState<string>('CAIXA');
   const [financingRate, setFinancingRate] = useState<number>(1.12);
 
-  const [assetType, setAssetType] = useState<'vehicle' | 'real_estate'>('vehicle');
+  const [assetType, setAssetType] = useState<'vehicle' | 'real_estate'>('real_estate');
 
   // Gerar opções de parcelas
   const generateInstallmentOptions = () => {
@@ -82,13 +82,14 @@ const SimulacaoConsorcio = () => {
     setFinancingRate(rate);
   };
 
-  // Cálculos
+  // Cálculos corrigidos
   const consortiumCalculation = ConsortiumCalculator.calculate({
     assetValue: consortiumCreditValue,
     installments: consortiumTerm,
     downPayment: 0,
     adminRate,
-    fundRate
+    fundRate,
+    inccRate
   });
 
   const financingAmount = financingValue - downPayment;
@@ -152,8 +153,8 @@ const SimulacaoConsorcio = () => {
                 <TrendingUp className="h-4 w-4 text-purple-600" />
                 <div>
                   <p className="text-sm text-muted-foreground">Economia</p>
-                  <p className="text-lg font-bold text-green-600">
-                    {formatCurrency(economyAmount)}
+                  <p className={`text-lg font-bold ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(Math.abs(economyAmount))}
                   </p>
                 </div>
               </div>
@@ -257,16 +258,28 @@ const SimulacaoConsorcio = () => {
                 <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Resultado do Consórcio</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
+                    <span>Carta de Crédito:</span>
+                    <span className="font-bold">{formatCurrency(consortiumCalculation.creditLetter)}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span>Parcela Mensal:</span>
                     <span className="font-bold">{formatCurrency(consortiumCalculation.monthlyPayment)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Total a Pagar:</span>
-                    <span className="font-bold">{formatCurrency(consortiumCalculation.totalCost)}</span>
+                    <span>Taxa Administrativa:</span>
+                    <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.totalAdminCost)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Total de Taxas:</span>
-                    <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.totalAdminCost)}</span>
+                    <span>Ajuste INCC:</span>
+                    <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.inccAdjustment)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fundo de Reserva:</span>
+                    <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.totalFundCost)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span>Total a Pagar:</span>
+                    <span className="font-bold">{formatCurrency(consortiumCalculation.totalCost)}</span>
                   </div>
                 </div>
               </div>
@@ -334,6 +347,14 @@ const SimulacaoConsorcio = () => {
                 <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Resultado do Financiamento</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
+                    <span>Valor do Bem:</span>
+                    <span className="font-bold">{formatCurrency(financingValue)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Entrada:</span>
+                    <span className="font-bold">{formatCurrency(downPayment)}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span>Valor Financiado:</span>
                     <span className="font-bold">{formatCurrency(financingAmount)}</span>
                   </div>
@@ -342,12 +363,12 @@ const SimulacaoConsorcio = () => {
                     <span className="font-bold">{formatCurrency(priceCalculation.monthlyPayment)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Total a Pagar:</span>
-                    <span className="font-bold">{formatCurrency(priceCalculation.totalAmount)}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span>Total de Juros:</span>
                     <span className="font-bold text-destructive">{formatCurrency(priceCalculation.totalInterest)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span>Total a Pagar:</span>
+                    <span className="font-bold">{formatCurrency(priceCalculation.totalAmount)}</span>
                   </div>
                 </div>
               </div>
@@ -384,15 +405,19 @@ const SimulacaoConsorcio = () => {
                 <p className="text-sm mt-2">Total: {formatCurrency(priceCalculation.totalAmount)}</p>
               </div>
 
-              <div className="text-center p-4 border-2 border-green-500 rounded-lg bg-green-50 dark:bg-green-950">
-                <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-green-600 mb-2">Economia</h3>
-                <p className="text-2xl font-bold text-green-600 mb-1">{formatCurrency(economyAmount)}</p>
+              <div className={`text-center p-4 border-2 rounded-lg ${economyAmount > 0 ? 'border-green-500 bg-green-50 dark:bg-green-950' : 'border-red-500 bg-red-50 dark:bg-red-950'}`}>
+                <Target className={`h-8 w-8 mx-auto mb-2 ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`} />
+                <h3 className={`font-semibold mb-2 ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {economyAmount > 0 ? 'Economia' : 'Diferença'}
+                </h3>
+                <p className={`text-2xl font-bold mb-1 ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(Math.abs(economyAmount))}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  {economyAmount > 0 ? 'economizando com consórcio' : 'financiamento mais vantajoso'}
+                  {economyAmount > 0 ? 'economizando com consórcio' : 'financiamento mais caro'}
                 </p>
                 <p className="text-sm mt-2">
-                  {((economyAmount / priceCalculation.totalAmount) * 100).toFixed(1)}% de economia
+                  {((Math.abs(economyAmount) / priceCalculation.totalAmount) * 100).toFixed(1)}% de diferença
                 </p>
               </div>
             </div>
