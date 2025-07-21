@@ -14,7 +14,6 @@ interface GoalCardProps {
 
 export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
   const progress = goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
-  const progressColor = progress >= 100 ? "bg-green-500" : progress >= 75 ? "bg-yellow-500" : "bg-blue-500";
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -109,17 +108,17 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
           </span>
         </div>
 
-        {goal.goal_type === 'office' && (goal as any).offices && (
+        {goal.goal_type === 'office' && goal.offices && (
           <div className="text-sm">
             <span className="font-medium">Escritório: </span>
-            {(goal as any).offices.name}
+            {goal.offices.name}
           </div>
         )}
 
-        {goal.goal_type === 'individual' && (goal as any).profiles && (
+        {goal.goal_type === 'individual' && goal.profiles && (
           <div className="text-sm">
             <span className="font-medium">Vendedor: </span>
-            {(goal as any).profiles.full_name || (goal as any).profiles.email}
+            {goal.profiles.full_name || goal.profiles.email}
           </div>
         )}
       </CardContent>

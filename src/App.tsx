@@ -5,9 +5,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import PublicRoute from "@/components/auth/PublicRoute";
-import ProtectedLayout from "@/components/layout/ProtectedLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { PublicRoute } from "@/components/auth/PublicRoute";
+import { ProtectedLayout } from "@/components/layout/ProtectedLayout";
 
 // Pages
 import Index from "@/pages/Index";

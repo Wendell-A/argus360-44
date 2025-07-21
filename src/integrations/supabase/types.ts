@@ -417,6 +417,86 @@ export type Database = {
           },
         ]
       }
+      goals: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          current_amount: number | null
+          description: string | null
+          goal_type: string
+          id: string
+          office_id: string | null
+          period_end: string
+          period_start: string
+          status: string | null
+          target_amount: number
+          tenant_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          current_amount?: number | null
+          description?: string | null
+          goal_type: string
+          id?: string
+          office_id?: string | null
+          period_end: string
+          period_start: string
+          status?: string | null
+          target_amount: number
+          tenant_id: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          current_amount?: number | null
+          description?: string | null
+          goal_type?: string
+          id?: string
+          office_id?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string | null
+          target_amount?: number
+          tenant_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       office_users: {
         Row: {
           active: boolean | null

@@ -19,9 +19,21 @@ export type Goal = {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  offices?: { name: string };
+  profiles?: { full_name: string; email: string };
+  creator?: { full_name: string };
 };
 
-export type GoalInsert = Omit<Goal, 'id' | 'tenant_id' | 'current_amount' | 'created_at' | 'updated_at'>;
+export type GoalInsert = {
+  office_id?: string;
+  user_id?: string;
+  goal_type: 'office' | 'individual';
+  target_amount: number;
+  period_start: string;
+  period_end: string;
+  status: 'active' | 'completed' | 'cancelled';
+  description?: string;
+};
 
 export const useGoals = () => {
   const { activeTenant } = useAuth();
@@ -37,15 +49,15 @@ export const useGoals = () => {
         .from('goals')
         .select(`
           *,
-          offices:office_id(name),
-          profiles:user_id(full_name, email),
-          creator:created_by(full_name)
+          offices!office_id(name),
+          profiles!user_id(full_name, email),
+          creator:profiles!created_by(full_name)
         `)
         .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Goal[];
+      return (data || []) as Goal[];
     },
     enabled: !!activeTenant?.tenant_id,
   });
@@ -159,13 +171,14 @@ export const useGoalStats = () => {
 
       if (error) throw error;
 
+      const goals = data || [];
       const stats = {
-        totalGoals: data.length,
-        officeGoals: data.filter(g => g.goal_type === 'office').length,
-        individualGoals: data.filter(g => g.goal_type === 'individual').length,
-        completedGoals: data.filter(g => g.current_amount >= g.target_amount).length,
-        averageProgress: data.length > 0 ? 
-          data.reduce((sum, g) => sum + (g.current_amount / g.target_amount), 0) / data.length * 100 : 0,
+        totalGoals: goals.length,
+        officeGoals: goals.filter(g => g.goal_type === 'office').length,
+        individualGoals: goals.filter(g => g.goal_type === 'individual').length,
+        completedGoals: goals.filter(g => g.current_amount >= g.target_amount).length,
+        averageProgress: goals.length > 0 ? 
+          goals.reduce((sum, g) => sum + (g.current_amount / g.target_amount), 0) / goals.length * 100 : 0,
       };
 
       return stats;

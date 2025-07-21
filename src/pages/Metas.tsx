@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Target, TrendingUp, Award, Calendar } from "lucide-react";
 import GoalModal from "@/components/GoalModal";
 import GoalCard from "@/components/GoalCard";
@@ -17,7 +16,7 @@ export default function Metas() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { goals, isLoading, refetch } = useGoals();
-  const { stats } = useGoalStats();
+  const { data: stats } = useGoalStats();
   const createGoal = useCreateGoal();
   const updateGoal = useUpdateGoal();
   const deleteGoal = useDeleteGoal();
@@ -97,7 +96,7 @@ export default function Metas() {
       </div>
 
       {/* Stats Cards */}
-      {stats.data && (
+      {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -105,7 +104,7 @@ export default function Metas() {
                 <Target className="h-5 w-5 text-blue-600" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total de Metas</p>
-                  <p className="text-2xl font-bold">{stats.data.totalGoals}</p>
+                  <p className="text-2xl font-bold">{stats.totalGoals}</p>
                 </div>
               </div>
             </CardContent>
@@ -117,7 +116,7 @@ export default function Metas() {
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Progresso Médio</p>
-                  <p className="text-2xl font-bold">{stats.data.averageProgress.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold">{stats.averageProgress.toFixed(1)}%</p>
                 </div>
               </div>
             </CardContent>
@@ -129,7 +128,7 @@ export default function Metas() {
                 <Award className="h-5 w-5 text-yellow-600" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Metas Concluídas</p>
-                  <p className="text-2xl font-bold">{stats.data.completedGoals}</p>
+                  <p className="text-2xl font-bold">{stats.completedGoals}</p>
                 </div>
               </div>
             </CardContent>
@@ -141,7 +140,7 @@ export default function Metas() {
                 <Calendar className="h-5 w-5 text-purple-600" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Metas Ativas</p>
-                  <p className="text-2xl font-bold">{stats.data.totalGoals - stats.data.completedGoals}</p>
+                  <p className="text-2xl font-bold">{stats.totalGoals - stats.completedGoals}</p>
                 </div>
               </div>
             </CardContent>
