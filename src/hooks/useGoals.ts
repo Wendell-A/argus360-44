@@ -35,6 +35,14 @@ export type GoalInsert = {
   description?: string;
 };
 
+export type GoalStats = {
+  totalGoals: number;
+  officeGoals: number;
+  individualGoals: number;
+  completedGoals: number;
+  averageProgress: number;
+};
+
 export const useGoals = () => {
   const { activeTenant } = useAuth();
 
@@ -158,7 +166,7 @@ export const useGoalStats = () => {
 
   return useQuery({
     queryKey: ['goal-stats', activeTenant?.tenant_id],
-    queryFn: async () => {
+    queryFn: async (): Promise<GoalStats> => {
       if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
@@ -172,7 +180,7 @@ export const useGoalStats = () => {
       if (error) throw error;
 
       const goals = data || [];
-      const stats = {
+      const stats: GoalStats = {
         totalGoals: goals.length,
         officeGoals: goals.filter(g => g.goal_type === 'office').length,
         individualGoals: goals.filter(g => g.goal_type === 'individual').length,

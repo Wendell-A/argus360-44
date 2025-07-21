@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Card, 
@@ -57,31 +58,9 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, description, icon
 const Dashboard = () => {
   const { activeTenant } = useAuth();
   const { goals, isLoading: goalsLoading } = useGoals();
-  const { goalStats, isLoading: statsLoading } = useGoalStats();
+  const { data: goalStats, isLoading: statsLoading } = useGoalStats();
 
-  // Dados mock para os gráficos (enquanto a API não está pronta)
-  const mockVendasMensais = [
-    { month: 'Jan', vendas: 45000, comissoes: 4500 },
-    { month: 'Fev', vendas: 52000, comissoes: 5200 },
-    { month: 'Mar', vendas: 48000, comissoes: 4800 },
-    { month: 'Abr', vendas: 55000, comissoes: 5500 },
-    { month: 'Mai', vendas: 60000, comissoes: 6000 },
-    { month: 'Jun', vendas: 58000, comissoes: 5800 },
-  ];
-
-  // Calcular estatísticas reais das metas
-  const totalGoals = goals.length;
-  const activeGoals = goals.filter(goal => goal.status === 'active').length;
-  const completedGoals = goals.filter(goal => goal.current_amount >= goal.target_amount).length;
-  const goalCompletionRate = activeGoals > 0 ? (completedGoals / activeGoals) * 100 : 0;
-
-  // Calcular progresso médio das metas ativas
-  const activeGoalsList = goals.filter(goal => goal.status === 'active');
-  const averageProgress = activeGoalsList.length > 0 
-    ? activeGoalsList.reduce((sum, goal) => sum + (goal.current_amount / goal.target_amount), 0) / activeGoalsList.length * 100
-    : 0;
-
-  // Preparar dados para o gráfico de vendas mensais com cores corretas
+  // Dados para os gráficos com cores corretas (verde para vendas, azul para metas)
   const vendasMensais = [
     { month: 'Jul', vendas: 35000, meta: 40000 },
     { month: 'Ago', vendas: 42000, meta: 45000 },
@@ -132,6 +111,12 @@ const Dashboard = () => {
       data: '5 dias atrás'
     },
   ];
+
+  // Calcular estatísticas das metas
+  const totalGoals = goals.length;
+  const activeGoals = goals.filter(goal => goal.status === 'active').length;
+  const completedGoals = goals.filter(goal => goal.current_amount >= goal.target_amount).length;
+  const goalCompletionRate = activeGoals > 0 ? (completedGoals / activeGoals) * 100 : 0;
 
   if (goalsLoading || statsLoading) {
     return (
@@ -309,7 +294,7 @@ const Dashboard = () => {
         </div>
 
         {/* Estatísticas das Metas */}
-        {totalGoals > 0 && (
+        {goalStats && goalStats.totalGoals > 0 && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -320,19 +305,19 @@ const Dashboard = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{totalGoals}</div>
+                  <div className="text-2xl font-bold text-blue-600">{goalStats.totalGoals}</div>
                   <div className="text-sm text-muted-foreground">Total de Metas</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{activeGoals}</div>
+                  <div className="text-2xl font-bold text-green-600">{goalStats.totalGoals}</div>
                   <div className="text-sm text-muted-foreground">Metas Ativas</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{completedGoals}</div>
+                  <div className="text-2xl font-bold text-purple-600">{goalStats.completedGoals}</div>
                   <div className="text-sm text-muted-foreground">Metas Concluídas</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{averageProgress.toFixed(1)}%</div>
+                  <div className="text-2xl font-bold text-orange-600">{goalStats.averageProgress.toFixed(1)}%</div>
                   <div className="text-sm text-muted-foreground">Progresso Médio</div>
                 </div>
               </div>
