@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoals, useGoalStats } from '@/hooks/useGoals';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 interface MetricCardProps {
   title: string;
@@ -59,9 +60,25 @@ const Dashboard = () => {
   const { activeTenant } = useAuth();
   const { goals, isLoading: goalsLoading } = useGoals();
   const { data: goalStats, isLoading: statsLoading } = useGoalStats();
+  const { data: dashboardStats, isLoading: dashboardLoading } = useDashboardStats();
 
-  // Dados para os gráficos com cores corretas (verde para vendas, azul para metas)
-  const vendasMensais = [
+  if (goalsLoading || statsLoading || dashboardLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Usar dados reais ou fallback para dados simulados
+  const vendasMensais = dashboardStats?.monthlyData || [
     { month: 'Jul', vendas: 35000, meta: 40000 },
     { month: 'Ago', vendas: 42000, meta: 45000 },
     { month: 'Set', vendas: 38000, meta: 42000 },
@@ -70,7 +87,11 @@ const Dashboard = () => {
     { month: 'Dez', vendas: 49000, meta: 52000 },
   ];
 
-  const comissoesMensais = [
+  const comissoesMensais = dashboardStats?.monthlyData?.map(item => ({
+    month: item.month,
+    comissoes: item.comissoes,
+    meta: item.meta * 0.1, // Assumindo comissão de 10% da meta
+  })) || [
     { month: 'Jul', comissoes: 3500, meta: 4000 },
     { month: 'Ago', comissoes: 4200, meta: 4500 },
     { month: 'Set', comissoes: 3800, meta: 4200 },
@@ -79,16 +100,30 @@ const Dashboard = () => {
     { month: 'Dez', comissoes: 4900, meta: 5200 },
   ];
 
-  // Dados para o gráfico de pizza dos vendedores
-  const topVendedores = [
+  // Dados para o gráfico de pizza dos vendedores com cores
+  const topVendedores = dashboardStats?.topVendedores?.map((vendedor, index) => ({
+    name: vendedor.name,
+    value: vendedor.total_sales,
+    color: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'][index] || '#6b7280'
+  })) || [
     { name: 'João Silva', value: 85000, color: '#10b981' },
     { name: 'Maria Santos', value: 72000, color: '#3b82f6' },
     { name: 'Pedro Costa', value: 68000, color: '#f59e0b' },
     { name: 'Ana Oliveira', value: 54000, color: '#ef4444' },
   ];
 
-  // Vendas recentes (simuladas)
-  const vendasRecentes = [
+  // Vendas recentes com dados reais
+  const vendasRecentes = dashboardStats?.recentSales?.map(sale => ({
+    cliente: sale.client_name,
+    vendedor: sale.vendedor_name,
+    valor: formatCurrency(sale.sale_value),
+    comissao: formatCurrency(sale.commission_amount),
+    data: new Date(sale.sale_date).toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric' 
+    })
+  })) || [
     { 
       cliente: 'Carlos Mendes', 
       vendedor: 'João Silva', 
@@ -112,26 +147,11 @@ const Dashboard = () => {
     },
   ];
 
-  // Calcular estatísticas das metas
+  // Calcular estatísticas das metas com dados reais
   const totalGoals = goals.length;
   const activeGoals = goals.filter(goal => goal.status === 'active').length;
   const completedGoals = goals.filter(goal => goal.current_amount >= goal.target_amount).length;
-  const goalCompletionRate = activeGoals > 0 ? (completedGoals / activeGoals) * 100 : 0;
-
-  if (goalsLoading || statsLoading) {
-    return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const goalCompletionRate = dashboardStats?.goalCompletion || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -151,21 +171,21 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <MetricCard
             title="Vendas do Mês"
-            value="47"
+            value={dashboardStats?.monthSales?.toString() || "0"}
             description="vendas realizadas"
             icon={<TrendingUp className="h-4 w-4" />}
             trend={12}
           />
           <MetricCard
             title="Comissões Pagas"
-            value="R$ 234.500"
+            value={formatCurrency(dashboardStats?.monthCommissions || 0)}
             description="valor total pago"
             icon={<DollarSign className="h-4 w-4" />}
             trend={8}
           />
           <MetricCard
             title="Vendedores Ativos"
-            value="24"
+            value={dashboardStats?.activeVendedores?.toString() || "0"}
             description="vendedores em atividade"
             icon={<Users className="h-4 w-4" />}
             trend={2}

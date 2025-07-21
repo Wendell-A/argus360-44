@@ -102,19 +102,25 @@ export function AppSidebar() {
   return (
     <Sidebar 
       className={cn(
-        "transition-all duration-300",
+        "transition-all duration-300 border-r border-sidebar-border",
         collapsed ? "w-16" : "w-64"
       )} 
       variant="sidebar"
     >
-      <SidebarContent className="bg-sidebar border-r border-sidebar-border">
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center space-x-2">
+      <SidebarContent className="bg-sidebar border-0">
+        <div className={cn(
+          "p-4 border-b border-sidebar-border transition-all duration-300",
+          collapsed ? "p-2" : "p-4"
+        )}>
+          <div className={cn(
+            "flex items-center transition-all duration-300",
+            collapsed ? "justify-center" : "space-x-2"
+          )}>
             <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center shrink-0">
               <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
             {!collapsed && (
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 opacity-100 transition-opacity duration-300">
                 <h2 className="text-lg font-semibold text-sidebar-foreground truncate">
                   {activeTenant?.tenant_name || 'Argus360'}
                 </h2>
@@ -124,26 +130,35 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <div className="p-4 border-b border-sidebar-border">
+        <div className={cn(
+          "p-4 border-b border-sidebar-border transition-all duration-300",
+          collapsed ? "p-2" : "p-4"
+        )}>
           {isLoading ? (
-            <div className="flex items-center space-x-3">
+            <div className={cn(
+              "flex items-center transition-all duration-300",
+              collapsed ? "justify-center" : "space-x-3"
+            )}>
               <Skeleton className="h-8 w-8 rounded-full shrink-0" />
               {!collapsed && (
-                <div className="flex-1 space-y-1">
+                <div className="flex-1 space-y-1 opacity-100 transition-opacity duration-300">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-20" />
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center space-x-3">
+            <div className={cn(
+              "flex items-center transition-all duration-300",
+              collapsed ? "justify-center" : "space-x-3"
+            )}>
               <UserAvatar 
                 avatarUrl={currentUser?.avatar_url}
                 fullName={currentUser?.full_name || 'Usuário'}
                 size="md"
               />
               {!collapsed && currentUser && (
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 opacity-100 transition-opacity duration-300">
                   <div className="text-sm font-medium text-sidebar-foreground truncate">
                     {currentUser.full_name}
                   </div>
@@ -166,31 +181,40 @@ export function AppSidebar() {
           )}
         </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Principal
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+        <SidebarGroup className="flex-1">
+          {!collapsed && (
+            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
+              Principal
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent className={collapsed ? "px-2" : "px-4"}>
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
                     isActive={isActive(item.url)} 
                     tooltip={collapsed ? item.title : undefined}
+                    className="w-full"
                   >
                     <Link
                       to={item.url}
                       className={cn(
-                        "flex items-center rounded-lg transition-colors",
-                        collapsed ? "justify-center p-3" : "justify-start space-x-3 px-3 py-2",
+                        "flex items-center rounded-lg transition-all duration-200 group",
+                        collapsed 
+                          ? "justify-center p-3 w-12 h-12 mx-auto" 
+                          : "justify-start space-x-3 px-3 py-2.5",
                         isActive(item.url)
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       )}
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span className="font-medium">{item.title}</span>}
+                      <item.icon className={cn(
+                        "shrink-0 transition-all duration-200",
+                        collapsed ? "h-5 w-5" : "h-5 w-5",
+                        isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
+                      )} />
+                      {!collapsed && <span className="font-medium truncate">{item.title}</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -200,30 +224,39 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Gestão
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+          {!collapsed && (
+            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
+              Gestão
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent className={collapsed ? "px-2" : "px-4"}>
+            <SidebarMenu className="space-y-1">
               {managementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
                     isActive={isActive(item.url)} 
                     tooltip={collapsed ? item.title : undefined}
+                    className="w-full"
                   >
                     <Link
                       to={item.url}
                       className={cn(
-                        "flex items-center rounded-lg transition-colors",
-                        collapsed ? "justify-center p-3" : "justify-start space-x-3 px-3 py-2",
+                        "flex items-center rounded-lg transition-all duration-200 group",
+                        collapsed 
+                          ? "justify-center p-3 w-12 h-12 mx-auto" 
+                          : "justify-start space-x-3 px-3 py-2.5",
                         isActive(item.url)
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       )}
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span className="font-medium">{item.title}</span>}
+                      <item.icon className={cn(
+                        "shrink-0 transition-all duration-200",
+                        collapsed ? "h-5 w-5" : "h-5 w-5",
+                        isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
+                      )} />
+                      {!collapsed && <span className="font-medium truncate">{item.title}</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -233,30 +266,39 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Sistema
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+          {!collapsed && (
+            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
+              Sistema
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent className={collapsed ? "px-2" : "px-4"}>
+            <SidebarMenu className="space-y-1">
               {configItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild 
                     isActive={isActive(item.url)} 
                     tooltip={collapsed ? item.title : undefined}
+                    className="w-full"
                   >
                     <Link
                       to={item.url}
                       className={cn(
-                        "flex items-center rounded-lg transition-colors",
-                        collapsed ? "justify-center p-3" : "justify-start space-x-3 px-3 py-2",
+                        "flex items-center rounded-lg transition-all duration-200 group",
+                        collapsed 
+                          ? "justify-center p-3 w-12 h-12 mx-auto" 
+                          : "justify-start space-x-3 px-3 py-2.5",
                         isActive(item.url)
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       )}
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span className="font-medium">{item.title}</span>}
+                      <item.icon className={cn(
+                        "shrink-0 transition-all duration-200",
+                        collapsed ? "h-5 w-5" : "h-5 w-5",
+                        isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
+                      )} />
+                      {!collapsed && <span className="font-medium truncate">{item.title}</span>}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -265,17 +307,21 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
+        <div className={cn(
+          "mt-auto border-t border-sidebar-border space-y-2 transition-all duration-300",
+          collapsed ? "p-2" : "p-4"
+        )}>
           <SidebarMenuButton 
             asChild 
             tooltip={collapsed ? "Sair" : undefined}
+            className="w-full"
           >
             <Button
               variant="ghost"
               onClick={handleLogout}
               className={cn(
-                "w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                collapsed ? "justify-center p-3" : "justify-start"
+                "w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200",
+                collapsed ? "justify-center p-3 h-12" : "justify-start h-10"
               )}
             >
               <LogOut className="h-4 w-4 shrink-0" />
@@ -283,7 +329,10 @@ export function AppSidebar() {
             </Button>
           </SidebarMenuButton>
           
-          <SidebarTrigger className="w-full" />
+          <SidebarTrigger className={cn(
+            "w-full transition-all duration-200",
+            collapsed ? "h-12" : "h-10"
+          )} />
         </div>
       </SidebarContent>
     </Sidebar>
