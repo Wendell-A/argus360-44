@@ -3,24 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface OfficeData {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface DepartmentData {
-  id: string;
-  name: string;
-}
-
 interface CurrentUserData {
   id: string;
   email: string;
   full_name: string;
   avatar_url?: string;
-  office?: OfficeData;
-  department?: DepartmentData;
+  office?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  department?: {
+    id: string;
+    name: string;
+  };
   role?: string;
 }
 
@@ -29,12 +25,12 @@ export function useCurrentUser() {
 
   const query = useQuery({
     queryKey: ['current-user', user?.id, activeTenant?.tenant_id],
-    queryFn: async (): Promise<CurrentUserData> => {
+    queryFn: async () => {
       if (!user?.id || !activeTenant?.tenant_id) {
         throw new Error('User or tenant not found');
       }
 
-      // Buscar dados do usuário com informações do escritório e departamento
+      // Buscar dados do usuário com informações do escritório
       const { data: userData, error: userError } = await supabase
         .from('office_users')
         .select(`
@@ -55,13 +51,12 @@ export function useCurrentUser() {
       }
 
       // Buscar departamento se o usuário tiver escritório
-      let departmentData: DepartmentData | null = null;
+      let departmentData = null;
       if (userData?.offices) {
         const { data: deptData, error: deptError } = await supabase
           .from('departments')
           .select('id, name')
           .eq('tenant_id', activeTenant.tenant_id)
-          .eq('active', true)
           .limit(1)
           .single();
 

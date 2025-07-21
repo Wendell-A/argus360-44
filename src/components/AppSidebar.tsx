@@ -14,7 +14,8 @@ import {
   Target,
   UsersIcon,
   Building,
-  LogOut
+  LogOut,
+  Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -42,6 +43,7 @@ const menuItems = [
   { title: "Vendedores", url: "/vendedores", icon: UserCheck },
   { title: "Comissões", url: "/comissoes", icon: DollarSign },
   { title: "Metas", url: "/metas", icon: Target },
+  { title: "Simulação", url: "/simulacao-consorcio", icon: Calculator },
   { title: "Consórcios", url: "/consorcios", icon: Building2 },
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
 ];
@@ -85,18 +87,12 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      // Fazer logout através do contexto de autenticação
       await signOut();
-      
-      // Limpar qualquer cache local adicional se necessário
       localStorage.removeItem('supabase.auth.token');
       sessionStorage.clear();
-      
-      // Redirecionar para a página de login
       navigate('/auth/login', { replace: true });
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
-      // Mesmo com erro, redirecionar para garantir segurança
       navigate('/auth/login', { replace: true });
     }
   };
@@ -168,7 +164,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={collapsed ? item.title : undefined}>
                     <Link
                       to={item.url}
                       className={cn(
@@ -178,7 +174,7 @@ export function AppSidebar() {
                           : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                       )}
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span className="font-medium">{item.title}</span>}
                     </Link>
                   </SidebarMenuButton>
@@ -194,7 +190,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {managementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={collapsed ? item.title : undefined}>
                     <Link
                       to={item.url}
                       className={cn(
@@ -204,7 +200,7 @@ export function AppSidebar() {
                           : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                       )}
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span className="font-medium">{item.title}</span>}
                     </Link>
                   </SidebarMenuButton>
@@ -220,7 +216,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {configItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={collapsed ? item.title : undefined}>
                     <Link
                       to={item.url}
                       className={cn(
@@ -230,7 +226,7 @@ export function AppSidebar() {
                           : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                       )}
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span className="font-medium">{item.title}</span>}
                     </Link>
                   </SidebarMenuButton>
@@ -241,15 +237,16 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
-          {/* Botão de Logout */}
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            {!collapsed && "Sair"}
-          </Button>
+          <SidebarMenuButton asChild tooltip={collapsed ? "Sair" : undefined}>
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              {!collapsed && <span className="ml-2">Sair</span>}
+            </Button>
+          </SidebarMenuButton>
           
           <SidebarTrigger className="w-full" />
         </div>
