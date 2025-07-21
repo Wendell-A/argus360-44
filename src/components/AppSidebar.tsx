@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Home, 
   Users, 
@@ -12,7 +13,8 @@ import {
   FileText,
   Target,
   UsersIcon,
-  Building
+  Building,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +29,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -59,7 +62,8 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { activeTenant } = useAuth();
+  const navigate = useNavigate();
+  const { activeTenant, signOut } = useAuth();
   const { currentUser, isLoading } = useCurrentUser();
 
   const isActive = (path: string) => {
@@ -77,6 +81,24 @@ export function AppSidebar() {
       user: 'Usuário'
     };
     return roleMap[role || 'user'] || 'Usuário';
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Fazer logout através do contexto de autenticação
+      await signOut();
+      
+      // Limpar qualquer cache local adicional se necessário
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      // Redirecionar para a página de login
+      navigate('/auth/login', { replace: true });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      // Mesmo com erro, redirecionar para garantir segurança
+      navigate('/auth/login', { replace: true });
+    }
   };
 
   return (
@@ -218,7 +240,17 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-4 border-t border-sidebar-border">
+        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
+          {/* Botão de Logout */}
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            {!collapsed && "Sair"}
+          </Button>
+          
           <SidebarTrigger className="w-full" />
         </div>
       </SidebarContent>

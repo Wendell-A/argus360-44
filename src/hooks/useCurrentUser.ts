@@ -39,10 +39,6 @@ export function useCurrentUser() {
             id,
             name,
             type
-          ),
-          departments (
-            id,
-            name
           )
         `)
         .eq('user_id', user.id)
@@ -54,13 +50,36 @@ export function useCurrentUser() {
         console.error('Error fetching user data:', userError);
       }
 
+      // Buscar departamento se o usuário tiver escritório
+      let departmentData = null;
+      if (userData?.offices) {
+        const { data: deptData, error: deptError } = await supabase
+          .from('departments')
+          .select('id, name')
+          .eq('tenant_id', activeTenant.tenant_id)
+          .eq('active', true)
+          .limit(1)
+          .single();
+
+        if (!deptError) {
+          departmentData = deptData;
+        }
+      }
+
       const currentUserData: CurrentUserData = {
         id: user.id,
         email: user.email || '',
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
         avatar_url: user.user_metadata?.avatar_url,
-        office: userData?.offices || undefined,
-        department: userData?.departments || undefined,
+        office: userData?.offices ? {
+          id: userData.offices.id,
+          name: userData.offices.name,
+          type: userData.offices.type
+        } : undefined,
+        department: departmentData ? {
+          id: departmentData.id,
+          name: departmentData.name
+        } : undefined,
         role: userData?.role || 'user',
       };
 
