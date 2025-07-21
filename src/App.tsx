@@ -5,9 +5,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { PublicRoute } from "@/components/auth/PublicRoute";
-import { ProtectedLayout } from "@/components/layout/ProtectedLayout";
 
 // Pages
 import Index from "@/pages/Index";
@@ -48,163 +45,27 @@ function App() {
           <Router>
             <Routes>
               {/* Public Routes */}
-              <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
-              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-              <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+              <Route path="/landing" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
               {/* Protected Routes */}
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              
-              {/* Protected routes with layout */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Dashboard />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/vendas" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Vendas />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/clientes" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Clientes />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/vendedores" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Vendedores />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/comissoes" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Comissoes />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/metas" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Metas />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/consorcios" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Consorcios />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/simulacao-consorcio" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <SimulacaoConsorcio />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/relatorios" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Relatorios />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/escritorios" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Escritorios />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/equipes" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Equipes />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/departamentos" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Departamentos />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/permissoes" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Permissoes />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/configuracoes" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Configuracoes />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/auditoria" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <ProtectedLayout>
-                      <Auditoria />
-                    </ProtectedLayout>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/vendas" element={<Vendas />} />
+              <Route path="/clientes" element={<Clientes />} />
+              <Route path="/vendedores" element={<Vendedores />} />
+              <Route path="/comissoes" element={<Comissoes />} />
+              <Route path="/metas" element={<Metas />} />
+              <Route path="/consorcios" element={<Consorcios />} />
+              <Route path="/simulacao-consorcio" element={<SimulacaoConsorcio />} />
+              <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/escritorios" element={<Escritorios />} />
+              <Route path="/equipes" element={<Equipes />} />
+              <Route path="/departamentos" element={<Departamentos />} />
+              <Route path="/permissoes" element={<Permissoes />} />
+              <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="/auditoria" element={<Auditoria />} />
 
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
