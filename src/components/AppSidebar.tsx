@@ -65,17 +65,17 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={cn("transition-all duration-200", collapsed ? "w-14" : "w-64")}>
-      <SidebarContent className="bg-white border-r">
-        <div className="p-4 border-b">
+    <Sidebar className={cn("transition-all duration-200", collapsed ? "w-14" : "w-64")} variant="sidebar">
+      <SidebarContent className="bg-sidebar border-r border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-white" />
+            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
             {!collapsed && (
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Argus360</h2>
-                <p className="text-xs text-gray-500">Sistema de Vendas</p>
+                <h2 className="text-lg font-semibold text-sidebar-foreground">Argus360</h2>
+                <p className="text-xs text-sidebar-foreground/70">Sistema de Vendas</p>
               </div>
             )}
           </div>
@@ -87,14 +87,14 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <Link
                       to={item.url}
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
                         isActive(item.url)
-                          ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                       )}
                     >
                       <item.icon className="h-5 w-5" />
@@ -113,14 +113,14 @@ export function AppSidebar() {
             <SidebarMenu>
               {managementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <Link
                       to={item.url}
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
                         isActive(item.url)
-                          ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                       )}
                     >
                       <item.icon className="h-5 w-5" />
@@ -139,14 +139,14 @@ export function AppSidebar() {
             <SidebarMenu>
               {configItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <Link
                       to={item.url}
                       className={cn(
                         "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
                         isActive(item.url)
-                          ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-2 border-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                       )}
                     >
                       <item.icon className="h-5 w-5" />
@@ -159,7 +159,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-4 border-t">
+        <div className="mt-auto p-4 border-t border-sidebar-border">
           <SidebarTrigger className="w-full" />
         </div>
       </SidebarContent>
