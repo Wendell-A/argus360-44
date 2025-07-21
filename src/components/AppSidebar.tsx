@@ -28,7 +28,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -63,8 +62,8 @@ const configItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === 'collapsed';
+  const { open } = useSidebar();
+  const collapsed = !open;
   const location = useLocation();
   const navigate = useNavigate();
   const { activeTenant, signOut } = useAuth();
@@ -101,10 +100,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar 
-      className={cn(
-        "transition-all duration-300 border-r border-sidebar-border",
-        collapsed ? "w-16" : "w-64"
-      )} 
+      collapsible="icon"
+      className="border-r border-sidebar-border"
       variant="sidebar"
     >
       <SidebarContent className="bg-sidebar border-0">
@@ -308,7 +305,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <div className={cn(
-          "mt-auto border-t border-sidebar-border space-y-2 transition-all duration-300",
+          "mt-auto border-t border-sidebar-border p-4 transition-all duration-300",
           collapsed ? "p-2" : "p-4"
         )}>
           <SidebarMenuButton 
@@ -328,11 +325,6 @@ export function AppSidebar() {
               {!collapsed && <span className="ml-2">Sair</span>}
             </Button>
           </SidebarMenuButton>
-          
-          <SidebarTrigger className={cn(
-            "w-full transition-all duration-200",
-            collapsed ? "h-12" : "h-10"
-          )} />
         </div>
       </SidebarContent>
     </Sidebar>
