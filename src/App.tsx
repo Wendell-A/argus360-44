@@ -1,17 +1,18 @@
+
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "next-themes"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster"
 
 import { AuthProvider } from "./contexts/AuthContext";
-import { PublicRoute } from "./routes/PublicRoute";
-import { ProtectedRoute } from "./routes/ProtectedRoute";
-import { ProtectedLayout } from "./components/ProtectedLayout";
+import { PublicRoute } from "./components/auth/PublicRoute";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { ProtectedLayout } from "./components/layout/ProtectedLayout";
 
 import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import Vendas from "./pages/Vendas";
