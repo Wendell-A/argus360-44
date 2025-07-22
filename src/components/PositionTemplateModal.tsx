@@ -16,7 +16,7 @@ interface PositionTemplateModalProps {
 
 export function PositionTemplateModal({ open, onClose }: PositionTemplateModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<PositionTemplate | null>(null);
-  const { createPosition, isPending } = useCreatePosition();
+  const createPositionMutation = useCreatePosition();
   const { departments } = useDepartments();
 
   const handleCreateFromTemplate = (template: PositionTemplate) => {
@@ -32,7 +32,7 @@ export function PositionTemplateModal({ open, onClose }: PositionTemplateModalPr
       }
     }
 
-    createPosition({
+    createPositionMutation.mutate({
       name: template.name,
       description: `${template.description}\n\nResponsabilidades:\n${template.responsibilities.map(r => `• ${r}`).join('\n')}\n\nRequisitos:\n${template.requirements.map(r => `• ${r}`).join('\n')}`,
       department_id: departmentId
@@ -140,7 +140,7 @@ export function PositionTemplateModal({ open, onClose }: PositionTemplateModalPr
                       e.stopPropagation();
                       handleCreateFromTemplate(template);
                     }}
-                    disabled={isPending}
+                    disabled={createPositionMutation.isPending}
                   >
                     Usar este Template
                   </Button>
