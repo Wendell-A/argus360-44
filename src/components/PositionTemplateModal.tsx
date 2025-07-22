@@ -81,70 +81,73 @@ export function PositionTemplateModal({ open, onClose }: PositionTemplateModalPr
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {POSITION_TEMPLATES.map((template) => (
-            <Card 
-              key={template.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedTemplate(template)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${template.color}`}>
-                      {template.icon}
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{template.name}</CardTitle>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className={getLevelColor(template.level)}>
-                          {getLevelText(template.level)}
-                        </Badge>
-                        {template.department && (
-                          <Badge variant="secondary" className="text-xs">
-                            {template.department}
+          {POSITION_TEMPLATES.map((template) => {
+            const IconComponent = template.icon;
+            return (
+              <Card 
+                key={template.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setSelectedTemplate(template)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${template.color}`}>
+                        <IconComponent className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant="outline" className={getLevelColor(template.level)}>
+                            {getLevelText(template.level)}
                           </Badge>
-                        )}
+                          {template.department && (
+                            <Badge variant="secondary" className="text-xs">
+                              {template.department}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <CardDescription className="text-sm">
-                  {template.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-2">
-                    Principais responsabilidades:
-                  </p>
-                  <div className="space-y-1">
-                    {template.responsibilities.slice(0, 2).map((resp) => (
-                      <p key={resp} className="text-xs text-muted-foreground">
-                        • {resp}
-                      </p>
-                    ))}
-                    {template.responsibilities.length > 2 && (
-                      <p className="text-xs text-muted-foreground">
-                        • +{template.responsibilities.length - 2} mais...
-                      </p>
-                    )}
+                  <CardDescription className="text-sm">
+                    {template.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      Principais responsabilidades:
+                    </p>
+                    <div className="space-y-1">
+                      {template.responsibilities.slice(0, 2).map((resp) => (
+                        <p key={resp} className="text-xs text-muted-foreground">
+                          • {resp}
+                        </p>
+                      ))}
+                      {template.responsibilities.length > 2 && (
+                        <p className="text-xs text-muted-foreground">
+                          • +{template.responsibilities.length - 2} mais...
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                <Button
-                  className="w-full"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCreateFromTemplate(template);
-                  }}
-                  disabled={isPending}
-                >
-                  Usar este Template
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  
+                  <Button
+                    className="w-full"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCreateFromTemplate(template);
+                    }}
+                    disabled={isPending}
+                  >
+                    Usar este Template
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {selectedTemplate && (

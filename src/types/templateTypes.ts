@@ -1,9 +1,12 @@
 
+import React from 'react';
+import { LucideIcon } from 'lucide-react';
+
 export interface BaseTemplate {
   id: string;
   name: string;
   description: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
   color: string;
 }
 
