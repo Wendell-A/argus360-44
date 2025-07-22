@@ -1,163 +1,166 @@
-
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Shield, Users, BarChart3, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, BarChart3, Users, Target, Shield, Zap } from 'lucide-react';
 
-export default function Landing() {
-  const features = [
-    {
-      icon: Users,
-      title: 'Gestão Multi-tenant',
-      description: 'Gerencie múltiplas organizações e usuários em uma única plataforma.'
-    },
-    {
-      icon: Shield,
-      title: 'Segurança Avançada',
-      description: 'Controle de acesso granular e auditoria completa de todas as operações.'
-    },
-    {
-      icon: BarChart3,
-      title: 'Relatórios Detalhados',
-      description: 'Dashboards e relatórios personalizados para cada área do negócio.'
-    }
-  ];
-
-  const benefits = [
-    'Controle total de usuários e permissões',
-    'Auditoria completa de ações do sistema',
-    'Interface moderna e responsiva',
-    'Suporte a múltiplas organizações',
-    'Relatórios e dashboards personalizados',
-    'Integração com sistemas externos'
-  ];
-
+const Landing = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Argus360</span>
-          </div>
-          <div className="space-x-4">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Entrar</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/register">Começar Agora</Link>
-            </Button>
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <h1 className="text-2xl font-bold text-gray-900">Argus360</h1>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link to="/auth/login">
+                <Button variant="ghost">Entrar</Button>
+              </Link>
+              <Link to="/auth/register">
+                <Button>Começar Grátis</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          Gestão Empresarial Completa
-        </h1>
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Plataforma moderna para gestão de usuários, organizações e processos empresariais 
-          com segurança e controle total.
-        </p>
-        <div className="space-x-4">
-          <Button size="lg" asChild>
-            <Link to="/register">
-              Criar Conta Gratuita
-              <ArrowRight className="ml-2 h-4 w-4" />
+      <section className="relative px-4 py-20 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <Badge variant="secondary" className="mb-4">
+            Sistema de Gestão de Consórcios
+          </Badge>
+          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+            Gerencie seu negócio de
+            <span className="text-blue-600"> consórcios</span> com inteligência
+          </h1>
+          <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
+            Plataforma completa para administradoras e corretoras de consórcio. 
+            Controle vendas, comissões, clientes e relatórios em um só lugar.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/auth/register">
+              <Button size="lg" className="text-lg px-8 py-3">
+                Começar Teste Grátis
+              </Button>
             </Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link to="/login">Já tenho conta</Link>
-          </Button>
+            <Link to="/auth/login">
+              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+                Fazer Login
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-20">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Funcionalidades Principais
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <Card key={index} className="text-center">
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              Funcionalidades Principais
+            </h2>
+            <p className="mt-4 text-xl text-gray-600">
+              Tudo que você precisa para gerenciar seu negócio de consórcios
+            </p>
+          </div>
+
+          <div className="mt-20">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              <Card>
                 <CardHeader>
-                  <Icon className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>{feature.title}</CardTitle>
+                  <BarChart3 className="h-8 w-8 text-blue-600" />
+                  <CardTitle>Gestão de Vendas</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-base">
-                    {feature.description}
+                  <CardDescription>
+                    Controle completo do processo de vendas, desde o lead até a contemplação.
                   </CardDescription>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-      </section>
 
-      {/* Benefits Section */}
-      <section className="bg-muted/50 py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">
-                Por que escolher o Argus360?
-              </h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                Nossa plataforma oferece tudo que você precisa para gerenciar 
-                sua empresa de forma eficiente e segura.
-              </p>
-              <Button size="lg" asChild>
-                <Link to="/register">
-                  Começar Agora
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-            <div className="space-y-4">
-              {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span className="text-lg">{benefit}</span>
-                </div>
-              ))}
+              <Card>
+                <CardHeader>
+                  <Target className="h-8 w-8 text-green-600" />
+                  <CardTitle>Controle de Comissões</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Automatize o cálculo e pagamento de comissões para vendedores e escritórios.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <Users className="h-8 w-8 text-purple-600" />
+                  <CardTitle>Gestão de Clientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Base completa de clientes com histórico de relacionamento e vendas.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <Shield className="h-8 w-8 text-red-600" />
+                  <CardTitle>Relatórios Avançados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Dashboards e relatórios detalhados para tomada de decisão estratégica.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <Zap className="h-8 w-8 text-yellow-600" />
+                  <CardTitle>Automação</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Processos automatizados que economizam tempo e reduzem erros.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CheckCircle className="h-8 w-8 text-indigo-600" />
+                  <CardTitle>Multi-tenant</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Suporte a múltiplos escritórios com isolamento completo de dados.
+                  </CardDescription>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl">
-              Pronto para começar?
-            </CardTitle>
-            <CardDescription className="text-lg">
-              Crie sua conta gratuita e comece a gerenciar sua empresa hoje mesmo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-x-4">
-            <Button size="lg" asChild>
-              <Link to="/register">Criar Conta Gratuita</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link to="/login">Já tenho conta</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-
       {/* Footer */}
-      <footer className="border-t bg-background/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
-          <p>&copy; 2024 Argus360. Todos os direitos reservados.</p>
+      <footer className="bg-gray-800">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-white">Argus360</h3>
+            <p className="mt-2 text-gray-400">
+              Sistema de Gestão de Consórcios
+            </p>
+          </div>
         </div>
       </footer>
     </div>
   );
-}
+};
+
+export default Landing;
