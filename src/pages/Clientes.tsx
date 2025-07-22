@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,7 @@ import {
 import { useClients, useDeleteClient } from "@/hooks/useClients";
 import { ClientModal } from "@/components/ClientModal";
 import { useToast } from "@/hooks/use-toast";
-import { useUpdateClientFunnelPosition } from "@/hooks/useSalesFunnel";
+import { useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFunnelStages } from "@/hooks/useSalesFunnel";
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,6 +48,17 @@ export default function Clientes() {
   const { deleteClientAsync, isDeleting } = useDeleteClient();
   const { toast } = useToast();
   const { updatePositionAsync } = useUpdateClientFunnelPosition();
+  const { stages } = useSalesFunnelStages();
+  const { createDefaultStagesAsync, isCreating } = useCreateDefaultFunnelStages();
+
+  // Criar fases padrão se não existirem
+  useEffect(() => {
+    if (stages.length === 0) {
+      createDefaultStagesAsync().catch((error) => {
+        console.error('Erro ao criar fases padrão:', error);
+      });
+    }
+  }, [stages.length, createDefaultStagesAsync]);
 
   const filteredClients = clients.filter((client) => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,23 +113,43 @@ export default function Clientes() {
     }
   };
 
-  const handleAddToFunnel = async (clientId: string) => {
+  const handleAddToFunnel = async (clientId: string, clientName: string) => {
     try {
-      // Adicionar cliente na primeira fase do funil (Lead)
+      // Verificar se há fases disponíveis
+      if (stages.length === 0) {
+        toast({
+          title: "Fases do funil não encontradas",
+          description: "Criando fases padrão do funil de vendas...",
+        });
+        await createDefaultStagesAsync();
+        return;
+      }
+
+      // Pegar a primeira fase (Lead)
+      const firstStage = stages.find(stage => stage.order_index === 1) || stages[0];
+      
+      if (!firstStage) {
+        throw new Error('Nenhuma fase encontrada no funil');
+      }
+
+      // Adicionar cliente na primeira fase do funil
       await updatePositionAsync({
         clientId: clientId,
-        stageId: 'lead-stage-id', // TODO: Pegar ID da primeira fase dinamicamente
+        stageId: firstStage.id,
         probability: 10,
         expectedValue: 0,
+        notes: `Cliente ${clientName} adicionado automaticamente ao funil em ${new Date().toLocaleDateString('pt-BR')}`,
       });
+
       toast({
         title: "Cliente adicionado ao funil",
-        description: "O cliente foi adicionado ao funil de vendas.",
+        description: `${clientName} foi adicionado à fase "${firstStage.name}" do funil de vendas.`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Erro ao adicionar cliente ao funil:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar o cliente ao funil.",
+        description: error?.message || "Não foi possível adicionar o cliente ao funil.",
         variant: "destructive",
       });
     }
@@ -353,11 +385,12 @@ export default function Clientes() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleAddToFunnel(client.id)}
+                              onClick={() => handleAddToFunnel(client.id, client.name)}
+                              disabled={isCreating}
                               className="text-xs text-green-600 hover:text-green-700"
                             >
                               <Users className="w-3 h-3 mr-1" />
-                              + CRM
+                              {isCreating ? 'Configurando...' : '+ CRM'}
                             </Button>
                             <Button
                               variant="outline"

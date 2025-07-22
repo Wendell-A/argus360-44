@@ -88,7 +88,7 @@ export function useUpdateClientFunnelPosition() {
           tenant_id: activeTenant.tenant_id,
           client_id: data.clientId,
           stage_id: data.stageId,
-          probability: data.probability || 0,
+          probability: data.probability || 10,
           expected_value: data.expectedValue || 0,
           notes: data.notes || '',
           entered_at: new Date().toISOString(),
@@ -108,6 +108,92 @@ export function useUpdateClientFunnelPosition() {
     updatePosition: mutation.mutate,
     updatePositionAsync: mutation.mutateAsync,
     isUpdating: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+export function useCreateDefaultFunnelStages() {
+  const queryClient = useQueryClient();
+  const { activeTenant } = useAuth();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!activeTenant?.tenant_id) {
+        throw new Error('No tenant selected');
+      }
+
+      // Verificar se já existem fases
+      const { data: existingStages } = await supabase
+        .from('sales_funnel_stages')
+        .select('id')
+        .eq('tenant_id', activeTenant.tenant_id)
+        .limit(1);
+
+      if (existingStages && existingStages.length > 0) {
+        return existingStages; // Já existem fases
+      }
+
+      // Criar fases padrão
+      const defaultStages = [
+        {
+          tenant_id: activeTenant.tenant_id,
+          name: 'Lead',
+          description: 'Potenciais clientes identificados',
+          color: '#3b82f6',
+          order_index: 1,
+          is_active: true,
+        },
+        {
+          tenant_id: activeTenant.tenant_id,
+          name: 'Qualificado',
+          description: 'Clientes com interesse confirmado',
+          color: '#f59e0b',
+          order_index: 2,
+          is_active: true,
+        },
+        {
+          tenant_id: activeTenant.tenant_id,
+          name: 'Proposta',
+          description: 'Proposta enviada e em análise',
+          color: '#8b5cf6',
+          order_index: 3,
+          is_active: true,
+        },
+        {
+          tenant_id: activeTenant.tenant_id,
+          name: 'Negociação',
+          description: 'Em processo de negociação',
+          color: '#ef4444',
+          order_index: 4,
+          is_active: true,
+        },
+        {
+          tenant_id: activeTenant.tenant_id,
+          name: 'Fechado',
+          description: 'Venda concluída com sucesso',
+          color: '#10b981',
+          order_index: 5,
+          is_active: true,
+        },
+      ];
+
+      const { data, error } = await supabase
+        .from('sales_funnel_stages')
+        .insert(defaultStages)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales_funnel_stages'] });
+    },
+  });
+
+  return {
+    createDefaultStages: mutation.mutate,
+    createDefaultStagesAsync: mutation.mutateAsync,
+    isCreating: mutation.isPending,
     error: mutation.error,
   };
 }
