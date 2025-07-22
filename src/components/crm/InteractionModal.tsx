@@ -157,6 +157,7 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
         completed_at: formData.status === 'completed' ? new Date().toISOString() : null,
       });
 
+      // Criar a interação principal
       await createInteractionAsync({
         client_id: client.id,
         interaction_type: formData.interaction_type,
@@ -169,9 +170,45 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
         completed_at: formData.status === 'completed' ? new Date().toISOString() : null,
       });
 
+      // Se há próxima ação definida, criar uma tarefa automaticamente
+      if (formData.next_action_type && formData.next_action_title && formData.next_action_date && client.id) {
+        console.log('Creating automatic task for next action:', {
+          client_id: client.id,
+          task_type: formData.next_action_type,
+          title: formData.next_action_title,
+          description: formData.next_action_description,
+          priority: formData.priority,
+          due_date: formData.next_action_date,
+        });
+
+        try {
+          // Criar tarefa para a próxima ação
+          await createInteractionAsync({
+            client_id: client.id,
+            interaction_type: formData.next_action_type,
+            title: formData.next_action_title,
+            description: formData.next_action_description || `Tarefa criada automaticamente: ${formData.next_action_title}`,
+            priority: formData.priority,
+            status: 'pending',
+            next_action: `${interactionTypeOptions.find(opt => opt.value === formData.next_action_type)?.label}: ${formData.next_action_title}`,
+            next_action_date: formData.next_action_date,
+            scheduled_at: new Date(formData.next_action_date).toISOString(),
+          });
+
+          console.log('Automatic task created successfully');
+        } catch (taskError) {
+          console.error('Error creating automatic task:', taskError);
+          toast({
+            title: "Aviso",
+            description: "Interação salva, mas houve problema ao criar a tarefa automática.",
+            variant: "destructive",
+          });
+        }
+      }
+
       toast({
         title: "Sucesso",
-        description: "Interação registrada com sucesso.",
+        description: "Interação registrada com sucesso." + (formData.next_action_type ? " Tarefa criada automaticamente." : ""),
       });
 
       onClose();
