@@ -1,199 +1,151 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  TrendingUp, 
-  Clock, 
-  Target,
-  MessageCircle,
-  Phone,
-  Calendar
-} from 'lucide-react';
+import { Users, Target, Calendar, TrendingUp } from 'lucide-react';
 import { SalesFunnelBoard } from '@/components/crm/SalesFunnelBoard';
-import { useClientFunnelPositions } from '@/hooks/useSalesFunnel';
-import { useAutomatedTasks } from '@/hooks/useAutomatedTasks';
+import { ClientInteractionHistory } from '@/components/crm/ClientInteractionHistory';
+import { UpcomingTasks } from '@/components/crm/UpcomingTasks';
+import { useSalesFunnelStages, useClientFunnelPositions } from '@/hooks/useSalesFunnel';
+import { useClientInteractions } from '@/hooks/useClientInteractions';
 
 export default function CRM() {
-  const { positions } = useClientFunnelPositions();
-  const { tasks } = useAutomatedTasks();
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
+  const { positions, isLoading: positionsLoading } = useClientFunnelPositions();
+  const { interactions } = useClientInteractions();
 
-  // Calcular métricas do CRM
+  // Calcular métricas
   const totalClients = positions.length;
-  const pendingTasks = tasks.filter(task => task.status === 'pending').length;
-  const overdueTasks = tasks.filter(task => {
-    const dueDate = new Date(task.due_date);
-    return task.status === 'pending' && dueDate < new Date();
-  }).length;
+  const totalInteractions = interactions.length;
+  const activeTasks = interactions.filter(i => 
+    i.next_action && i.next_action_date && i.status !== 'completed'
+  ).length;
+  
+  // Calcular conversão (clientes na última fase / total)
+  const lastStage = stages.sort((a, b) => b.order_index - a.order_index)[0];
+  const convertedClients = lastStage ? positions.filter(p => p.sales_funnel_stages?.id === lastStage.id).length : 0;
+  const conversionRate = totalClients > 0 ? ((convertedClients / totalClients) * 100).toFixed(1) : '0';
 
-  // Calcular conversão por fase
-  const conversionRate = positions.reduce((acc, pos) => acc + (pos.probability || 0), 0) / positions.length || 0;
+  const isLoading = stagesLoading || positionsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Carregando CRM...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-4 sm:p-6 lg:p-8 w-full max-w-none">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900">
-              CRM - Funil de Vendas
-            </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1">
-              Gerencie seus clientes e acompanhe o pipeline de vendas
-            </p>
-          </div>
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">CRM - Funil de Vendas</h1>
+          <p className="text-muted-foreground">Gerencie seus clientes e acompanhe o pipeline de vendas</p>
         </div>
+      </div>
 
-        {/* Métricas Principais */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Clientes no Funil</CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalClients}</div>
-              <p className="text-xs text-gray-600 mt-1">Total ativo</p>
-            </CardContent>
-          </Card>
+      {/* Métricas do Dashboard */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalClients}</div>
+            <p className="text-xs text-muted-foreground">no funil de vendas</p>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
-              <p className="text-xs text-green-600 mt-1">Probabilidade média</p>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{conversionRate}%</div>
+            <p className="text-xs text-muted-foreground">clientes convertidos</p>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tarefas Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingTasks}</div>
-              <p className="text-xs text-yellow-600 mt-1">Para hoje</p>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Interações</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalInteractions}</div>
+            <p className="text-xs text-muted-foreground">registradas</p>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tarefas Atrasadas</CardTitle>
-              <Target className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{overdueTasks}</div>
-              <p className="text-xs text-red-600 mt-1">Requer atenção</p>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tarefas Ativas</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeTasks}</div>
+            <p className="text-xs text-muted-foreground">a serem concluídas</p>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Abas do CRM */}
-        <Tabs defaultValue="funnel" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="funnel">Funil de Vendas</TabsTrigger>
-            <TabsTrigger value="tasks">Tarefas</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+      {/* Conteúdo Principal */}
+      <Tabs defaultValue="funnel" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="funnel">Funil de Vendas</TabsTrigger>
+          <TabsTrigger value="tasks">Próximas Tarefas</TabsTrigger>
+          {selectedClientId && (
+            <TabsTrigger value="history">Histórico do Cliente</TabsTrigger>
+          )}
+        </TabsList>
 
-          <TabsContent value="funnel" className="mt-6">
+        <TabsContent value="funnel" className="space-y-4">
+          <SalesFunnelBoard onClientSelect={setSelectedClientId} />
+        </TabsContent>
+
+        <TabsContent value="tasks" className="space-y-4">
+          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+            <UpcomingTasks />
             <Card>
               <CardHeader>
-                <CardTitle>Pipeline de Vendas</CardTitle>
+                <CardTitle className="text-sm">Resumo de Tarefas</CardTitle>
               </CardHeader>
               <CardContent>
-                <SalesFunnelBoard />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tasks" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Minhas Tarefas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {tasks.slice(0, 10).map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <h4 className="font-medium">{task.title}</h4>
-                        <p className="text-sm text-gray-600">{task.description}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {task.task_type.replace('_', ' ')}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            Vence: {new Date(task.due_date).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {task.task_type === 'send_whatsapp' && (
-                          <Button size="sm" variant="outline">
-                            <MessageCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {task.task_type === 'call_client' && (
-                          <Button size="sm" variant="outline">
-                            <Phone className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {task.task_type === 'schedule_meeting' && (
-                          <Button size="sm" variant="outline">
-                            <Calendar className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {tasks.length === 0 && (
-                    <div className="text-center text-gray-500 py-8">
-                      Nenhuma tarefa pendente
-                    </div>
-                  )}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Tarefas ativas:</span>
+                    <Badge variant="secondary">{activeTasks}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Interações hoje:</span>
+                    <Badge variant="secondary">
+                      {interactions.filter(i => 
+                        new Date(i.created_at).toDateString() === new Date().toDateString()
+                      ).length}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Clientes ativos:</span>
+                    <Badge variant="secondary">{totalClients}</Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        </TabsContent>
 
-          <TabsContent value="analytics" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Conversão por Fase</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center text-gray-500 py-8">
-                    Gráfico de conversão em breve...
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Performance do Mês</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center text-gray-500 py-8">
-                    Métricas de performance em breve...
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+        {selectedClientId && (
+          <TabsContent value="history" className="space-y-4">
+            <ClientInteractionHistory clientId={selectedClientId} />
           </TabsContent>
-        </Tabs>
-      </div>
+        )}
+      </Tabs>
     </div>
   );
 }

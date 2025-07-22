@@ -149,8 +149,10 @@ export type Database = {
           created_at: string | null
           entered_at: string | null
           estimated_close_date: string | null
+          exited_at: string | null
           expected_value: number | null
           id: string
+          is_current: boolean | null
           notes: string | null
           probability: number | null
           stage_id: string
@@ -162,8 +164,10 @@ export type Database = {
           created_at?: string | null
           entered_at?: string | null
           estimated_close_date?: string | null
+          exited_at?: string | null
           expected_value?: number | null
           id?: string
+          is_current?: boolean | null
           notes?: string | null
           probability?: number | null
           stage_id: string
@@ -175,8 +179,10 @@ export type Database = {
           created_at?: string | null
           entered_at?: string | null
           estimated_close_date?: string | null
+          exited_at?: string | null
           expected_value?: number | null
           id?: string
+          is_current?: boolean | null
           notes?: string | null
           probability?: number | null
           stage_id?: string

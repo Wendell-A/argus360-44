@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +29,11 @@ interface FunnelStage {
   clients: ClientCard[];
 }
 
-export function SalesFunnelBoard() {
+interface SalesFunnelBoardProps {
+  onClientSelect?: (clientId: string) => void;
+}
+
+export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
   const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
   const { positions, isLoading: positionsLoading, refetch } = useClientFunnelPositions();
   const { updatePositionAsync } = useUpdateClientFunnelPosition();
@@ -128,6 +131,12 @@ export function SalesFunnelBoard() {
     e.preventDefault();
   };
 
+  const handleClientClick = (client: ClientCard) => {
+    if (onClientSelect) {
+      onClientSelect(client.id);
+    }
+  };
+
   const getClassificationColor = (classification: string) => {
     switch (classification) {
       case 'hot': return 'bg-red-100 text-red-800';
@@ -194,6 +203,7 @@ export function SalesFunnelBoard() {
                     draggable
                     onDragStart={(e) => handleDragStart(e, client)}
                     onDragEnd={handleDragEnd}
+                    onClick={() => handleClientClick(client)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between mb-2">

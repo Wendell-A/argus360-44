@@ -56,7 +56,8 @@ export function useClientFunnelPositions() {
           clients(id, name, email, phone, classification, status),
           sales_funnel_stages(id, name, color, order_index)
         `)
-        .eq('tenant_id', activeTenant.tenant_id);
+        .eq('tenant_id', activeTenant.tenant_id)
+        .eq('is_current', true);
 
       if (error) throw error;
       return data;
@@ -66,6 +67,40 @@ export function useClientFunnelPositions() {
 
   return {
     positions: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
+
+export function useClientFunnelHistory(clientId?: string) {
+  const { activeTenant } = useAuth();
+
+  const query = useQuery({
+    queryKey: ['client_funnel_history', activeTenant?.tenant_id, clientId],
+    queryFn: async () => {
+      if (!activeTenant?.tenant_id || !clientId) {
+        throw new Error('No tenant or client selected');
+      }
+
+      const { data, error } = await supabase
+        .from('client_funnel_position')
+        .select(`
+          *,
+          sales_funnel_stages(id, name, color, order_index)
+        `)
+        .eq('tenant_id', activeTenant.tenant_id)
+        .eq('client_id', clientId)
+        .order('entered_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeTenant?.tenant_id && !!clientId,
+  });
+
+  return {
+    history: query.data || [],
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,
@@ -82,9 +117,28 @@ export function useUpdateClientFunnelPosition() {
         throw new Error('No tenant selected');
       }
 
+      console.log('Updating funnel position:', data);
+
+      // Primeiro, marcar a posição atual como não atual e definir data de saída
+      const { error: updateError } = await supabase
+        .from('client_funnel_position')
+        .update({
+          is_current: false,
+          exited_at: new Date().toISOString(),
+        })
+        .eq('tenant_id', activeTenant.tenant_id)
+        .eq('client_id', data.clientId)
+        .eq('is_current', true);
+
+      if (updateError) {
+        console.error('Error updating previous position:', updateError);
+        throw updateError;
+      }
+
+      // Criar nova posição atual
       const { data: result, error } = await supabase
         .from('client_funnel_position')
-        .upsert({
+        .insert({
           tenant_id: activeTenant.tenant_id,
           client_id: data.clientId,
           stage_id: data.stageId,
@@ -92,15 +146,22 @@ export function useUpdateClientFunnelPosition() {
           expected_value: data.expectedValue || 0,
           notes: data.notes || '',
           entered_at: new Date().toISOString(),
+          is_current: true,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating new position:', error);
+        throw error;
+      }
+
+      console.log('Position updated successfully:', result);
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client_funnel_positions'] });
+      queryClient.invalidateQueries({ queryKey: ['client_funnel_history'] });
     },
   });
 
