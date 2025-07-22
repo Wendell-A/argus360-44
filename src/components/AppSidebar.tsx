@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Home, 
@@ -16,7 +15,8 @@ import {
   Building,
   LogOut,
   Calculator,
-  Briefcase
+  Briefcase,
+  Car
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -37,15 +37,66 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Vendas", url: "/vendas", icon: ShoppingCart },
-  { title: "Clientes", url: "/clientes", icon: Users },
-  { title: "Vendedores", url: "/vendedores", icon: UserCheck },
-  { title: "Comissões", url: "/comissoes", icon: DollarSign },
-  { title: "Metas", url: "/metas", icon: Target },
-  { title: "Simulação", url: "/simulacao-consorcio", icon: Calculator },
-  { title: "Consórcios", url: "/consorcios", icon: Building2 },
-  { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: Home,
+    shortcut: "⌘D"
+  },
+  {
+    title: "CRM",
+    url: "/crm",
+    icon: Users,
+    shortcut: "⌘R"
+  },
+  {
+    title: "Clientes",
+    url: "/clientes", 
+    icon: UserCheck,
+    shortcut: "⌘C"
+  },
+  {
+    title: "Vendas",
+    url: "/vendas",
+    icon: ShoppingCart,
+    shortcut: "⌘V"
+  },
+  {
+    title: "Vendedores",
+    url: "/vendedores",
+    icon: Users,
+    shortcut: "⌘U"
+  },
+  {
+    title: "Comissões",
+    url: "/comissoes",
+    icon: DollarSign,
+    shortcut: "⌘M"
+  },
+  {
+    title: "Consórcios",
+    url: "/consorcios",
+    icon: Car,
+    shortcut: "⌘N"
+  },
+  {
+    title: "Simulação",
+    url: "/simulacao-consorcio",
+    icon: Calculator,
+    shortcut: "⌘S"
+  },
+  {
+    title: "Metas",
+    url: "/metas",
+    icon: Target,
+    shortcut: "⌘T"
+  },
+  {
+    title: "Relatórios",
+    url: "/relatorios",
+    icon: FileText,
+    shortcut: "⌘L"
+  }
 ];
 
 const managementItems = [

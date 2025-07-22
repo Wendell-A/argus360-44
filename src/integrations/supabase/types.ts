@@ -64,6 +64,165 @@ export type Database = {
           },
         ]
       }
+      automated_tasks: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string
+          id: string
+          priority: string
+          seller_id: string
+          settings: Json | null
+          status: string
+          task_type: string
+          template_id: string | null
+          tenant_id: string
+          title: string
+          trigger_stage_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date: string
+          id?: string
+          priority?: string
+          seller_id: string
+          settings?: Json | null
+          status?: string
+          task_type: string
+          template_id?: string | null
+          tenant_id: string
+          title: string
+          trigger_stage_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string
+          id?: string
+          priority?: string
+          seller_id?: string
+          settings?: Json | null
+          status?: string
+          task_type?: string
+          template_id?: string | null
+          tenant_id?: string
+          title?: string
+          trigger_stage_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      client_funnel_position: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          entered_at: string | null
+          estimated_close_date: string | null
+          expected_value: number | null
+          id: string
+          notes: string | null
+          probability: number | null
+          stage_id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          entered_at?: string | null
+          estimated_close_date?: string | null
+          expected_value?: number | null
+          id?: string
+          notes?: string | null
+          probability?: number | null
+          stage_id: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          entered_at?: string | null
+          estimated_close_date?: string | null
+          expected_value?: number | null
+          id?: string
+          notes?: string | null
+          probability?: number | null
+          stage_id?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      client_interactions: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          interaction_type: string
+          next_action: string | null
+          next_action_date: string | null
+          outcome: string | null
+          priority: string
+          scheduled_at: string | null
+          seller_id: string
+          settings: Json | null
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          interaction_type: string
+          next_action?: string | null
+          next_action_date?: string | null
+          outcome?: string | null
+          priority?: string
+          scheduled_at?: string | null
+          seller_id: string
+          settings?: Json | null
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          interaction_type?: string
+          next_action?: string | null
+          next_action_date?: string | null
+          outcome?: string | null
+          priority?: string
+          scheduled_at?: string | null
+          seller_id?: string
+          settings?: Json | null
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: Json | null
@@ -496,6 +655,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      message_templates: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          stage_id: string | null
+          template_text: string
+          tenant_id: string
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          stage_id?: string | null
+          template_text: string
+          tenant_id: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          stage_id?: string | null
+          template_text?: string
+          tenant_id?: string
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
       }
       office_users: {
         Row: {
@@ -939,6 +1137,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sales_funnel_stages: {
+        Row: {
+          automated_tasks: Json | null
+          color: string
+          conversion_goals: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          order_index: number
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          automated_tasks?: Json | null
+          color?: string
+          conversion_goals?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          order_index: number
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          automated_tasks?: Json | null
+          color?: string
+          conversion_goals?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          order_index?: number
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       seller_commissions: {
         Row: {

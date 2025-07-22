@@ -1,0 +1,248 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Phone, MessageCircle, Mail, Plus } from 'lucide-react';
+import { useSalesFunnelStages, useClientFunnelPositions, useUpdateClientFunnelPosition } from '@/hooks/useSalesFunnel';
+import { generateWhatsAppLink, formatPhoneNumber } from '@/lib/whatsapp';
+import { InteractionModal } from './InteractionModal';
+import { useToast } from '@/hooks/use-toast';
+
+interface ClientCard {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  classification: string;
+  status: string;
+  probability: number;
+  expected_value: number;
+  entered_at: string;
+}
+
+interface FunnelStage {
+  id: string;
+  name: string;
+  color: string;
+  order_index: number;
+  clients: ClientCard[];
+}
+
+export function SalesFunnelBoard() {
+  const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
+  const { positions, isLoading: positionsLoading } = useClientFunnelPositions();
+  const { updatePositionAsync } = useUpdateClientFunnelPosition();
+  const [selectedClient, setSelectedClient] = useState<ClientCard | null>(null);
+  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  // Organizar dados por fase
+  const funnelData: FunnelStage[] = stages.map(stage => ({
+    id: stage.id,
+    name: stage.name,
+    color: stage.color,
+    order_index: stage.order_index,
+    clients: positions
+      .filter(pos => pos.sales_funnel_stages?.id === stage.id)
+      .map(pos => ({
+        id: pos.clients?.id || '',
+        name: pos.clients?.name || '',
+        email: pos.clients?.email || '',
+        phone: pos.clients?.phone || '',
+        classification: pos.clients?.classification || 'cold',
+        status: pos.clients?.status || 'prospect',
+        probability: pos.probability || 0,
+        expected_value: pos.expected_value || 0,
+        entered_at: pos.entered_at || '',
+      }))
+  }));
+
+  const handleDragStart = (e: React.DragEvent, client: ClientCard) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify(client));
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStageId: string) => {
+    e.preventDefault();
+    const clientData = JSON.parse(e.dataTransfer.getData('text/plain')) as ClientCard;
+    
+    try {
+      await updatePositionAsync({
+        clientId: clientData.id,
+        stageId: targetStageId,
+        probability: clientData.probability,
+        expectedValue: clientData.expected_value,
+      });
+      
+      toast({
+        title: "Cliente movido com sucesso",
+        description: `${clientData.name} foi movido para a nova fase.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao mover cliente",
+        description: "Não foi possível mover o cliente para a nova fase.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const getClassificationColor = (classification: string) => {
+    switch (classification) {
+      case 'hot': return 'bg-red-100 text-red-800';
+      case 'warm': return 'bg-yellow-100 text-yellow-800';
+      case 'cold': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleWhatsAppClick = (client: ClientCard) => {
+    if (client.phone) {
+      const message = `Olá ${client.name}! Como posso ajudá-lo hoje?`;
+      const link = generateWhatsAppLink(client.phone, message);
+      window.open(link, '_blank');
+    }
+  };
+
+  const handleInteractionClick = (client: ClientCard) => {
+    setSelectedClient(client);
+    setIsInteractionModalOpen(true);
+  };
+
+  if (stagesLoading || positionsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Carregando funil de vendas...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {funnelData.map((stage) => (
+          <div
+            key={stage.id}
+            className="min-w-[300px] flex-shrink-0"
+            onDrop={(e) => handleDrop(e, stage.id)}
+            onDragOver={handleDragOver}
+          >
+            <Card className="h-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle 
+                    className="text-sm font-medium"
+                    style={{ color: stage.color }}
+                  >
+                    {stage.name}
+                  </CardTitle>
+                  <Badge variant="secondary">
+                    {stage.clients.length}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
+                {stage.clients.map((client) => (
+                  <Card
+                    key={client.id}
+                    className="cursor-move hover:shadow-md transition-shadow border-l-4"
+                    style={{ borderLeftColor: stage.color }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, client)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-xs">
+                              {client.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{client.name}</p>
+                            <p className="text-xs text-gray-600">{client.email}</p>
+                          </div>
+                        </div>
+                        <Badge className={getClassificationColor(client.classification)}>
+                          {client.classification}
+                        </Badge>
+                      </div>
+                      
+                      {client.phone && (
+                        <p className="text-xs text-gray-600 mb-2">
+                          {formatPhoneNumber(client.phone)}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Prob: {client.probability}%</span>
+                        <span>
+                          Valor: R$ {client.expected_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleWhatsAppClick(client)}
+                          disabled={!client.phone}
+                          className="flex-1 p-1 h-7"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`tel:${client.phone}`)}
+                          disabled={!client.phone}
+                          className="flex-1 p-1 h-7"
+                        >
+                          <Phone className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`mailto:${client.email}`)}
+                          disabled={!client.email}
+                          className="flex-1 p-1 h-7"
+                        >
+                          <Mail className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleInteractionClick(client)}
+                          className="flex-1 p-1 h-7"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {stage.clients.length === 0 && (
+                  <div className="text-center text-gray-500 text-sm py-8">
+                    Nenhum cliente nesta fase
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
+
+      <InteractionModal
+        isOpen={isInteractionModalOpen}
+        onClose={() => setIsInteractionModalOpen(false)}
+        client={selectedClient}
+      />
+    </div>
+  );
+}

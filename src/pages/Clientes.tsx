@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import {
 import { useClients, useDeleteClient } from "@/hooks/useClients";
 import { ClientModal } from "@/components/ClientModal";
 import { useToast } from "@/hooks/use-toast";
+import { useUpdateClientFunnelPosition } from "@/hooks/useSalesFunnel";
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +46,7 @@ export default function Clientes() {
   const { clients, isLoading } = useClients();
   const { deleteClientAsync, isDeleting } = useDeleteClient();
   const { toast } = useToast();
+  const { updatePositionAsync } = useUpdateClientFunnelPosition();
 
   const filteredClients = clients.filter((client) => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,6 +101,28 @@ export default function Clientes() {
     }
   };
 
+  const handleAddToFunnel = async (clientId: string) => {
+    try {
+      // Adicionar cliente na primeira fase do funil (Lead)
+      await updatePositionAsync({
+        clientId: clientId,
+        stageId: 'lead-stage-id', // TODO: Pegar ID da primeira fase dinamicamente
+        probability: 10,
+        expectedValue: 0,
+      });
+      toast({
+        title: "Cliente adicionado ao funil",
+        description: "O cliente foi adicionado ao funil de vendas.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o cliente ao funil.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ')
       .map(word => word.charAt(0))
@@ -135,13 +158,23 @@ export default function Clientes() {
             <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900">Clientes</h1>
             <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1">Gerencie sua base de clientes</p>
           </div>
-          <Button 
-            onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Cliente
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => window.location.href = '/crm'}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Ver CRM
+            </Button>
+            <Button 
+              onClick={handleCreate}
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Cliente
+            </Button>
+          </div>
         </div>
 
         {/* Metrics Cards */}
@@ -255,7 +288,7 @@ export default function Clientes() {
                       <TableHead className="min-w-[120px]">Documento</TableHead>
                       <TableHead className="min-w-[100px]">Status</TableHead>
                       <TableHead className="min-w-[120px]">Classificação</TableHead>
-                      <TableHead className="min-w-[150px]">Ações</TableHead>
+                      <TableHead className="min-w-[200px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -316,6 +349,15 @@ export default function Clientes() {
                             >
                               <Edit className="w-3 h-3 mr-1" />
                               Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddToFunnel(client.id)}
+                              className="text-xs text-green-600 hover:text-green-700"
+                            >
+                              <Users className="w-3 h-3 mr-1" />
+                              + CRM
                             </Button>
                             <Button
                               variant="outline"
