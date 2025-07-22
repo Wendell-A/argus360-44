@@ -61,10 +61,11 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!client) {
+    // Validar se cliente foi fornecido (não pode ser string vazia)
+    if (!client || !client.id || client.id.trim() === '') {
       toast({
         title: "Erro",
-        description: "Cliente não selecionado.",
+        description: "Cliente deve ser selecionado para criar tarefa.",
         variant: "destructive",
       });
       return;
@@ -100,6 +101,8 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     }
 
     try {
+      console.log('Creating task with client:', client);
+      
       // Criar uma interação com status pending que representa a tarefa
       await createInteractionAsync({
         client_id: client.id,

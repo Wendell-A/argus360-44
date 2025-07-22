@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, Clock, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle2, Plus, User } from 'lucide-react';
 import { useClientInteractions, useUpdateClientInteraction } from '@/hooks/useClientInteractions';
+import { useClients } from '@/hooks/useClients';
 import { format, isAfter, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { TaskModal } from './TaskModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface UpcomingTasksProps {
   clientId?: string;
@@ -31,9 +33,10 @@ const getDateColor = (date: Date) => {
 
 export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string } | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
   
   const { interactions, isLoading } = useClientInteractions(clientId);
+  const { clients } = useClients();
   const { updateInteractionAsync, isUpdating } = useUpdateClientInteraction();
   const { toast } = useToast();
 
@@ -76,13 +79,27 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
   const handleNewTask = () => {
     if (clientId) {
       // Se há um cliente específico, usar esse cliente
-      const clientName = `Cliente #${clientId}`;
-      setSelectedClient({ id: clientId, name: clientName });
+      setSelectedClientId(clientId);
+    } else if (selectedClientId) {
+      // Se cliente foi selecionado no dropdown
+      // Manter o cliente selecionado
     } else {
-      // Se não há cliente específico, permitir criar tarefa geral
-      setSelectedClient({ id: '', name: 'Tarefa Geral' });
+      toast({
+        title: "Selecione um cliente",
+        description: "É necessário selecionar um cliente para criar uma tarefa.",
+        variant: "destructive",
+      });
+      return;
     }
     setIsTaskModalOpen(true);
+  };
+
+  const getSelectedClient = () => {
+    const targetClientId = clientId || selectedClientId;
+    if (!targetClientId) return null;
+    
+    const client = clients.find(c => c.id === targetClientId);
+    return client ? { id: client.id, name: client.name } : null;
   };
 
   if (isLoading) {
@@ -104,29 +121,68 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
               <Calendar className="w-4 h-4" />
               Próximas Tarefas ({upcomingTasks.length})
             </div>
-            <Button 
-              size="sm" 
-              onClick={handleNewTask}
-              className="h-7 text-xs"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Nova Tarefa
-            </Button>
+            <div className="flex items-center gap-2">
+              {!clientId && (
+                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                  <SelectTrigger className="w-48 h-7 text-xs">
+                    <SelectValue placeholder="Selecionar cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>
+                        <div className="flex items-center gap-2">
+                          <User className="w-3 h-3" />
+                          {client.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Button 
+                size="sm" 
+                onClick={handleNewTask}
+                className="h-7 text-xs"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Nova Tarefa
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {upcomingTasks.length === 0 ? (
             <div className="text-center py-4">
               <p className="text-sm text-gray-500 mb-3">Nenhuma tarefa agendada.</p>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={handleNewTask}
-                className="text-xs"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Criar primeira tarefa
-              </Button>
+              <div className="space-y-2">
+                {!clientId && (
+                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecionar cliente para criar tarefa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map(client => (
+                        <SelectItem key={client.id} value={client.id}>
+                          <div className="flex items-center gap-2">
+                            <User className="w-3 h-3" />
+                            {client.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={handleNewTask}
+                  className="text-xs"
+                  disabled={!clientId && !selectedClientId}
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Criar primeira tarefa
+                </Button>
+              </div>
             </div>
           ) : (
             <ScrollArea className="h-64">
@@ -135,6 +191,7 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
                   const taskDate = new Date(task.next_action_date || task.scheduled_at!);
                   const isOverdue = isAfter(new Date(), taskDate);
                   const taskTitle = task.next_action || task.title;
+                  const taskClient = clients.find(c => c.id === task.client_id);
                   
                   return (
                     <div key={task.id} className="border rounded-lg p-3 space-y-2">
@@ -178,9 +235,9 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
                       </div>
 
                       {/* Mostrar informações do cliente se não foi filtrado por cliente específico */}
-                      {!clientId && (
+                      {!clientId && taskClient && (
                         <div className="text-xs text-gray-500 pt-1 border-t">
-                          Cliente: <span className="font-medium">Cliente #{task.client_id}</span>
+                          Cliente: <span className="font-medium">{taskClient.name}</span>
                         </div>
                       )}
                     </div>
@@ -195,7 +252,7 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        client={selectedClient}
+        client={getSelectedClient()}
       />
     </>
   );
