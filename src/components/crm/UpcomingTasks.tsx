@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useClientInteractions } from '@/hooks/useClientInteractions';
+import { useClientInteractions, useUpdateClientInteraction } from '@/hooks/useClientInteractions';
 import { format, isAfter, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 interface UpcomingTasksProps {
   clientId?: string;
@@ -27,8 +28,23 @@ const getDateColor = (date: Date) => {
   return 'bg-blue-100 text-blue-800';
 };
 
+const getInteractionTypeLabel = (type: string) => {
+  const types = {
+    'whatsapp': 'WhatsApp',
+    'call': 'Ligação',
+    'email': 'E-mail',
+    'meeting': 'Reunião',
+    'visit': 'Visita',
+    'proposal_sent': 'Proposta Enviada',
+    'follow_up': 'Follow-up'
+  };
+  return types[type as keyof typeof types] || type;
+};
+
 export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
   const { interactions, isLoading } = useClientInteractions(clientId);
+  const { updateInteractionAsync, isUpdating } = useUpdateClientInteraction();
+  const { toast } = useToast();
 
   // Filtrar interações que têm próximas ações agendadas
   const upcomingTasks = interactions
@@ -40,6 +56,30 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
     .sort((a, b) => 
       new Date(a.next_action_date!).getTime() - new Date(b.next_action_date!).getTime()
     );
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      await updateInteractionAsync({
+        id: taskId,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        next_action: null,
+        next_action_date: null,
+      });
+
+      toast({
+        title: "Tarefa concluída",
+        description: "A tarefa foi marcada como concluída com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível concluir a tarefa.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -113,15 +153,20 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
                       size="sm" 
                       variant="outline" 
                       className="h-6 text-xs"
-                      onClick={() => {
-                        // TODO: Implementar marcar como concluída
-                        console.log('Marcar tarefa como concluída:', task.id);
-                      }}
+                      onClick={() => handleCompleteTask(task.id)}
+                      disabled={isUpdating}
                     >
                       <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Concluir
+                      {isUpdating ? 'Concluindo...' : 'Concluir'}
                     </Button>
                   </div>
+
+                  {/* Mostrar informações do cliente se não foi filtrado por cliente específico */}
+                  {!clientId && (
+                    <div className="text-xs text-gray-500 pt-1 border-t">
+                      Cliente: <span className="font-medium">Cliente #{task.client_id}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
