@@ -9,7 +9,7 @@ export type ClientInteractionInsert = TablesInsert<'client_interactions'>;
 export type ClientInteractionUpdate = TablesUpdate<'client_interactions'>;
 
 export function useClientInteractions(clientId?: string) {
-  const { activeTenant } = useAuth();
+  const { activeTenant, user } = useAuth();
 
   const query = useQuery({
     queryKey: ['client_interactions', activeTenant?.tenant_id, clientId],
@@ -46,21 +46,40 @@ export function useClientInteractions(clientId?: string) {
 
 export function useCreateClientInteraction() {
   const queryClient = useQueryClient();
-  const { activeTenant } = useAuth();
+  const { activeTenant, user } = useAuth();
 
   const mutation = useMutation({
-    mutationFn: async (interaction: Omit<ClientInteractionInsert, 'tenant_id'>) => {
+    mutationFn: async (interaction: Omit<ClientInteractionInsert, 'tenant_id' | 'seller_id'>) => {
       if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Creating interaction:', {
+        ...interaction,
+        tenant_id: activeTenant.tenant_id,
+        seller_id: user.id
+      });
+
       const { data, error } = await supabase
         .from('client_interactions')
-        .insert({ ...interaction, tenant_id: activeTenant.tenant_id })
+        .insert({ 
+          ...interaction, 
+          tenant_id: activeTenant.tenant_id,
+          seller_id: user.id
+        })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating interaction:', error);
+        throw error;
+      }
+      
+      console.log('Interaction created successfully:', data);
       return data as ClientInteraction;
     },
     onSuccess: () => {
@@ -81,6 +100,8 @@ export function useUpdateClientInteraction() {
 
   const mutation = useMutation({
     mutationFn: async ({ id, ...updates }: ClientInteractionUpdate & { id: string }) => {
+      console.log('Updating interaction:', { id, updates });
+
       const { data, error } = await supabase
         .from('client_interactions')
         .update(updates)
@@ -88,7 +109,12 @@ export function useUpdateClientInteraction() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating interaction:', error);
+        throw error;
+      }
+      
+      console.log('Interaction updated successfully:', data);
       return data as ClientInteraction;
     },
     onSuccess: () => {

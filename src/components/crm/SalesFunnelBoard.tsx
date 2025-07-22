@@ -32,10 +32,11 @@ interface FunnelStage {
 
 export function SalesFunnelBoard() {
   const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
-  const { positions, isLoading: positionsLoading } = useClientFunnelPositions();
+  const { positions, isLoading: positionsLoading, refetch } = useClientFunnelPositions();
   const { updatePositionAsync } = useUpdateClientFunnelPosition();
   const [selectedClient, setSelectedClient] = useState<ClientCard | null>(null);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
   // Organizar dados por fase
@@ -60,14 +61,38 @@ export function SalesFunnelBoard() {
   }));
 
   const handleDragStart = (e: React.DragEvent, client: ClientCard) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify(client));
+    console.log('Drag started for client:', client);
+    setIsDragging(true);
+    e.dataTransfer.setData('application/json', JSON.stringify(client));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    console.log('Drag ended');
+    setIsDragging(false);
   };
 
   const handleDrop = async (e: React.DragEvent, targetStageId: string) => {
     e.preventDefault();
-    const clientData = JSON.parse(e.dataTransfer.getData('text/plain')) as ClientCard;
+    console.log('Drop event on stage:', targetStageId);
     
     try {
+      const clientDataStr = e.dataTransfer.getData('application/json');
+      if (!clientDataStr) {
+        console.error('No client data found in drag event');
+        return;
+      }
+
+      const clientData = JSON.parse(clientDataStr) as ClientCard;
+      console.log('Moving client to stage:', { clientData, targetStageId });
+      
+      // Verificar se o cliente já está na fase de destino
+      const currentPosition = positions.find(pos => pos.clients?.id === clientData.id);
+      if (currentPosition?.sales_funnel_stages?.id === targetStageId) {
+        console.log('Client is already in target stage');
+        return;
+      }
+
       await updatePositionAsync({
         clientId: clientData.id,
         stageId: targetStageId,
@@ -75,20 +100,31 @@ export function SalesFunnelBoard() {
         expectedValue: clientData.expected_value,
       });
       
+      // Refetch data to update the UI
+      await refetch();
+      
       toast({
         title: "Cliente movido com sucesso",
         description: `${clientData.name} foi movido para a nova fase.`,
       });
     } catch (error) {
+      console.error('Error moving client:', error);
       toast({
         title: "Erro ao mover cliente",
-        description: "Não foi possível mover o cliente para a nova fase.",
+        description: error instanceof Error ? error.message : "Não foi possível mover o cliente para a nova fase.",
         variant: "destructive",
       });
+    } finally {
+      setIsDragging(false);
     }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
@@ -128,9 +164,12 @@ export function SalesFunnelBoard() {
         {funnelData.map((stage) => (
           <div
             key={stage.id}
-            className="min-w-[300px] flex-shrink-0"
+            className={`min-w-[300px] flex-shrink-0 transition-colors duration-200 ${
+              isDragging ? 'bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg' : ''
+            }`}
             onDrop={(e) => handleDrop(e, stage.id)}
             onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
           >
             <Card className="h-full">
               <CardHeader className="pb-3">
@@ -150,10 +189,11 @@ export function SalesFunnelBoard() {
                 {stage.clients.map((client) => (
                   <Card
                     key={client.id}
-                    className="cursor-move hover:shadow-md transition-shadow border-l-4"
+                    className="cursor-move hover:shadow-md transition-shadow border-l-4 hover:bg-gray-50"
                     style={{ borderLeftColor: stage.color }}
                     draggable
                     onDragStart={(e) => handleDragStart(e, client)}
+                    onDragEnd={handleDragEnd}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between mb-2">
@@ -228,8 +268,11 @@ export function SalesFunnelBoard() {
                 ))}
                 
                 {stage.clients.length === 0 && (
-                  <div className="text-center text-gray-500 text-sm py-8">
+                  <div className="text-center text-gray-500 text-sm py-8 border-2 border-dashed border-gray-200 rounded-lg">
                     Nenhum cliente nesta fase
+                    {isDragging && (
+                      <p className="text-xs mt-1">Solte o cliente aqui</p>
+                    )}
                   </div>
                 )}
               </CardContent>

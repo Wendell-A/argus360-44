@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Copy, Send } from 'lucide-react';
 import { useCreateClientInteraction } from '@/hooks/useClientInteractions';
 import { useMessageTemplates, parseMessageTemplate } from '@/hooks/useMessageTemplates';
@@ -43,6 +42,13 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
   const { templates } = useMessageTemplates('whatsapp');
   const { toast } = useToast();
 
+  // Sincronizar descrição com mensagem personalizada quando for WhatsApp
+  useEffect(() => {
+    if (formData.interaction_type === 'whatsapp' && formData.description) {
+      setParsedMessage(formData.description);
+    }
+  }, [formData.description, formData.interaction_type]);
+
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
     const template = templates.find(t => t.id === templateId);
@@ -66,40 +72,66 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!client) return;
+    if (!client) {
+      toast({
+        title: "Erro",
+        description: "Cliente não selecionado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.title.trim()) {
+      toast({
+        title: "Erro",
+        description: "Título é obrigatório.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
+      console.log('Submitting interaction data:', {
+        client_id: client.id,
+        ...formData,
+        completed_at: formData.status === 'completed' ? new Date().toISOString() : null,
+      });
+
       await createInteractionAsync({
         client_id: client.id,
-        seller_id: 'current-user-id', // TODO: Pegar do contexto do usuário
         ...formData,
         completed_at: formData.status === 'completed' ? new Date().toISOString() : null,
       });
 
       toast({
-        title: "Interação registrada",
-        description: "A interação foi salva com sucesso.",
+        title: "Sucesso",
+        description: "Interação registrada com sucesso.",
       });
 
       onClose();
-      setFormData({
-        interaction_type: 'whatsapp',
-        title: '',
-        description: '',
-        priority: 'medium',
-        status: 'completed',
-        next_action: '',
-        next_action_date: '',
-      });
-      setParsedMessage('');
-      setSelectedTemplate('');
+      resetForm();
     } catch (error) {
+      console.error('Error creating interaction:', error);
       toast({
         title: "Erro ao salvar",
-        description: "Não foi possível salvar a interação.",
+        description: error instanceof Error ? error.message : "Não foi possível salvar a interação.",
         variant: "destructive",
       });
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      interaction_type: 'whatsapp',
+      title: '',
+      description: '',
+      priority: 'medium',
+      status: 'completed',
+      next_action: '',
+      next_action_date: '',
+    });
+    setParsedMessage('');
+    setSelectedTemplate('');
   };
 
   const handleWhatsAppSend = () => {
@@ -126,6 +158,13 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
       });
     }
   };
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
 
   if (!client) return null;
 
@@ -236,7 +275,7 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
           )}
 
           <div>
-            <Label htmlFor="title">Título</Label>
+            <Label htmlFor="title">Título *</Label>
             <Input
               id="title"
               value={formData.title}
@@ -247,12 +286,23 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
           </div>
 
           <div>
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">
+              Descrição 
+              {formData.interaction_type === 'whatsapp' && (
+                <span className="text-xs text-gray-500 ml-1">
+                  (será usada como mensagem personalizada)
+                </span>
+              )}
+            </Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Descreva os detalhes da interação..."
+              placeholder={
+                formData.interaction_type === 'whatsapp' 
+                  ? "Digite a mensagem que será enviada no WhatsApp..."
+                  : "Descreva os detalhes da interação..."
+              }
               rows={3}
             />
           </div>
