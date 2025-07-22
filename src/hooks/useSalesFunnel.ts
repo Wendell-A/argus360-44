@@ -53,8 +53,8 @@ export function useClientFunnelPositions() {
         .from('client_funnel_position')
         .select(`
           *,
-          clients!inner(id, name, email, phone, classification, status),
-          sales_funnel_stages!inner(id, name, color, order_index)
+          clients(id, name, email, phone, classification, status),
+          sales_funnel_stages(id, name, color, order_index)
         `)
         .eq('tenant_id', activeTenant.tenant_id);
 

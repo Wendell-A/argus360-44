@@ -119,7 +119,29 @@ export type Database = {
           trigger_stage_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_automated_tasks_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_automated_tasks_template_id"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_automated_tasks_trigger_stage_id"
+            columns: ["trigger_stage_id"]
+            isOneToOne: false
+            referencedRelation: "sales_funnel_stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_funnel_position: {
         Row: {
@@ -161,7 +183,22 @@ export type Database = {
           tenant_id?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_client_funnel_position_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_funnel_position_stage_id"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "sales_funnel_stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_interactions: {
         Row: {
@@ -221,7 +258,15 @@ export type Database = {
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_client_interactions_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clients: {
         Row: {
@@ -693,7 +738,15 @@ export type Database = {
           updated_at?: string | null
           variables?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_message_templates_stage_id"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "sales_funnel_stages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       office_users: {
         Row: {
