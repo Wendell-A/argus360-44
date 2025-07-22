@@ -80,6 +80,8 @@ export function useCreateDepartment() {
     createDepartment: mutation.mutate,
     createDepartmentAsync: mutation.mutateAsync,
     isCreating: mutation.isPending,
+    isPending: mutation.isPending,
+    mutate: mutation.mutate,
     error: mutation.error,
   };
 }
@@ -121,6 +123,8 @@ export function useUpdateDepartment() {
     updateDepartment: mutation.mutate,
     updateDepartmentAsync: mutation.mutateAsync,
     isUpdating: mutation.isPending,
+    isPending: mutation.isPending,
+    mutate: mutation.mutate,
     error: mutation.error,
   };
 }
@@ -159,6 +163,8 @@ export function useDeleteDepartment() {
     deleteDepartment: mutation.mutate,
     deleteDepartmentAsync: mutation.mutateAsync,
     isDeleting: mutation.isPending,
+    isPending: mutation.isPending,
+    mutate: mutation.mutate,
     error: mutation.error,
   };
 }

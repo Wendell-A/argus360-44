@@ -4,43 +4,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
-import PositionModal from "@/components/PositionModal";
+import { Plus, Search, Edit, Trash2, FileTemplate } from "lucide-react";
+import { PositionModal } from "@/components/PositionModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { usePositions, useCreatePosition, useUpdatePosition, useDeletePosition } from "@/hooks/usePositions";
+import { usePositions, useDeletePosition } from "@/hooks/usePositions";
+import { useDepartments } from "@/hooks/useDepartments";
 import { FilterBar } from "@/components/FilterBar";
 import { useAdvancedFilters } from "@/hooks/useAdvancedFilters";
 import { BaseFilters, FilterOption } from "@/types/filterTypes";
+import { PositionTemplateModal } from "@/components/PositionTemplateModal";
 
 export default function Cargos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const { positions, isLoading, refetch } = usePositions();
-  const createPosition = useCreatePosition();
-  const updatePosition = useUpdatePosition();
+  const { departments } = useDepartments();
   const deletePosition = useDeletePosition();
 
   // Configuração dos filtros
   const filterConfig = {
     mes: true,
     ano: true,
-    status: false, // Cargos não têm status variável
+    status: false,
   };
 
   const statusOptions: FilterOption[] = [];
 
   // Função de filtro personalizada
   const filterFunction = (item: any, filters: BaseFilters) => {
-    // Filtrar por mês (baseado na data de criação)
     if (filters.mes) {
       const itemMonth = new Date(item.created_at).getMonth() + 1;
       if (itemMonth.toString() !== filters.mes) return false;
     }
 
-    // Filtrar por ano
     if (filters.ano) {
       const itemYear = new Date(item.created_at).getFullYear();
       if (itemYear.toString() !== filters.ano) return false;
@@ -52,7 +52,8 @@ export default function Cargos() {
   // Função de busca
   const searchFunction = (item: any, term: string) => {
     return item.name?.toLowerCase().includes(term.toLowerCase()) ||
-           item.description?.toLowerCase().includes(term.toLowerCase());
+           item.description?.toLowerCase().includes(term.toLowerCase()) ||
+           item.department?.name?.toLowerCase().includes(term.toLowerCase());
   };
 
   const {
@@ -73,27 +74,6 @@ export default function Cargos() {
     searchFn: searchFunction,
     filterFn: filterFunction
   });
-
-  const handleCreatePosition = (data: any) => {
-    createPosition.mutate(data, {
-      onSuccess: () => {
-        setIsModalOpen(false);
-        refetch();
-      }
-    });
-  };
-
-  const handleUpdatePosition = (data: any) => {
-    if (editingPosition) {
-      updatePosition.mutate({ id: editingPosition.id, ...data }, {
-        onSuccess: () => {
-          setEditingPosition(null);
-          setIsModalOpen(false);
-          refetch();
-        }
-      });
-    }
-  };
 
   const handleDeletePosition = () => {
     if (deleteId) {
@@ -121,6 +101,17 @@ export default function Cargos() {
     handleSearch(value);
   };
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingPosition(null);
+    refetch();
+  };
+
+  const handleTemplateModalClose = () => {
+    setIsTemplateModalOpen(false);
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 bg-background">
@@ -142,10 +133,16 @@ export default function Cargos() {
           <h1 className="text-3xl font-bold text-foreground">Cargos</h1>
           <p className="text-muted-foreground mt-1">Gerencie os cargos da empresa</p>
         </div>
-        <Button onClick={handleNewPosition} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Cargo
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsTemplateModalOpen(true)} variant="outline" className="flex items-center gap-2">
+            <FileTemplate className="h-4 w-4" />
+            Usar Template
+          </Button>
+          <Button onClick={handleNewPosition} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Cargo
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -189,8 +186,8 @@ export default function Cargos() {
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-foreground">{totalPages}</div>
-            <p className="text-sm text-muted-foreground">Páginas</p>
+            <div className="text-2xl font-bold text-foreground">{departments?.length || 0}</div>
+            <p className="text-sm text-muted-foreground">Departamentos</p>
           </CardContent>
         </Card>
       </div>
@@ -221,7 +218,7 @@ export default function Cargos() {
                       {position.name}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {position.departments?.name || "Sem departamento"}
+                      {position.department?.name || "Sem departamento"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {position.description || "Sem descrição"}
@@ -294,11 +291,14 @@ export default function Cargos() {
 
       {/* Modal */}
       <PositionModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
         position={editingPosition}
-        onSave={editingPosition ? handleUpdatePosition : handleCreatePosition}
-        isLoading={createPosition.isPending || updatePosition.isPending}
+        onClose={handleModalClose}
+      />
+
+      {/* Template Modal */}
+      <PositionTemplateModal
+        open={isTemplateModalOpen}
+        onClose={handleTemplateModalClose}
       />
 
       {/* Confirm Delete */}

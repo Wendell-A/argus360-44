@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, FileTemplate } from "lucide-react";
 import DepartmentModal from "@/components/DepartmentModal";
+import DepartmentTemplateModal from "@/components/DepartmentTemplateModal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { FilterBar } from "@/components/FilterBar";
@@ -14,6 +15,7 @@ import { BaseFilters, FilterOption } from "@/types/filterTypes";
 
 export default function Departamentos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,6 +123,11 @@ export default function Departamentos() {
     handleSearch(value);
   };
 
+  const handleTemplateModalClose = () => {
+    setIsTemplateModalOpen(false);
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 bg-background">
@@ -142,10 +149,16 @@ export default function Departamentos() {
           <h1 className="text-3xl font-bold text-foreground">Departamentos</h1>
           <p className="text-muted-foreground mt-1">Gerencie os departamentos da empresa</p>
         </div>
-        <Button onClick={handleNewDepartment} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Departamento
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsTemplateModalOpen(true)} variant="outline" className="flex items-center gap-2">
+            <FileTemplate className="h-4 w-4" />
+            Usar Template
+          </Button>
+          <Button onClick={handleNewDepartment} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Departamento
+          </Button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -295,6 +308,12 @@ export default function Departamentos() {
         department={editingDepartment}
         onSave={editingDepartment ? handleUpdateDepartment : handleCreateDepartment}
         isLoading={createDepartment.isPending || updateDepartment.isPending}
+      />
+
+      {/* Template Modal */}
+      <DepartmentTemplateModal
+        open={isTemplateModalOpen}
+        onClose={handleTemplateModalClose}
       />
 
       {/* Confirm Delete */}

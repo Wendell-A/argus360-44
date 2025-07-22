@@ -7,6 +7,49 @@ import { X, Filter } from 'lucide-react';
 import { CommissionFilters, FilterOption } from '@/types/filterTypes';
 import { useFilterData } from '@/hooks/useFilterData';
 
+interface BaseFilterConfig {
+  vendedor: boolean;
+}
+
+interface OverviewFilterConfig extends BaseFilterConfig {
+  escritorio: boolean;
+  mes: boolean;
+  ano: boolean;
+  status: boolean;
+}
+
+interface PendingFilterConfig extends BaseFilterConfig {
+  escritorio: boolean;
+  mes: boolean;
+  ano: boolean;
+  vencimento: boolean;
+  valor: boolean;
+}
+
+interface ApprovedFilterConfig extends BaseFilterConfig {
+  escritorio: boolean;
+  mes: boolean;
+  ano: boolean;
+  dataAprovacao: boolean;
+  valor: boolean;
+}
+
+interface PaidFilterConfig extends BaseFilterConfig {
+  escritorio: boolean;
+  mes: boolean;
+  ano: boolean;
+  dataPagamento: boolean;
+  metodoPagamento: boolean;
+  valor: boolean;
+}
+
+interface SellerConfigFilterConfig extends BaseFilterConfig {
+  produto: boolean;
+  status: boolean;
+}
+
+type FilterConfig = OverviewFilterConfig | PendingFilterConfig | ApprovedFilterConfig | PaidFilterConfig | SellerConfigFilterConfig;
+
 interface CommissionFilterBarProps {
   filters: CommissionFilters;
   onFiltersChange: (filters: CommissionFilters) => void;
@@ -72,49 +115,67 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
   };
 
   // Configurações específicas por aba
-  const getTabConfig = () => {
-    const base = {
-      vendedor: true,
-      escritorio: true,
-      mes: true,
-      ano: true,
-    };
-
+  const getTabConfig = (): FilterConfig => {
     switch (tabType) {
       case 'overview':
-        return { ...base, status: true };
+        return {
+          vendedor: true,
+          escritorio: true,
+          mes: true,
+          ano: true,
+          status: true
+        } as OverviewFilterConfig;
       case 'pending':
-        return { 
-          ...base, 
+        return {
+          vendedor: true,
+          escritorio: true,
+          mes: true,
+          ano: true,
           vencimento: true,
-          valor: true 
-        };
+          valor: true
+        } as PendingFilterConfig;
       case 'approved':
-        return { 
-          ...base, 
+        return {
+          vendedor: true,
+          escritorio: true,
+          mes: true,
+          ano: true,
           dataAprovacao: true,
-          valor: true 
-        };
+          valor: true
+        } as ApprovedFilterConfig;
       case 'paid':
-        return { 
-          ...base, 
+        return {
+          vendedor: true,
+          escritorio: true,
+          mes: true,
+          ano: true,
           dataPagamento: true,
           metodoPagamento: true,
-          valor: true 
-        };
+          valor: true
+        } as PaidFilterConfig;
       case 'seller-config':
-        return { 
+        return {
           vendedor: true,
           produto: true,
-          status: true 
-        };
+          status: true
+        } as SellerConfigFilterConfig;
       default:
-        return base;
+        return {
+          vendedor: true,
+          escritorio: true,
+          mes: true,
+          ano: true,
+          status: true
+        } as OverviewFilterConfig;
     }
   };
 
   const config = getTabConfig();
   const statusOptions = getStatusOptions();
+
+  const hasProperty = (obj: any, prop: string): boolean => {
+    return prop in obj;
+  };
 
   const getFilterLabel = (key: keyof CommissionFilters) => {
     const value = filters[key];
@@ -165,7 +226,7 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           </Select>
         )}
 
-        {config.escritorio && (
+        {hasProperty(config, 'escritorio') && (config as any).escritorio && (
           <Select
             value={filters.escritorio || 'all'}
             onValueChange={(value) => updateFilter('escritorio', value)}
@@ -185,7 +246,7 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           </Select>
         )}
 
-        {config.mes && (
+        {hasProperty(config, 'mes') && (config as any).mes && (
           <Select
             value={filters.mes || 'all'}
             onValueChange={(value) => updateFilter('mes', value)}
@@ -204,7 +265,7 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           </Select>
         )}
 
-        {config.ano && (
+        {hasProperty(config, 'ano') && (config as any).ano && (
           <Select
             value={filters.ano || 'all'}
             onValueChange={(value) => updateFilter('ano', value)}
@@ -223,7 +284,7 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           </Select>
         )}
 
-        {config.status && (
+        {hasProperty(config, 'status') && (config as any).status && (
           <Select
             value={filters.status || 'all'}
             onValueChange={(value) => updateFilter('status', value)}
