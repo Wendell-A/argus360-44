@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Search, Edit, Trash2, FileType } from 'lucide-react';
 import { useDepartments, useDeleteDepartment } from '@/hooks/useDepartments';
-import { DepartmentModal } from '@/components/DepartmentModal';
-import { DepartmentTemplateModal } from '@/components/DepartmentTemplateModal';
+import DepartmentModal from '@/components/DepartmentModal';
+import DepartmentTemplateModal from '@/components/DepartmentTemplateModal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { toast } from 'sonner';
 
@@ -48,7 +48,7 @@ export default function Departamentos() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await deleteDepartment.mutateAsync(deleteConfirm.id);
+      await deleteDepartment.deleteDepartmentAsync(deleteConfirm.id);
       setDeleteConfirm({ open: false, id: '', name: '' });
     } catch (error) {
       console.error('Error deleting department:', error);
@@ -141,8 +141,13 @@ export default function Departamentos() {
 
       <DepartmentModal 
         open={showDepartmentModal}
-        onClose={handleModalClose}
+        onOpenChange={handleModalClose}
         department={editingDepartment}
+        onSave={(data) => {
+          // Handle save logic here if needed
+          handleModalClose();
+        }}
+        isLoading={false}
       />
 
       <DepartmentTemplateModal 
@@ -151,12 +156,13 @@ export default function Departamentos() {
       />
 
       <ConfirmDialog
-        open={deleteConfirm.open}
+        isOpen={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, id: '', name: '' })}
         onConfirm={handleDeleteConfirm}
         title="Excluir Departamento"
         description={`Tem certeza que deseja excluir o departamento "${deleteConfirm.name}"? Esta ação não pode ser desfeita.`}
         isLoading={deleteDepartment.isPending}
+        variant="destructive"
       />
     </div>
   );

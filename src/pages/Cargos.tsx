@@ -152,12 +152,13 @@ export default function Cargos() {
       />
 
       <ConfirmDialog
-        open={deleteConfirm.open}
+        isOpen={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, id: '', name: '' })}
         onConfirm={handleDeleteConfirm}
         title="Excluir Cargo"
         description={`Tem certeza que deseja excluir o cargo "${deleteConfirm.name}"? Esta ação não pode ser desfeita.`}
         isLoading={deletePosition.isPending}
+        variant="destructive"
       />
     </div>
   );
