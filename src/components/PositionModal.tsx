@@ -32,13 +32,13 @@ export function PositionModal({ position, trigger, onClose }: PositionModalProps
     if (position) {
       setFormData({
         name: position.name || '',
-        department_id: position.department_id || '',
+        department_id: position.department_id || 'none',
         description: position.description || '',
       });
     } else {
       setFormData({
         name: '',
-        department_id: '',
+        department_id: 'none',
         description: '',
       });
     }
@@ -56,12 +56,12 @@ export function PositionModal({ position, trigger, onClose }: PositionModalProps
         await updatePosition.mutateAsync({
           id: position.id,
           ...formData,
-          department_id: formData.department_id || undefined,
+          department_id: formData.department_id === 'none' ? undefined : formData.department_id || undefined,
         });
       } else {
         await createPosition.mutateAsync({
           ...formData,
-          department_id: formData.department_id || undefined,
+          department_id: formData.department_id === 'none' ? undefined : formData.department_id || undefined,
         });
       }
 
@@ -122,7 +122,7 @@ export function PositionModal({ position, trigger, onClose }: PositionModalProps
                 <SelectValue placeholder="Selecione um departamento" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum departamento</SelectItem>
+                <SelectItem value="none">Nenhum departamento</SelectItem>
                 {departments.map((department) => (
                   <SelectItem key={department.id} value={department.id}>
                     {department.name}
