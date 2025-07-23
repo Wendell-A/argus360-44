@@ -59,7 +59,7 @@ export default function AceitarConvite() {
 
       if (error) throw error;
 
-      const result = data as ValidationResult;
+      const result = (data as unknown) as ValidationResult;
       if (result.valid) {
         setInvitation(result.invitation);
       } else {
@@ -98,7 +98,7 @@ export default function AceitarConvite() {
 
         if (error) throw error;
 
-        const result = data as AcceptResult;
+        const result = (data as unknown) as AcceptResult;
         if (result.success) {
           toast.success('Convite aceito com sucesso!');
           navigate('/');
@@ -129,7 +129,7 @@ export default function AceitarConvite() {
 
           if (acceptError) throw acceptError;
 
-          const result = acceptData as AcceptResult;
+          const result = (acceptData as unknown) as AcceptResult;
           if (result.success) {
             toast.success('Conta criada e convite aceito com sucesso!');
             navigate('/');

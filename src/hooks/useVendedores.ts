@@ -12,7 +12,17 @@ type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 interface VendedorData extends Profile {
   sales_count?: number;
   commission_total?: number;
-  active_status?: boolean;
+  active: boolean;
+  user?: {
+    full_name: string | null;
+    email: string;
+  };
+  office?: {
+    name: string;
+  };
+  team?: {
+    name: string;
+  };
 }
 
 export const useVendedores = () => {
@@ -101,7 +111,17 @@ export const useVendedores = () => {
           ...profile,
           sales_count: profileSales.length,
           commission_total: profileCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
-          active_status: true,
+          active: true,
+          user: {
+            full_name: profile.full_name,
+            email: profile.email,
+          },
+          office: {
+            name: 'N/A' // Simplificado por enquanto
+          },
+          team: {
+            name: 'Sem equipe' // Simplificado por enquanto
+          }
         } as VendedorData;
       });
 
@@ -194,11 +214,17 @@ export const useVendedores = () => {
 
   // Atualizar vendedor
   const updateVendedorMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: ProfileUpdate }) => {
-      console.log("Updating vendedor:", id, updates);
-      const { data, error } = await supabase
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      console.log("Updating vendedor:", id, data);
+      const { data: result, error } = await supabase
         .from("profiles")
-        .update(updates)
+        .update({
+          full_name: data.full_name,
+          email: data.email,
+          phone: data.phone,
+          department: data.department,
+          position: data.position,
+        })
         .eq("id", id)
         .select()
         .single();
@@ -208,7 +234,7 @@ export const useVendedores = () => {
         throw error;
       }
 
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendedores", activeTenant?.tenant_id] });
@@ -272,9 +298,9 @@ export const useVendedores = () => {
   return {
     vendedores,
     isLoading,
-    createVendedor: createVendedorMutation.mutate,
-    updateVendedor: updateVendedorMutation.mutate,
-    deleteVendedor: deleteVendedorMutation.mutate,
+    createVendedor: createVendedorMutation,
+    updateVendedor: updateVendedorMutation,
+    deleteVendedor: deleteVendedorMutation,
     isCreating: createVendedorMutation.isPending,
     isUpdating: updateVendedorMutation.isPending,
     isDeleting: deleteVendedorMutation.isPending,

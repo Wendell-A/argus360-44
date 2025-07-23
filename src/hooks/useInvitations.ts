@@ -19,7 +19,7 @@ export interface Invitation {
 }
 
 export const useInvitations = () => {
-  const { activeTenant } = useAuth();
+  const { activeTenant, user } = useAuth();
   const queryClient = useQueryClient();
 
   // Buscar convites do tenant
@@ -44,6 +44,7 @@ export const useInvitations = () => {
   const sendInvitation = useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
       if (!activeTenant?.tenant_id) throw new Error('Tenant não encontrado');
+      if (!user?.id) throw new Error('Usuário não autenticado');
 
       const token = await supabase.rpc('generate_invitation_token');
       if (token.error) throw token.error;
@@ -56,6 +57,7 @@ export const useInvitations = () => {
         .insert({
           tenant_id: activeTenant.tenant_id,
           email,
+          invited_by: user.id,
           role: role as 'owner' | 'admin' | 'manager' | 'user' | 'viewer',
           token: token.data,
           expires_at: expiresAt.toISOString(),
