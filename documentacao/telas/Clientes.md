@@ -1,156 +1,70 @@
+# Clientes
 
-# Clientes - Documentação
+## Propósito
+Tela dedicada ao gerenciamento da base de clientes, permitindo cadastro, edição, visualização, exclusão, filtragem e integração com o funil de vendas (CRM).
 
-## RPD (Requisitos, Processos e Dados)
-
-### Requisitos Funcionais
-- RF001: Listar todos os clientes cadastrados
-- RF002: Distinguir Pessoa Física e Pessoa Jurídica
-- RF003: Exibir vendedor responsável
-- RF004: Mostrar última compra e valor total
-- RF005: Permitir busca por nome, CNPJ/CPF
-- RF006: Filtrar por status (Ativo, Prospect, Inativo)
-- RF007: Permitir cadastro de novo cliente
-- RF008: Visualizar histórico de compras
-
-### Requisitos Não Funcionais
-- RNF001: Busca em tempo real conforme digitação
-- RNF002: Filtros visuais com destaque
-- RNF003: Formatação automática de CNPJ/CPF
-
-### Processos
-1. **Listagem de Clientes**
-   - Sistema busca todos os clientes
-   - Aplica filtros selecionados
-   - Ordena por relevância
-
-2. **Busca de Clientes**
-   - Busca em tempo real
-   - Pesquisa por nome, CNPJ/CPF
-   - Destaca resultados
-
-3. **Cadastro de Cliente**
-   - Formulário adaptado para PF/PJ
-   - Validação de documentos
-   - Vinculação ao vendedor
-
-### Dados Utilizados
-- Dados pessoais/empresariais
-- Documentos (CPF/CNPJ)
-- Histórico de compras
-- Vendedor responsável
-- Status do relacionamento
-
-## Schema de Dados
-
-```typescript
-interface Cliente {
-  id: number;
-  nome: string;
-  cnpj: string; // CPF para PF
-  vendedor: string;
-  ultimaCompra: string;
-  valorTotal: string;
-  status: 'Ativo' | 'Prospect' | 'Inativo';
-  tipo: 'Pessoa Física' | 'Pessoa Jurídica';
-}
-
-interface ClientesState {
-  clientes: Cliente[];
-  filtroAtivo: string;
-  termoBusca: string;
-  loading: boolean;
-  metricas: {
-    totalClientes: number;
-    clientesAtivos: number;
-    prospects: number;
-    valorTotal: string;
-  };
-}
-```
-
-## FlowChart (Fluxo Textual)
-
-```
-INÍCIO Clientes
-├── Usuário acessa rota "/clientes"
-├── Sistema carrega componente Clientes
-├── Busca dados dos clientes
-├── Busca métricas resumo
-│   ├── Total de clientes
-│   ├── Clientes ativos
-│   ├── Prospects em negociação
-│   └── Valor total da carteira
-├── Renderiza interface
-│   ├── Header com título e botão "Novo Cliente"
-│   ├── Cards de resumo (4 métricas)
-│   ├── Barra de busca e filtros
-│   │   ├── Campo de busca com ícone
-│   │   └── Botões de filtro por status
-│   └── Tabela de clientes
-│       ├── Nome e ID
-│       ├── CNPJ/CPF formatado
-│       ├── Tipo (PF/PJ) com badge
-│       ├── Vendedor responsável
-│       ├── Data última compra
-│       ├── Valor total (destaque verde)
-│       ├── Status com badge colorida
-│       └── Ações (Editar, Histórico)
-├── Interações possíveis
-│   ├── Digitação na busca → Filtra em tempo real
-│   ├── Clique nos filtros → Aplica filtro de status
-│   ├── Clique "Novo Cliente" → Modal/Página cadastro
-│   ├── Clique "Editar" → Modal/Página edição
-│   └── Clique "Histórico" → Página histórico compras
-└── FIM
-```
+## Principais Funções
+- Listar todos os clientes cadastrados
+- Buscar clientes por nome, email ou documento
+- Filtrar clientes por status (prospect, ativo, inativo) e classificação (hot, warm, cold)
+- Visualizar métricas rápidas (total, prospects, ativos, taxa de conversão)
+- Criar, editar, visualizar e excluir clientes
+- Adicionar clientes ao funil de vendas (CRM)
+- Modal para cadastro/edição/visualização de clientes
 
 ## Componentes Utilizados
+- Card, CardContent, CardHeader, CardTitle
+- Button, Input, Badge
+- Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+- Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+- Avatar, AvatarFallback
+- Icons: Plus, Search, Filter, Users, UserCheck, Clock, Eye, Edit, Trash2
+- ClientModal (modal para manipulação de clientes)
+- Hooks: useClients, useDeleteClient, useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFunnelStages, useToast
 
-### Principais
-- `Input`: Campo de busca
-- `Table`: Listagem de clientes
-- `Badge`: Status e tipo de pessoa
-- `Button`: Filtros e ações
-- `Card`: Cards de métricas
+## RPD (Responsabilidades, Permissões e Dados)
+- Responsável: Usuários autenticados com permissão de gestão de clientes
+- Permissões: Visualizar, criar, editar, excluir clientes; adicionar ao CRM
+- Dados manipulados: Dados cadastrais do cliente (nome, email, telefone, documento, status, classificação, tipo)
 
-### Ícones
-- `Search`: Busca
-- `Plus`: Novo cliente
-- `Users`, `Building2`, `HandCoins`: Métricas
+## Schema
+- Cliente: { id, name, email, phone, document, status, classification, type }
+- Métricas: total, prospects, active, inactive
+- Filtros: searchTerm, statusFilter, classificationFilter
 
-## Estados e Interações
+## FlowChart
+```mermaid
+flowchart TD
+    A[Usuário acessa tela Clientes]
+    B[Visualiza métricas e lista de clientes]
+    C[Filtra/Busca clientes]
+    D[Cria novo cliente]
+    E[Edita cliente]
+    F[Visualiza cliente]
+    G[Exclui cliente]
+    H[Adiciona cliente ao CRM]
+    I[Abre modal de cliente]
+    A --> B
+    B --> C
+    B --> D
+    B --> E
+    B --> F
+    B --> G
+    B --> H
+    D --> I
+    E --> I
+    F --> I
+```
 
-### Estados
-- Lista de clientes carregada
-- Filtro ativo selecionado
-- Termo de busca atual
-- Modal de cadastro/edição
+## Integração com Outras Telas/Componentes
+- Integração direta com o CRM: botão para adicionar cliente ao funil de vendas
+- Utiliza ClientModal para manipulação de dados do cliente
+- Relacionamento com hooks de funil de vendas para integração com etapas do CRM
 
-### Interações
-- Busca em tempo real
-- Filtros por status
-- Cadastro de novo cliente
-- Edição de cliente
-- Visualização de histórico
+## Observações Técnicas
+- Criação automática de fases do funil caso não existam ao tentar adicionar cliente ao CRM
+- Uso de hooks customizados para manipulação de dados e feedback ao usuário
+- Interface responsiva e adaptada para diferentes tamanhos de tela
 
-## Validações
-
-### Cadastro/Edição
-- Nome obrigatório
-- CNPJ válido para PJ
-- CPF válido para PF
-- Email válido se informado
-- Vendedor responsável obrigatório
-
-## Formatações
-- CNPJ: XX.XXX.XXX/XXXX-XX
-- CPF: XXX.XXX.XXX-XX
-- Valores monetários: R$ X.XXX,XX
-
-## Melhorias Futuras
-- Importação de clientes via CSV
-- Histórico de interações
-- Segmentação de clientes
-- Mapa de localização
-- Integração com CRM externo
+## Visão para IA
+Esta documentação detalha a estrutura, funções e integrações da tela de Clientes, facilitando a compreensão para desenvolvedores e sistemas de IA sobre como gerenciar clientes e integrá-los ao funil de vendas. Para detalhes do funil, consultar a documentação do CRM.

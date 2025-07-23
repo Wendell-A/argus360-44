@@ -235,7 +235,7 @@ export function AppSidebar() {
               Principal
             </SidebarGroupLabel>
           )}
-          <SidebarGroupContent className={collapsed ? "px-2" : "px-4"}>
+          <SidebarGroupContent className={collapsed ? "" : "px-4"}>
             <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -250,7 +250,7 @@ export function AppSidebar() {
                       className={cn(
                         "flex items-center rounded-lg transition-all duration-200 group",
                         collapsed 
-                          ? "justify-center p-3 w-12 h-12 mx-auto" 
+                          ? "justify-center w-20 h-14 mx-auto" 
                           : "justify-start space-x-3 px-3 py-2.5",
                         isActive(item.url)
                           ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
@@ -277,7 +277,7 @@ export function AppSidebar() {
               Gestão
             </SidebarGroupLabel>
           )}
-          <SidebarGroupContent className={collapsed ? "px-2" : "px-4"}>
+          <SidebarGroupContent className={collapsed ? "" : "px-4"}>
             <SidebarMenu className="space-y-1">
               {managementItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -292,7 +292,7 @@ export function AppSidebar() {
                       className={cn(
                         "flex items-center rounded-lg transition-all duration-200 group",
                         collapsed 
-                          ? "justify-center p-3 w-12 h-12 mx-auto" 
+                          ? "justify-center p-4 w-20 h-14 mx-auto" 
                           : "justify-start space-x-3 px-3 py-2.5",
                         isActive(item.url)
                           ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
@@ -319,7 +319,7 @@ export function AppSidebar() {
               Sistema
             </SidebarGroupLabel>
           )}
-          <SidebarGroupContent className={collapsed ? "px-2" : "px-4"}>
+          <SidebarGroupContent className={collapsed ? "" : "px-4"}>
             <SidebarMenu className="space-y-1">
               {configItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -334,7 +334,7 @@ export function AppSidebar() {
                       className={cn(
                         "flex items-center rounded-lg transition-all duration-200 group",
                         collapsed 
-                          ? "justify-center p-3 w-12 h-12 mx-auto" 
+                          ? "justify-center p-4 w-20 h-14 mx-auto" 
                           : "justify-start space-x-3 px-3 py-2.5",
                         isActive(item.url)
                           ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
@@ -369,7 +369,7 @@ export function AppSidebar() {
               onClick={handleLogout}
               className={cn(
                 "w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200",
-                collapsed ? "justify-center p-3 h-12" : "justify-start h-10"
+                collapsed ? "justify-center h-14 w-20 mx-auto" : "justify-start h-10"
               )}
             >
               <LogOut className="h-4 w-4 shrink-0" />

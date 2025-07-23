@@ -100,9 +100,7 @@ export default function CRM() {
         <TabsList>
           <TabsTrigger value="funnel">Funil de Vendas</TabsTrigger>
           <TabsTrigger value="tasks">Próximas Tarefas</TabsTrigger>
-          {selectedClientId && (
-            <TabsTrigger value="history">Histórico do Cliente</TabsTrigger>
-          )}
+          <TabsTrigger value="history">Histórico do Cliente</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="space-y-4">
@@ -140,11 +138,23 @@ export default function CRM() {
           </div>
         </TabsContent>
 
-        {selectedClientId && (
-          <TabsContent value="history" className="space-y-4">
+        <TabsContent value="history" className="space-y-4">
+          {selectedClientId ? (
             <ClientInteractionHistory clientId={selectedClientId} />
-          </TabsContent>
-        )}
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico do Cliente</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-gray-500">Selecione um cliente no funil de vendas para visualizar seu histórico de interações.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );

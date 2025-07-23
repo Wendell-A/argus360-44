@@ -169,11 +169,11 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
 
   return (
     <div className="w-full">
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-6">
         {funnelData.map((stage) => (
           <div
             key={stage.id}
-            className={`min-w-[300px] flex-shrink-0 transition-colors duration-200 ${
+            className={`transition-colors duration-200 ${
               isDragging ? 'bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg' : ''
             }`}
             onDrop={(e) => handleDrop(e, stage.id)}
@@ -181,7 +181,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
             onDragEnter={handleDragEnter}
           >
             <Card className="h-full">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle 
                     className="text-sm font-medium"
@@ -194,7 +194,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3 max-h-[600px] overflow-y-auto">
+              <CardContent className="space-y-4 max-h-[600px] overflow-y-auto px-4">
                 {stage.clients.map((client) => (
                   <Card
                     key={client.id}
@@ -205,7 +205,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                     onDragEnd={handleDragEnd}
                     onClick={() => handleClientClick(client)}
                   >
-                    <CardContent className="p-3">
+                    <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-8 w-8">
@@ -236,41 +236,41 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                         </span>
                       </div>
                       
-                      <div className="flex gap-1">
+                      <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleWhatsAppClick(client)}
                           disabled={!client.phone}
-                          className="flex-1 p-1 h-7"
+                          className="flex-1 p-2 h-8"
                         >
-                          <MessageCircle className="w-3 h-3" />
+                          <MessageCircle className="w-4 h-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => window.open(`tel:${client.phone}`)}
                           disabled={!client.phone}
-                          className="flex-1 p-1 h-7"
+                          className="flex-1 p-2 h-8"
                         >
-                          <Phone className="w-3 h-3" />
+                          <Phone className="w-4 h-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => window.open(`mailto:${client.email}`)}
                           disabled={!client.email}
-                          className="flex-1 p-1 h-7"
+                          className="flex-1 p-2 h-8"
                         >
-                          <Mail className="w-3 h-3" />
+                          <Mail className="w-4 h-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleInteractionClick(client)}
-                          className="flex-1 p-1 h-7"
+                          className="flex-1 p-2 h-8"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-4 h-4" />
                         </Button>
                       </div>
                     </CardContent>
@@ -278,10 +278,10 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                 ))}
                 
                 {stage.clients.length === 0 && (
-                  <div className="text-center text-gray-500 text-sm py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                  <div className="text-center text-gray-500 text-sm py-10 px-4 border-2 border-dashed border-gray-200 rounded-lg">
                     Nenhum cliente nesta fase
                     {isDragging && (
-                      <p className="text-xs mt-1">Solte o cliente aqui</p>
+                      <p className="text-xs mt-2">Solte o cliente aqui</p>
                     )}
                   </div>
                 )}
