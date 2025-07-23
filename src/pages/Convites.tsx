@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useInvitations } from '@/hooks/useInvitations';
 import { InvitationModal } from '@/components/InvitationModal';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
-import { UserPlus, Mail, Clock, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { UserPlus, Mail, Clock, CheckCircle, XCircle, RotateCcw, AlertCircle, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const roleNames = {
   owner: 'Proprietário',
@@ -28,6 +30,7 @@ const statusConfig = {
 export default function Convites() {
   const { invitations, isLoading, cancelInvitation, resendInvitation } = useInvitations();
   const [showModal, setShowModal] = useState(false);
+  const [copiedLinks, setCopiedLinks] = useState<Set<string>>(new Set());
 
   const getInvitationStatus = (invitation: any) => {
     if (invitation.status === 'accepted') return 'accepted';
@@ -39,9 +42,24 @@ export default function Convites() {
     return `${window.location.origin}/aceitar-convite/${token}`;
   };
 
-  const copyInvitationLink = (token: string) => {
-    navigator.clipboard.writeText(getInvitationLink(token));
-    // toast.success('Link copiado para a área de transferência!');
+  const copyInvitationLink = async (token: string) => {
+    try {
+      const link = getInvitationLink(token);
+      await navigator.clipboard.writeText(link);
+      setCopiedLinks(prev => new Set(prev).add(token));
+      toast.success('Link copiado para a área de transferência!');
+      
+      // Remover o estado de copiado após 2 segundos
+      setTimeout(() => {
+        setCopiedLinks(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(token);
+          return newSet;
+        });
+      }, 2000);
+    } catch (error) {
+      toast.error('Erro ao copiar link');
+    }
   };
 
   if (isLoading) {
@@ -57,6 +75,10 @@ export default function Convites() {
     );
   }
 
+  const pendingInvitations = invitations.filter(inv => getInvitationStatus(inv) === 'pending');
+  const acceptedInvitations = invitations.filter(inv => getInvitationStatus(inv) === 'accepted');
+  const expiredInvitations = invitations.filter(inv => getInvitationStatus(inv) === 'expired');
+
   return (
     <PermissionGuard
       permission={{ module: 'users', resource: 'invitations', action: 'read' }}
@@ -65,9 +87,9 @@ export default function Convites() {
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Convites</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Gerenciar Convites</h1>
             <p className="text-muted-foreground">
-              Gerencie convites para novos usuários da sua organização
+              Convide novos usuários para sua organização e acompanhe o status dos convites
             </p>
           </div>
           <Button onClick={() => setShowModal(true)} className="flex items-center gap-2">
@@ -75,6 +97,67 @@ export default function Convites() {
             Novo Convite
           </Button>
         </div>
+
+        {/* Estatísticas dos convites */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">{invitations.length}</p>
+                </div>
+                <Mail className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Pendentes</p>
+                  <p className="text-2xl font-bold text-yellow-600">{pendingInvitations.length}</p>
+                </div>
+                <Clock className="h-8 w-8 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Aceitos</p>
+                  <p className="text-2xl font-bold text-green-600">{acceptedInvitations.length}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Expirados</p>
+                  <p className="text-2xl font-bold text-red-600">{expiredInvitations.length}</p>
+                </div>
+                <XCircle className="h-8 w-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Instruções sobre convites */}
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Como funciona:</strong> Envie convites com a função desejada. O usuário receberá um link para se cadastrar 
+            ou aceitar o convite (se já tiver conta). Após aceitar, ele aparecerá na lista de usuários disponíveis para 
+            ser cadastrado como vendedor.
+          </AlertDescription>
+        </Alert>
 
         <Card>
           <CardHeader>
@@ -99,6 +182,7 @@ export default function Convites() {
                       const status = getInvitationStatus(invitation);
                       const statusInfo = statusConfig[status];
                       const StatusIcon = statusInfo.icon;
+                      const isCopied = copiedLinks.has(invitation.token);
 
                       return (
                         <TableRow key={invitation.id}>
@@ -131,8 +215,12 @@ export default function Convites() {
                                     size="sm"
                                     onClick={() => copyInvitationLink(invitation.token)}
                                   >
-                                    <Mail className="h-3 w-3 mr-1" />
-                                    Copiar Link
+                                    {isCopied ? (
+                                      <Check className="h-3 w-3 mr-1" />
+                                    ) : (
+                                      <Copy className="h-3 w-3 mr-1" />
+                                    )}
+                                    {isCopied ? 'Copiado!' : 'Copiar Link'}
                                   </Button>
                                   <Button
                                     variant="outline"
@@ -175,7 +263,13 @@ export default function Convites() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        Nenhum convite enviado ainda.
+                        <div className="flex flex-col items-center gap-2">
+                          <Mail className="h-8 w-8 text-muted-foreground" />
+                          <p>Nenhum convite enviado ainda.</p>
+                          <Button onClick={() => setShowModal(true)} variant="outline" size="sm">
+                            Enviar Primeiro Convite
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}

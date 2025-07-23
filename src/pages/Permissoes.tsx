@@ -1,242 +1,321 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
-import { Shield, Users, Settings, Search, ChevronLeft, ChevronRight, Info, UserPlus } from 'lucide-react';
-import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Link } from 'react-router-dom';
+import { 
+  Shield, 
+  Users, 
+  ShoppingCart, 
+  UserCheck, 
+  FileText, 
+  Building, 
+  DollarSign,
+  Settings,
+  Info,
+  Mail,
+  Eye,
+  Edit,
+  Plus,
+  Trash2,
+  CheckCircle,
+  Search
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
-const roleNames = {
-  owner: 'Proprietário',
-  admin: 'Administrador',
-  manager: 'Gerente',
-  user: 'Usuário',
-  viewer: 'Visualizador'
-};
-
-const roleDescriptions = {
-  owner: 'Acesso total ao sistema - pode gerenciar tudo, incluindo configurações críticas',
-  admin: 'Gestão completa do tenant - pode gerenciar usuários, vendas e configurações',
-  manager: 'Gestão de vendas e equipes - pode gerenciar vendas, clientes e relatórios',
-  user: 'Operações básicas - pode cadastrar clientes, realizar vendas e acompanhar suas metas',
-  viewer: 'Apenas visualização - pode visualizar dados mas não pode editar'
-};
-
-// Dicionário de explicações dos módulos e recursos
+// Dicionário de explicações baseado nas permissões reais do banco
 const permissionExplanations = {
   system: {
     name: 'Sistema',
-    description: 'Configurações gerais do sistema',
+    description: 'Configurações e administração do sistema',
+    icon: Settings,
+    color: 'text-purple-600',
     permissions: {
-      'permissions': 'Gerenciar permissões de usuários e funções',
-      'settings': 'Configurar parâmetros gerais do sistema',
-      'audit': 'Visualizar logs de auditoria e atividades',
+      'permissions': {
+        name: 'Gerenciar Permissões',
+        description: 'Controlar quem pode fazer o que no sistema',
+        example: 'Definir se um usuário pode criar vendas ou apenas visualizar',
+        actions: {
+          'read': 'Ver permissões existentes',
+          'write': 'Alterar permissões de usuários e funções',
+          'create': 'Criar novas configurações de permissão',
+          'delete': 'Remover permissões desnecessárias'
+        }
+      },
+      'settings': {
+        name: 'Configurações Gerais',
+        description: 'Alterar configurações do sistema',
+        example: 'Configurar horários de funcionamento, dados da empresa',
+        actions: {
+          'read': 'Ver configurações atuais',
+          'write': 'Alterar configurações do sistema'
+        }
+      },
+      'audit': {
+        name: 'Logs de Auditoria',
+        description: 'Visualizar histórico de ações no sistema',
+        example: 'Ver quem criou, editou ou excluiu dados',
+        actions: {
+          'read': 'Visualizar logs de atividades'
+        }
+      }
     }
   },
   users: {
     name: 'Usuários',
     description: 'Gestão de usuários e colaboradores',
+    icon: Users,
+    color: 'text-blue-600',
     permissions: {
-      'management': 'Criar, editar e desativar usuários',
-      'invitations': 'Enviar convites para novos usuários',
-      'roles': 'Alterar funções e permissões de usuários',
+      'management': {
+        name: 'Gerenciar Usuários',
+        description: 'Controlar usuários do sistema',
+        example: 'Criar conta para novo funcionário, desativar usuário que saiu',
+        actions: {
+          'create': 'Criar novos usuários',
+          'read': 'Ver lista de usuários',
+          'update': 'Editar dados de usuários',
+          'delete': 'Desativar usuários'
+        }
+      },
+      'invitations': {
+        name: 'Convites',
+        description: 'Enviar convites para novos usuários',
+        example: 'Convidar novo vendedor para se cadastrar no sistema',
+        actions: {
+          'create': 'Enviar novos convites',
+          'read': 'Ver convites enviados',
+          'update': 'Reenviar ou cancelar convites',
+          'delete': 'Remover convites pendentes'
+        }
+      },
+      'roles': {
+        name: 'Funções e Cargos',
+        description: 'Definir funções dos usuários',
+        example: 'Promover vendedor para gerente, alterar permissões',
+        actions: {
+          'read': 'Ver funções dos usuários',
+          'write': 'Alterar funções e permissões'
+        }
+      }
     }
   },
   sales: {
     name: 'Vendas',
-    description: 'Gestão de vendas e negociações',
+    description: 'Gestão do processo de vendas',
+    icon: ShoppingCart,
+    color: 'text-green-600',
     permissions: {
-      'management': 'Cadastrar, editar e excluir vendas',
-      'approval': 'Aprovar ou reprovar vendas pendentes',
-      'commission': 'Calcular e gerenciar comissões',
+      'management': {
+        name: 'Gerenciar Vendas',
+        description: 'Controlar todo o processo de vendas',
+        example: 'Criar nova venda, editar dados, cancelar venda',
+        actions: {
+          'create': 'Criar novas vendas',
+          'read': 'Ver vendas existentes',
+          'update': 'Editar dados das vendas',
+          'delete': 'Cancelar ou remover vendas'
+        }
+      },
+      'approval': {
+        name: 'Aprovar Vendas',
+        description: 'Aprovar ou rejeitar vendas',
+        example: 'Aprovar venda para liberar comissão',
+        actions: {
+          'write': 'Aprovar ou rejeitar vendas'
+        }
+      },
+      'view': {
+        name: 'Visualizar Vendas',
+        description: 'Ver informações de vendas',
+        example: 'Consultar vendas da equipe, relatórios',
+        actions: {
+          'read': 'Ver todas as vendas do sistema'
+        }
+      }
     }
   },
   clients: {
     name: 'Clientes',
     description: 'Gestão de clientes e prospects',
+    icon: UserCheck,
+    color: 'text-orange-600',
     permissions: {
-      'management': 'Cadastrar, editar e excluir clientes',
-      'interaction': 'Registrar interações e histórico',
-      'classification': 'Alterar classificação de clientes',
+      'management': {
+        name: 'Gerenciar Clientes',
+        description: 'Controlar dados dos clientes',
+        example: 'Cadastrar novo cliente, atualizar contato',
+        actions: {
+          'create': 'Cadastrar novos clientes',
+          'read': 'Ver lista de clientes',
+          'update': 'Editar dados dos clientes',
+          'delete': 'Remover clientes inativos'
+        }
+      },
+      'interactions': {
+        name: 'Interações com Clientes',
+        description: 'Registrar contatos e interações',
+        example: 'Registrar ligação, agendar reunião',
+        actions: {
+          'create': 'Registrar novas interações',
+          'read': 'Ver histórico de contatos',
+          'update': 'Editar interações existentes'
+        }
+      }
     }
   },
   reports: {
     name: 'Relatórios',
-    description: 'Acesso a relatórios e análises',
+    description: 'Relatórios e análises',
+    icon: FileText,
+    color: 'text-indigo-600',
     permissions: {
-      'view': 'Visualizar relatórios gerais',
-      'export': 'Exportar relatórios em diversos formatos',
-      'dashboard': 'Acessar dashboard com métricas',
+      'view': {
+        name: 'Visualizar Relatórios',
+        description: 'Acessar relatórios do sistema',
+        example: 'Ver relatório de vendas mensais, comissões',
+        actions: {
+          'read': 'Visualizar todos os relatórios'
+        }
+      },
+      'export': {
+        name: 'Exportar Relatórios',
+        description: 'Fazer download de relatórios',
+        example: 'Baixar relatório em Excel ou PDF',
+        actions: {
+          'create': 'Gerar e baixar relatórios'
+        }
+      }
     }
   },
   offices: {
     name: 'Escritórios',
     description: 'Gestão de escritórios e filiais',
+    icon: Building,
+    color: 'text-cyan-600',
     permissions: {
-      'management': 'Criar, editar e gerenciar escritórios',
-      'users': 'Associar usuários a escritórios',
-      'settings': 'Configurar parâmetros específicos do escritório',
+      'management': {
+        name: 'Gerenciar Escritórios',
+        description: 'Controlar escritórios da empresa',
+        example: 'Criar nova filial, alterar responsável',
+        actions: {
+          'create': 'Criar novos escritórios',
+          'read': 'Ver escritórios existentes',
+          'update': 'Editar dados dos escritórios',
+          'delete': 'Desativar escritórios'
+        }
+      }
     }
   },
   commissions: {
     name: 'Comissões',
     description: 'Gestão de comissões e pagamentos',
+    icon: DollarSign,
+    color: 'text-emerald-600',
     permissions: {
-      'management': 'Calcular e gerenciar comissões',
-      'approval': 'Aprovar pagamentos de comissões',
-      'schedule': 'Definir cronogramas de pagamento',
+      'management': {
+        name: 'Gerenciar Comissões',
+        description: 'Controlar pagamento de comissões',
+        example: 'Aprovar pagamento, configurar percentuais',
+        actions: {
+          'create': 'Criar configurações de comissão',
+          'read': 'Ver comissões calculadas',
+          'update': 'Editar regras de comissão',
+          'write': 'Aprovar pagamentos'
+        }
+      }
     }
   }
 };
 
-const actionDescriptions = {
-  create: 'Criar novos registros',
-  read: 'Visualizar informações existentes',
-  update: 'Editar registros existentes',
-  delete: 'Excluir registros',
-  write: 'Criar e editar registros',
-  approve: 'Aprovar operações pendentes',
-  export: 'Exportar dados',
-  manage: 'Gerenciar completamente'
+const roleDescriptions = {
+  owner: {
+    name: 'Proprietário',
+    description: 'Controle total do sistema',
+    color: 'bg-red-100 text-red-800',
+    permissions: 'Todas as permissões automaticamente'
+  },
+  admin: {
+    name: 'Administrador',
+    description: 'Gestão completa exceto configurações críticas',
+    color: 'bg-purple-100 text-purple-800',
+    permissions: 'Quase todas as permissões'
+  },
+  manager: {
+    name: 'Gerente',
+    description: 'Gestão de vendas e equipes',
+    color: 'bg-blue-100 text-blue-800',
+    permissions: 'Permissões de gestão e aprovação'
+  },
+  user: {
+    name: 'Usuário',
+    description: 'Operações básicas do dia a dia',
+    color: 'bg-green-100 text-green-800',
+    permissions: 'Permissões básicas de criação e visualização'
+  },
+  viewer: {
+    name: 'Visualizador',
+    description: 'Apenas visualização',
+    color: 'bg-gray-100 text-gray-800',
+    permissions: 'Apenas permissões de leitura'
+  }
 };
 
-const ITEMS_PER_PAGE = 10;
+const actionIcons = {
+  create: Plus,
+  read: Eye,
+  update: Edit,
+  delete: Trash2,
+  write: Edit,
+  approve: CheckCircle
+};
 
 export default function Permissoes() {
+  const { activeTenant } = useAuth();
   const { 
     allPermissions, 
     isLoading, 
-    updateRolePermissions,
-    grantUserPermission,
-    revokeUserPermission 
+    updateRolePermissions 
   } = usePermissions();
   
-  const { activeTenant } = useAuth();
-  
-  // Buscar usuários do tenant com profiles usando query separada
-  const { data: tenantUsersData = [], isLoading: loadingUsers } = useQuery({
-    queryKey: ['tenant-users-with-profiles', activeTenant?.tenant_id],
-    queryFn: async () => {
-      if (!activeTenant?.tenant_id) return [];
-
-      // Primeira query: buscar tenant_users
-      const { data: tenantUsers, error: tenantUsersError } = await supabase
-        .from('tenant_users')
-        .select('id, user_id, tenant_id, role, active, created_at, updated_at')
-        .eq('tenant_id', activeTenant.tenant_id)
-        .eq('active', true);
-
-      if (tenantUsersError) throw tenantUsersError;
-      if (!tenantUsers?.length) return [];
-
-      // Segunda query: buscar profiles dos usuários
-      const userIds = tenantUsers.map(tu => tu.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, avatar_url')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      // Combinar os dados
-      return tenantUsers.map(tenantUser => ({
-        ...tenantUser,
-        profiles: profiles?.find(p => p.id === tenantUser.user_id) || null
-      }));
-    },
-    enabled: !!activeTenant?.tenant_id,
-  });
-  
   const [selectedRole, setSelectedRole] = useState<string>('user');
-  const [selectedUser, setSelectedUser] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
-  // Agrupar permissões por módulo
-  const permissionsByModule = React.useMemo(() => {
-    const grouped: Record<string, typeof allPermissions> = {};
-    allPermissions.forEach(permission => {
-      if (!grouped[permission.module]) {
-        grouped[permission.module] = [];
-      }
-      grouped[permission.module].push(permission);
-    });
-    return grouped;
-  }, [allPermissions]);
+  const filteredModules = Object.entries(permissionExplanations).filter(([moduleKey, module]) =>
+    module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    Object.values(module.permissions).some(perm => 
+      perm.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
-  const handleRolePermissionChange = (permissionId: string, enabled: boolean) => {
-    setRolePermissions(prev => ({
-      ...prev,
-      [permissionId]: enabled
-    }));
+  const handlePermissionToggle = (permissionId: string) => {
+    setSelectedPermissions(prev => 
+      prev.includes(permissionId) 
+        ? prev.filter(id => id !== permissionId)
+        : [...prev, permissionId]
+    );
   };
 
-  const saveRolePermissions = async () => {
-    const permissionIds = Object.entries(rolePermissions)
-      .filter(([_, enabled]) => enabled)
-      .map(([permissionId]) => permissionId);
-
+  const handleSaveRolePermissions = async () => {
     try {
       await updateRolePermissions.mutateAsync({
         role: selectedRole,
-        permissionIds
+        permissionIds: selectedPermissions
       });
-      toast.success('Permissões da função atualizadas com sucesso!');
     } catch (error) {
-      toast.error('Erro ao atualizar permissões da função');
-      console.error(error);
+      console.error('Erro ao salvar permissões:', error);
     }
   };
 
-  // Filtrar usuários com type guards
-  const filteredUsers = tenantUsersData.filter(tenantUser => {
-    const profile = tenantUser.profiles;
-    
-    // Type guard para verificar se profile existe e tem as propriedades necessárias
-    if (!profile || 
-        typeof profile !== 'object' || 
-        !('full_name' in profile) || 
-        !('email' in profile) ||
-        !profile.full_name || 
-        !profile.email) {
-      return false;
-    }
-    
-    const fullName = String(profile.full_name);
-    const email = String(profile.email);
-    const searchLower = searchTerm.toLowerCase();
-    
-    return fullName.toLowerCase().includes(searchLower) ||
-           email.toLowerCase().includes(searchLower);
-  });
-
-  // Paginação
-  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-  const handlePreviousPage = () => {
-    setCurrentPage(prev => Math.max(1, prev - 1));
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(totalPages, prev + 1));
-  };
-
-  if (isLoading || loadingUsers) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-6">
         <div className="flex items-center justify-center h-64">
@@ -254,288 +333,212 @@ export default function Permissoes() {
       permission={{ module: 'system', resource: 'permissions', action: 'read' }}
       fallback={<AccessDenied message="Você não tem permissão para gerenciar permissões do sistema." />}
     >
-      <div className="container mx-auto py-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Gestão de Permissões</h1>
-            <p className="text-muted-foreground">
-              Configure permissões por função e usuários específicos
-            </p>
+      <TooltipProvider>
+        <div className="container mx-auto py-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Permissões do Sistema</h1>
+              <p className="text-muted-foreground">
+                Gerencie quem pode fazer o que no sistema de forma clara e organizada
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <Link to="/convites" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Gerenciar Convites
+                </Link>
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => window.open('/convites', '_blank')}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              Gerenciar Convites
-            </Button>
-            <Shield className="h-8 w-8 text-primary" />
+
+          {/* Busca */}
+          <div className="flex items-center gap-2 max-w-md">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar módulos ou permissões..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        </div>
 
-        <Tabs defaultValue="roles" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="roles" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Permissões por Função
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Permissões por Usuário
-            </TabsTrigger>
-          </TabsList>
+          {/* Explicação sobre Funções */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Funções Disponíveis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {Object.entries(roleDescriptions).map(([roleKey, role]) => (
+                  <div key={roleKey} className="p-4 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={role.color}>
+                        {role.name}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {role.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {role.permissions}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="roles" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurar Permissões por Função</CardTitle>
-                <CardDescription>
-                  Defina as permissões padrão para cada nível de acesso no sistema. 
-                  Essas permissões serão aplicadas automaticamente a todos os usuários com essa função.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <Select value={selectedRole} onValueChange={setSelectedRole}>
-                    <SelectTrigger className="w-64">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(roleNames).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{label}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {roleDescriptions[value as keyof typeof roleDescriptions]}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    onClick={saveRolePermissions}
-                    disabled={updateRolePermissions.isPending}
+          {/* Seletor de Função para Configurar */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Configurar Permissões por Função</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Selecione uma função para configurar suas permissões específicas
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 mb-4">
+                {Object.entries(roleDescriptions).map(([roleKey, role]) => (
+                  <Button
+                    key={roleKey}
+                    variant={selectedRole === roleKey ? "default" : "outline"}
+                    onClick={() => setSelectedRole(roleKey)}
                   >
-                    {updateRolePermissions.isPending ? 'Salvando...' : 'Salvar Permissões'}
+                    {role.name}
                   </Button>
-                </div>
+                ))}
+              </div>
+              <Button 
+                onClick={handleSaveRolePermissions}
+                disabled={updateRolePermissions.isPending}
+              >
+                {updateRolePermissions.isPending ? 'Salvando...' : 'Salvar Permissões'}
+              </Button>
+            </CardContent>
+          </Card>
 
-                <div className="space-y-6">
-                  <TooltipProvider>
-                    {Object.entries(permissionsByModule).map(([module, permissions]) => {
-                      const moduleInfo = permissionExplanations[module as keyof typeof permissionExplanations];
-                      
-                      return (
-                        <Card key={module} className="border-l-4 border-l-primary">
-                          <CardHeader>
-                            <div className="flex items-center gap-2">
-                              <CardTitle className="text-lg">
-                                {moduleInfo?.name || module}
-                              </CardTitle>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{moduleInfo?.description}</p>
-                                </TooltipContent>
-                              </Tooltip>
+          {/* Módulos de Permissões */}
+          <div className="grid gap-6">
+            {filteredModules.map(([moduleKey, module]) => {
+              const IconComponent = module.icon;
+              return (
+                <Card key={moduleKey}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg bg-muted ${module.color}`}>
+                        <IconComponent className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{module.name}</h3>
+                        <p className="text-sm text-muted-foreground font-normal">
+                          {module.description}
+                        </p>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {Object.entries(module.permissions).map(([permKey, permission]) => (
+                        <div key={`${moduleKey}-${permKey}`} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-medium flex items-center gap-2">
+                                {permission.name}
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <div className="space-y-2">
+                                      <p className="font-medium">{permission.description}</p>
+                                      <p className="text-xs">
+                                        <strong>Exemplo:</strong> {permission.example}
+                                      </p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </h4>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {permission.description}
+                              </p>
+                              <p className="text-xs text-muted-foreground italic">
+                                💡 {permission.example}
+                              </p>
                             </div>
-                            <CardDescription>
-                              {moduleInfo?.description}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              {permissions.map(permission => (
-                                <div key={permission.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="font-medium">
-                                        {permission.resource}
-                                      </span>
+                          </div>
+                          
+                          <Separator className="my-3" />
+                          
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Ações Disponíveis:</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                              {Object.entries(permission.actions).map(([actionKey, actionDesc]) => {
+                                const ActionIcon = actionIcons[actionKey as keyof typeof actionIcons] || Eye;
+                                const permissionId = allPermissions.find(p => 
+                                  p.module === moduleKey && 
+                                  p.resource === permKey && 
+                                  p.actions.includes(actionKey)
+                                )?.id;
+                                
+                                return (
+                                  <div key={actionKey} className="flex items-center space-x-2">
+                                    <Switch
+                                      id={`${moduleKey}-${permKey}-${actionKey}`}
+                                      checked={permissionId ? selectedPermissions.includes(permissionId) : false}
+                                      onCheckedChange={() => permissionId && handlePermissionToggle(permissionId)}
+                                    />
+                                    <div className="flex items-center gap-1">
+                                      <ActionIcon className="h-3 w-3" />
                                       <Tooltip>
                                         <TooltipTrigger>
-                                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                          <label 
+                                            htmlFor={`${moduleKey}-${permKey}-${actionKey}`}
+                                            className="text-xs cursor-pointer"
+                                          >
+                                            {actionKey}
+                                          </label>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                          <p>{moduleInfo?.permissions?.[permission.resource] || 'Permissão relacionada a ' + permission.resource}</p>
+                                          <p className="text-xs">{actionDesc}</p>
                                         </TooltipContent>
                                       </Tooltip>
                                     </div>
-                                    <div className="flex gap-1 flex-wrap">
-                                      {permission.actions.map(action => (
-                                        <Tooltip key={action}>
-                                          <TooltipTrigger>
-                                            <Badge variant="outline" className="text-xs cursor-help">
-                                              {action}
-                                            </Badge>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p>{actionDescriptions[action as keyof typeof actionDescriptions] || action}</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      ))}
-                                    </div>
                                   </div>
-                                  <Switch
-                                    checked={rolePermissions[permission.id] || false}
-                                    onCheckedChange={(checked) => 
-                                      handleRolePermissionChange(permission.id, checked)
-                                    }
-                                  />
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </TooltipProvider>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissões Específicas por Usuário</CardTitle>
-                <CardDescription>
-                  Conceda ou revogue permissões específicas para usuários individuais, 
-                  além das permissões já definidas pela função do usuário.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar usuários..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1); // Reset to first page when searching
-                      }}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div className="border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Usuário</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Função</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedUsers.length > 0 ? (
-                        paginatedUsers.map(tenantUser => {
-                          const profile = tenantUser.profiles;
-                          if (!profile || 
-                              typeof profile !== 'object' || 
-                              !('full_name' in profile) || 
-                              !('email' in profile)) {
-                            return null;
-                          }
-
-                          const fullName = String(profile.full_name || 'Sem nome');
-                          const email = String(profile.email);
-                          
-                          return (
-                            <TableRow key={tenantUser.id}>
-                              <TableCell className="font-medium">
-                                {fullName}
-                              </TableCell>
-                              <TableCell>{email}</TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <Badge variant="outline" className="w-fit">
-                                    {roleNames[tenantUser.role as keyof typeof roleNames] || tenantUser.role}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground mt-1">
-                                    {roleDescriptions[tenantUser.role as keyof typeof roleDescriptions]}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setSelectedUser(tenantUser.user_id)}
-                                >
-                                  Gerenciar Permissões
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                            {searchTerm ? 'Nenhum usuário encontrado com os critérios de busca.' : 'Nenhum usuário encontrado.'}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Paginação */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Mostrando {startIndex + 1} a {Math.min(startIndex + ITEMS_PER_PAGE, filteredUsers.length)} de {filteredUsers.length} usuários
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handlePreviousPage}
-                            disabled={currentPage === 1}
-                            className="gap-1 pl-2.5"
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                            Anterior
-                          </Button>
-                        </PaginationItem>
-                        
-                        <PaginationItem className="mx-2">
-                          <span className="text-sm font-medium">
-                            Página {currentPage} de {totalPages}
-                          </span>
-                        </PaginationItem>
-                        
-                        <PaginationItem>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleNextPage}
-                            disabled={currentPage === totalPages}
-                            className="gap-1 pr-2.5"
-                          >
-                            Próxima
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Link para Convites */}
+          <Card className="border-dashed">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Precisa convidar novos usuários?</h3>
+                <p className="text-muted-foreground mb-4">
+                  Envie convites para que novos colaboradores possam se cadastrar no sistema
+                </p>
+                <Button asChild>
+                  <Link to="/convites">
+                    Gerenciar Convites
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TooltipProvider>
     </PermissionGuard>
   );
 }

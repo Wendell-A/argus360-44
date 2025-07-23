@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useInvitations } from '@/hooks/useInvitations';
-import { Mail, UserPlus } from 'lucide-react';
+import { Mail, UserPlus, Info } from 'lucide-react';
 
 interface InvitationModalProps {
   open: boolean;
@@ -14,10 +15,30 @@ interface InvitationModalProps {
 }
 
 const roleOptions = [
-  { value: 'admin', label: 'Administrador', description: 'Gestão completa do tenant' },
-  { value: 'manager', label: 'Gerente', description: 'Gestão de vendas e equipes' },
-  { value: 'user', label: 'Usuário', description: 'Operações básicas' },
-  { value: 'viewer', label: 'Visualizador', description: 'Apenas visualização' },
+  { 
+    value: 'admin', 
+    label: 'Administrador', 
+    description: 'Gestão completa exceto configurações críticas',
+    permissions: 'Pode gerenciar usuários, vendas, clientes e relatórios'
+  },
+  { 
+    value: 'manager', 
+    label: 'Gerente', 
+    description: 'Gestão de vendas e equipes',
+    permissions: 'Pode aprovar vendas, gerenciar equipe e ver relatórios'
+  },
+  { 
+    value: 'user', 
+    label: 'Usuário', 
+    description: 'Operações básicas do dia a dia',
+    permissions: 'Pode criar vendas, gerenciar clientes e suas comissões'
+  },
+  { 
+    value: 'viewer', 
+    label: 'Visualizador', 
+    description: 'Apenas visualização',
+    permissions: 'Pode apenas visualizar dados, sem editar'
+  },
 ];
 
 export function InvitationModal({ open, onOpenChange }: InvitationModalProps) {
@@ -47,6 +68,8 @@ export function InvitationModal({ open, onOpenChange }: InvitationModalProps) {
     }
   };
 
+  const selectedRoleInfo = roleOptions.find(role => role.value === formData.role);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -56,6 +79,14 @@ export function InvitationModal({ open, onOpenChange }: InvitationModalProps) {
             Enviar Convite
           </DialogTitle>
         </DialogHeader>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            O usuário receberá um email com link para se cadastrar ou aceitar o convite. 
+            Após aceitar, ele aparecerá na lista de usuários disponíveis.
+          </AlertDescription>
+        </Alert>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -71,7 +102,7 @@ export function InvitationModal({ open, onOpenChange }: InvitationModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Função</Label>
+            <Label htmlFor="role">Função no Sistema</Label>
             <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
               <SelectTrigger>
                 <SelectValue />
@@ -79,8 +110,8 @@ export function InvitationModal({ open, onOpenChange }: InvitationModalProps) {
               <SelectContent>
                 {roleOptions.map((role) => (
                   <SelectItem key={role.value} value={role.value}>
-                    <div className="flex flex-col">
-                      <span>{role.label}</span>
+                    <div className="flex flex-col text-left">
+                      <span className="font-medium">{role.label}</span>
                       <span className="text-xs text-muted-foreground">
                         {role.description}
                       </span>
@@ -89,6 +120,16 @@ export function InvitationModal({ open, onOpenChange }: InvitationModalProps) {
                 ))}
               </SelectContent>
             </Select>
+            
+            {selectedRoleInfo && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium mb-1">{selectedRoleInfo.label}</p>
+                <p className="text-xs text-muted-foreground mb-2">{selectedRoleInfo.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Permissões:</strong> {selectedRoleInfo.permissions}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
