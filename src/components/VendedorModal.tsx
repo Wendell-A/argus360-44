@@ -1,133 +1,170 @@
 
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Database } from "@/integrations/supabase/types";
-import { useOffices } from "@/hooks/useOffices";
-
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useVendedores } from '@/hooks/useVendedores';
+import { useOffices } from '@/hooks/useOffices';
+import { useTeams } from '@/hooks/useTeams';
+import { toast } from 'sonner';
 
 interface VendedorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vendedor?: Profile | null;
-  onSave: (vendedor: ProfileInsert & { office_id?: string }) => void;
-  isLoading: boolean;
+  vendedor?: any;
+  availableUsers?: any[];
 }
 
-export default function VendedorModal({
-  open,
-  onOpenChange,
-  vendedor,
-  onSave,
-  isLoading,
-}: VendedorModalProps) {
+export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [] }: VendedorModalProps) {
+  const { createVendedor, updateVendedor } = useVendedores();
   const { offices } = useOffices();
+  const { teams } = useTeams();
   
   const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    department: "",
-    position: "",
-    office_id: "",
+    user_id: '',
+    office_id: '',
+    team_id: '',
+    commission_rate: 0,
+    active: true,
+    hierarchy_level: 1,
+    sales_goal: 0,
+    whatsapp: '',
+    specialties: [] as string[],
+    notes: '',
   });
 
   useEffect(() => {
     if (vendedor) {
       setFormData({
-        full_name: vendedor.full_name || "",
-        email: vendedor.email || "",
-        phone: vendedor.phone || "",
-        department: vendedor.department || "",
-        position: vendedor.position || "",
-        office_id: "",
+        user_id: vendedor.user_id || '',
+        office_id: vendedor.office_id || '',
+        team_id: vendedor.team_id || '',
+        commission_rate: vendedor.commission_rate || 0,
+        active: vendedor.active ?? true,
+        hierarchy_level: vendedor.hierarchy_level || 1,
+        sales_goal: vendedor.sales_goal || 0,
+        whatsapp: vendedor.whatsapp || '',
+        specialties: vendedor.specialties || [],
+        notes: vendedor.notes || '',
       });
     } else {
       setFormData({
-        full_name: "",
-        email: "",
-        phone: "",
-        department: "",
-        position: "",
-        office_id: "",
+        user_id: '',
+        office_id: '',
+        team_id: '',
+        commission_rate: 0,
+        active: true,
+        hierarchy_level: 1,
+        sales_goal: 0,
+        whatsapp: '',
+        specialties: [],
+        notes: '',
       });
     }
-  }, [vendedor, open]);
+  }, [vendedor]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const vendedorData: ProfileInsert & { office_id?: string } = {
-      id: vendedor?.id || crypto.randomUUID(),
-      full_name: formData.full_name,
-      email: formData.email,
-      phone: formData.phone || null,
-      department: formData.department || null,
-      position: formData.position || null,
-      office_id: formData.office_id || undefined,
-    };
+    if (!formData.user_id || !formData.office_id) {
+      toast.error('Usuário e escritório são obrigatórios');
+      return;
+    }
 
-    onSave(vendedorData);
+    try {
+      const vendedorData = {
+        ...formData,
+        settings: {
+          whatsapp: formData.whatsapp,
+          specialties: formData.specialties,
+        },
+      };
+
+      if (vendedor) {
+        await updateVendedor.mutateAsync({
+          id: vendedor.id,
+          data: vendedorData,
+        });
+        toast.success('Vendedor atualizado com sucesso!');
+      } else {
+        await createVendedor.mutateAsync(vendedorData);
+        toast.success('Vendedor criado com sucesso!');
+      }
+      
+      onOpenChange(false);
+    } catch (error: any) {
+      if (error.code === '23505') {
+        toast.error('Este usuário já está cadastrado como vendedor');
+      } else {
+        toast.error('Erro ao salvar vendedor: ' + error.message);
+      }
+    }
   };
+
+  // Filtrar usuários disponíveis que ainda não são vendedores
+  const filteredUsers = availableUsers.filter(user => {
+    // Se estamos editando, incluir o usuário atual
+    if (vendedor && user.user_id === vendedor.user_id) {
+      return true;
+    }
+    // Caso contrário, só mostrar usuários que não são vendedores ainda
+    return !vendedor;
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {vendedor ? "Editar Vendedor" : "Novo Vendedor"}
+            {vendedor ? 'Editar Vendedor' : 'Novo Vendedor'}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="full_name">Nome Completo *</Label>
-            <Input
-              id="full_name"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              required
-            />
+            <Label htmlFor="user_id">Usuário *</Label>
+            <Select 
+              value={formData.user_id} 
+              onValueChange={(value) => setFormData({ ...formData, user_id: value })}
+              disabled={!!vendedor} // Não permite alterar usuário ao editar
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredUsers.map((user) => (
+                  <SelectItem key={user.user_id} value={user.user_id}>
+                    <div className="flex flex-col">
+                      <span>{user.profiles?.full_name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {user.profiles?.email}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {filteredUsers.length === 0 && !vendedor && (
+              <p className="text-sm text-muted-foreground">
+                Nenhum usuário disponível. Envie convites para novos usuários primeiro.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="(11) 99999-9999"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="office_id">Escritório</Label>
+            <Label htmlFor="office_id">Escritório *</Label>
             <Select 
               value={formData.office_id} 
-              onValueChange={(value) => setFormData({ ...formData, office_id: value === "none" ? "" : value })}
+              onValueChange={(value) => setFormData({ ...formData, office_id: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um escritório" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
-                {offices.map((office) => (
+                {offices?.map((office) => (
                   <SelectItem key={office.id} value={office.id}>
                     {office.name}
                   </SelectItem>
@@ -137,26 +174,97 @@ export default function VendedorModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="department">Departamento</Label>
+            <Label htmlFor="team_id">Equipe</Label>
+            <Select 
+              value={formData.team_id} 
+              onValueChange={(value) => setFormData({ ...formData, team_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma equipe (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Sem equipe</SelectItem>
+                {teams?.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="commission_rate">Taxa de Comissão (%)</Label>
+              <Input
+                id="commission_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value={formData.commission_rate}
+                onChange={(e) => setFormData({ ...formData, commission_rate: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hierarchy_level">Nível Hierárquico</Label>
+              <Input
+                id="hierarchy_level"
+                type="number"
+                min="1"
+                max="10"
+                value={formData.hierarchy_level}
+                onChange={(e) => setFormData({ ...formData, hierarchy_level: parseInt(e.target.value) || 1 })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sales_goal">Meta de Vendas (R$)</Label>
             <Input
-              id="department"
-              value={formData.department}
-              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              placeholder="Vendas"
+              id="sales_goal"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.sales_goal}
+              onChange={(e) => setFormData({ ...formData, sales_goal: parseFloat(e.target.value) || 0 })}
+              placeholder="0.00"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="position">Cargo</Label>
+            <Label htmlFor="whatsapp">WhatsApp</Label>
             <Input
-              id="position"
-              value={formData.position}
-              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-              placeholder="Vendedor"
+              id="whatsapp"
+              type="tel"
+              value={formData.whatsapp}
+              onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+              placeholder="(11) 99999-9999"
             />
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="notes">Observações</Label>
+            <Input
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Observações sobre o vendedor"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="active"
+              checked={formData.active}
+              onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+            />
+            <Label htmlFor="active">Ativo</Label>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -164,8 +272,16 @@ export default function VendedorModal({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Salvando..." : "Salvar"}
+            <Button
+              type="submit"
+              disabled={
+                createVendedor.isPending || 
+                updateVendedor.isPending || 
+                !formData.user_id || 
+                !formData.office_id
+              }
+            >
+              {(createVendedor.isPending || updateVendedor.isPending) ? 'Salvando...' : 'Salvar'}
             </Button>
           </div>
         </form>

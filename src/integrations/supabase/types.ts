@@ -707,6 +707,56 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["user_role"]
+          status: string
+          tenant_id: string
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: string
+          tenant_id: string
+          token: string
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: string
+          tenant_id?: string
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_templates: {
         Row: {
           category: string
@@ -1659,6 +1709,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: {
+          invitation_token: string
+          user_id: string
+          user_email: string
+          user_full_name: string
+        }
+        Returns: Json
+      }
       add_user_to_tenant: {
         Args: {
           user_id: string
@@ -1683,6 +1742,10 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_invitation_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_authenticated_user_data: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1698,6 +1761,10 @@ export type Database = {
       is_tenant_owner: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: boolean
+      }
+      validate_invitation: {
+        Args: { invitation_token: string }
+        Returns: Json
       }
     }
     Enums: {

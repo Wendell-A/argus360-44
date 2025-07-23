@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
-import { Shield, Users, Settings, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, Users, Settings, Search, ChevronLeft, ChevronRight, Info, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,11 +27,89 @@ const roleNames = {
 };
 
 const roleDescriptions = {
-  owner: 'Acesso total ao sistema',
-  admin: 'Gestão completa do tenant',
-  manager: 'Gestão de vendas e equipes',
-  user: 'Operações básicas',
-  viewer: 'Apenas visualização'
+  owner: 'Acesso total ao sistema - pode gerenciar tudo, incluindo configurações críticas',
+  admin: 'Gestão completa do tenant - pode gerenciar usuários, vendas e configurações',
+  manager: 'Gestão de vendas e equipes - pode gerenciar vendas, clientes e relatórios',
+  user: 'Operações básicas - pode cadastrar clientes, realizar vendas e acompanhar suas metas',
+  viewer: 'Apenas visualização - pode visualizar dados mas não pode editar'
+};
+
+// Dicionário de explicações dos módulos e recursos
+const permissionExplanations = {
+  system: {
+    name: 'Sistema',
+    description: 'Configurações gerais do sistema',
+    permissions: {
+      'permissions': 'Gerenciar permissões de usuários e funções',
+      'settings': 'Configurar parâmetros gerais do sistema',
+      'audit': 'Visualizar logs de auditoria e atividades',
+    }
+  },
+  users: {
+    name: 'Usuários',
+    description: 'Gestão de usuários e colaboradores',
+    permissions: {
+      'management': 'Criar, editar e desativar usuários',
+      'invitations': 'Enviar convites para novos usuários',
+      'roles': 'Alterar funções e permissões de usuários',
+    }
+  },
+  sales: {
+    name: 'Vendas',
+    description: 'Gestão de vendas e negociações',
+    permissions: {
+      'management': 'Cadastrar, editar e excluir vendas',
+      'approval': 'Aprovar ou reprovar vendas pendentes',
+      'commission': 'Calcular e gerenciar comissões',
+    }
+  },
+  clients: {
+    name: 'Clientes',
+    description: 'Gestão de clientes e prospects',
+    permissions: {
+      'management': 'Cadastrar, editar e excluir clientes',
+      'interaction': 'Registrar interações e histórico',
+      'classification': 'Alterar classificação de clientes',
+    }
+  },
+  reports: {
+    name: 'Relatórios',
+    description: 'Acesso a relatórios e análises',
+    permissions: {
+      'view': 'Visualizar relatórios gerais',
+      'export': 'Exportar relatórios em diversos formatos',
+      'dashboard': 'Acessar dashboard com métricas',
+    }
+  },
+  offices: {
+    name: 'Escritórios',
+    description: 'Gestão de escritórios e filiais',
+    permissions: {
+      'management': 'Criar, editar e gerenciar escritórios',
+      'users': 'Associar usuários a escritórios',
+      'settings': 'Configurar parâmetros específicos do escritório',
+    }
+  },
+  commissions: {
+    name: 'Comissões',
+    description: 'Gestão de comissões e pagamentos',
+    permissions: {
+      'management': 'Calcular e gerenciar comissões',
+      'approval': 'Aprovar pagamentos de comissões',
+      'schedule': 'Definir cronogramas de pagamento',
+    }
+  }
+};
+
+const actionDescriptions = {
+  create: 'Criar novos registros',
+  read: 'Visualizar informações existentes',
+  update: 'Editar registros existentes',
+  delete: 'Excluir registros',
+  write: 'Criar e editar registros',
+  approve: 'Aprovar operações pendentes',
+  export: 'Exportar dados',
+  manage: 'Gerenciar completamente'
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -183,7 +262,17 @@ export default function Permissoes() {
               Configure permissões por função e usuários específicos
             </p>
           </div>
-          <Shield className="h-8 w-8 text-primary" />
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => window.open('/convites', '_blank')}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Gerenciar Convites
+            </Button>
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
         </div>
 
         <Tabs defaultValue="roles" className="space-y-6">
@@ -203,7 +292,8 @@ export default function Permissoes() {
               <CardHeader>
                 <CardTitle>Configurar Permissões por Função</CardTitle>
                 <CardDescription>
-                  Defina as permissões padrão para cada nível de acesso no sistema
+                  Defina as permissões padrão para cada nível de acesso no sistema. 
+                  Essas permissões serão aplicadas automaticamente a todos os usuários com essa função.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -216,7 +306,7 @@ export default function Permissoes() {
                       {Object.entries(roleNames).map(([value, label]) => (
                         <SelectItem key={value} value={value}>
                           <div className="flex flex-col">
-                            <span>{label}</span>
+                            <span className="font-medium">{label}</span>
                             <span className="text-xs text-muted-foreground">
                               {roleDescriptions[value as keyof typeof roleDescriptions]}
                             </span>
@@ -234,37 +324,77 @@ export default function Permissoes() {
                 </div>
 
                 <div className="space-y-6">
-                  {Object.entries(permissionsByModule).map(([module, permissions]) => (
-                    <Card key={module}>
-                      <CardHeader>
-                        <CardTitle className="text-lg capitalize">{module}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          {permissions.map(permission => (
-                            <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg">
-                              <div className="flex-1">
-                                <div className="font-medium">{permission.resource}</div>
-                                <div className="text-sm text-muted-foreground flex gap-1 mt-1">
-                                  {permission.actions.map(action => (
-                                    <Badge key={action} variant="outline" className="text-xs">
-                                      {action}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                              <Switch
-                                checked={rolePermissions[permission.id] || false}
-                                onCheckedChange={(checked) => 
-                                  handleRolePermissionChange(permission.id, checked)
-                                }
-                              />
+                  <TooltipProvider>
+                    {Object.entries(permissionsByModule).map(([module, permissions]) => {
+                      const moduleInfo = permissionExplanations[module as keyof typeof permissionExplanations];
+                      
+                      return (
+                        <Card key={module} className="border-l-4 border-l-primary">
+                          <CardHeader>
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-lg">
+                                {moduleInfo?.name || module}
+                              </CardTitle>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{moduleInfo?.description}</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                            <CardDescription>
+                              {moduleInfo?.description}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {permissions.map(permission => (
+                                <div key={permission.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className="font-medium">
+                                        {permission.resource}
+                                      </span>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{moduleInfo?.permissions?.[permission.resource] || 'Permissão relacionada a ' + permission.resource}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
+                                    <div className="flex gap-1 flex-wrap">
+                                      {permission.actions.map(action => (
+                                        <Tooltip key={action}>
+                                          <TooltipTrigger>
+                                            <Badge variant="outline" className="text-xs cursor-help">
+                                              {action}
+                                            </Badge>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>{actionDescriptions[action as keyof typeof actionDescriptions] || action}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <Switch
+                                    checked={rolePermissions[permission.id] || false}
+                                    onCheckedChange={(checked) => 
+                                      handleRolePermissionChange(permission.id, checked)
+                                    }
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </TooltipProvider>
                 </div>
               </CardContent>
             </Card>
@@ -275,7 +405,8 @@ export default function Permissoes() {
               <CardHeader>
                 <CardTitle>Permissões Específicas por Usuário</CardTitle>
                 <CardDescription>
-                  Conceda ou revogue permissões específicas para usuários individuais
+                  Conceda ou revogue permissões específicas para usuários individuais, 
+                  além das permissões já definidas pela função do usuário.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -325,9 +456,14 @@ export default function Permissoes() {
                               </TableCell>
                               <TableCell>{email}</TableCell>
                               <TableCell>
-                                <Badge variant="outline">
-                                  {roleNames[tenantUser.role as keyof typeof roleNames] || tenantUser.role}
-                                </Badge>
+                                <div className="flex flex-col">
+                                  <Badge variant="outline" className="w-fit">
+                                    {roleNames[tenantUser.role as keyof typeof roleNames] || tenantUser.role}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground mt-1">
+                                    {roleDescriptions[tenantUser.role as keyof typeof roleDescriptions]}
+                                  </span>
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <Button
