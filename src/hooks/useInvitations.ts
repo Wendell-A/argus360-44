@@ -56,7 +56,7 @@ export const useInvitations = () => {
         .insert({
           tenant_id: activeTenant.tenant_id,
           email,
-          role,
+          role: role as 'owner' | 'admin' | 'manager' | 'user' | 'viewer',
           token: token.data,
           expires_at: expiresAt.toISOString(),
         })

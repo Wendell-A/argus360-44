@@ -19,6 +19,19 @@ const roleNames = {
   viewer: 'Visualizador'
 };
 
+interface ValidationResult {
+  valid: boolean;
+  invitation?: any;
+  error?: string;
+}
+
+interface AcceptResult {
+  success: boolean;
+  error?: string;
+  tenant_id?: string;
+  role?: string;
+}
+
 export default function AceitarConvite() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -46,10 +59,11 @@ export default function AceitarConvite() {
 
       if (error) throw error;
 
-      if (data.valid) {
-        setInvitation(data.invitation);
+      const result = data as ValidationResult;
+      if (result.valid) {
+        setInvitation(result.invitation);
       } else {
-        toast.error(data.error || 'Convite inválido');
+        toast.error(result.error || 'Convite inválido');
         navigate('/auth/login');
       }
     } catch (error: any) {
@@ -84,11 +98,12 @@ export default function AceitarConvite() {
 
         if (error) throw error;
 
-        if (data.success) {
+        const result = data as AcceptResult;
+        if (result.success) {
           toast.success('Convite aceito com sucesso!');
           navigate('/');
         } else {
-          toast.error(data.error || 'Erro ao aceitar convite');
+          toast.error(result.error || 'Erro ao aceitar convite');
         }
       } else {
         // Criar nova conta e aceitar convite
@@ -114,11 +129,12 @@ export default function AceitarConvite() {
 
           if (acceptError) throw acceptError;
 
-          if (acceptData.success) {
+          const result = acceptData as AcceptResult;
+          if (result.success) {
             toast.success('Conta criada e convite aceito com sucesso!');
             navigate('/');
           } else {
-            toast.error(acceptData.error || 'Erro ao aceitar convite');
+            toast.error(result.error || 'Erro ao aceitar convite');
           }
         }
       }

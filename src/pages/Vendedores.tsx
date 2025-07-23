@@ -51,8 +51,8 @@ export default function Vendedores() {
   });
 
   const filteredVendedores = vendedores?.filter(vendedor => {
-    const matchesSearch = vendedor.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         vendedor.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = vendedor.user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         vendedor.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || vendedor.active.toString() === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
@@ -64,7 +64,11 @@ export default function Vendedores() {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja remover este vendedor?')) {
-      await deleteVendedor.mutateAsync(id);
+      try {
+        await deleteVendedor.mutateAsync(id);
+      } catch (error) {
+        console.error('Erro ao remover vendedor:', error);
+      }
     }
   };
 
@@ -170,14 +174,14 @@ export default function Vendedores() {
                   filteredVendedores.map((vendedor) => (
                     <TableRow key={vendedor.id}>
                       <TableCell className="font-medium">
-                        {vendedor.profiles?.full_name || 'N/A'}
+                        {vendedor.user?.full_name || 'N/A'}
                       </TableCell>
-                      <TableCell>{vendedor.profiles?.email || 'N/A'}</TableCell>
+                      <TableCell>{vendedor.user?.email || 'N/A'}</TableCell>
                       <TableCell>
-                        {vendedor.offices?.name || 'N/A'}
+                        {vendedor.office?.name || 'N/A'}
                       </TableCell>
                       <TableCell>
-                        {vendedor.teams?.name || 'Sem equipe'}
+                        {vendedor.team?.name || 'Sem equipe'}
                       </TableCell>
                       <TableCell>
                         <Badge variant={vendedor.active ? 'default' : 'secondary'}>
@@ -197,9 +201,8 @@ export default function Vendedores() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(vendedor.id)}
-                            disabled={deleteVendedor.isPending}
                           >
-                            {deleteVendedor.isPending ? 'Removendo...' : 'Remover'}
+                            Remover
                           </Button>
                         </div>
                       </TableCell>
