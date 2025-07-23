@@ -448,8 +448,8 @@ export default function Permissoes() {
                               <h4 className="font-medium flex items-center gap-2">
                                 {permission.name}
                                 <Tooltip>
-                                  <TooltipTrigger>
-                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-xs">
                                     <div className="space-y-2">
@@ -493,7 +493,7 @@ export default function Permissoes() {
                                     <div className="flex items-center gap-1">
                                       <ActionIcon className="h-3 w-3" />
                                       <Tooltip>
-                                        <TooltipTrigger>
+                                        <TooltipTrigger asChild>
                                           <label 
                                             htmlFor={`${moduleKey}-${permKey}-${actionKey}`}
                                             className="text-xs cursor-pointer"
@@ -502,7 +502,7 @@ export default function Permissoes() {
                                           </label>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                          <p className="text-xs">{actionDesc}</p>
+                                          <p className="text-xs">{String(actionDesc)}</p>
                                         </TooltipContent>
                                       </Tooltip>
                                     </div>
