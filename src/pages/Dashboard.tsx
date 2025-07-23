@@ -155,7 +155,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -168,7 +168,7 @@ const Dashboard = () => {
         </div>
 
         {/* Métricas Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <MetricCard
             title="Vendas do Mês"
             value={dashboardStats?.monthSales?.toString() || "0"}
@@ -200,7 +200,7 @@ const Dashboard = () => {
         </div>
 
         {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
           {/* Gráfico de Vendas Mensais */}
           <Card>
             <CardHeader>
@@ -247,7 +247,7 @@ const Dashboard = () => {
         </div>
 
         {/* Seção Inferior - Top Vendedores e Vendas Recentes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Top Vendedores */}
           <Card>
             <CardHeader>
@@ -323,7 +323,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{goalStats.totalGoals}</div>
                   <div className="text-sm text-muted-foreground">Total de Metas</div>
