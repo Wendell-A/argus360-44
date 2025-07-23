@@ -39,16 +39,16 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
   useEffect(() => {
     if (vendedor) {
       setFormData({
-        user_id: vendedor.user_id || '',
+        user_id: vendedor.id || '',
         office_id: vendedor.office_id || '',
         team_id: vendedor.team_id || '',
         commission_rate: vendedor.commission_rate || 0,
         active: vendedor.active ?? true,
-        hierarchy_level: vendedor.hierarchy_level || 1,
+        hierarchy_level: vendedor.hierarchical_level || 1,
         sales_goal: vendedor.sales_goal || 0,
-        whatsapp: vendedor.whatsapp || '',
-        specialties: vendedor.specialties || [],
-        notes: vendedor.notes || '',
+        whatsapp: vendedor.phone || '',
+        specialties: vendedor.settings?.specialties || [],
+        notes: vendedor.settings?.notes || '',
       });
     } else {
       setFormData({
@@ -74,22 +74,63 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
       return;
     }
 
-    try {
-      const vendedorData = {
-        ...formData,
-        settings: {
-          whatsapp: formData.whatsapp,
-          specialties: formData.specialties,
-        },
-      };
+    // Buscar dados do usuário selecionado
+    const selectedUser = availableUsers.find(user => 
+      user.profiles?.id === formData.user_id || user.user_id === formData.user_id
+    );
 
+    if (!selectedUser && !vendedor) {
+      toast.error('Usuário não encontrado');
+      return;
+    }
+
+    try {
       if (vendedor) {
+        // Atualizando vendedor existente
+        const updateData = {
+          full_name: vendedor.full_name, // Manter o nome atual
+          email: vendedor.email, // Manter o email atual
+          phone: formData.whatsapp,
+          department: vendedor.department,
+          position: vendedor.position,
+          hierarchical_level: formData.hierarchy_level,
+          settings: {
+            ...vendedor.settings,
+            whatsapp: formData.whatsapp,
+            specialties: formData.specialties,
+            notes: formData.notes,
+            active: formData.active,
+            commission_rate: formData.commission_rate,
+            sales_goal: formData.sales_goal,
+            office_id: formData.office_id,
+            team_id: formData.team_id,
+          },
+        };
+
         await updateVendedor.mutateAsync({
           id: vendedor.id,
-          data: vendedorData,
+          data: updateData,
         });
         toast.success('Vendedor atualizado com sucesso!');
       } else {
+        // Criando novo vendedor
+        const vendedorData = {
+          id: selectedUser.profiles?.id || selectedUser.user_id,
+          email: selectedUser.profiles?.email || selectedUser.email,
+          full_name: selectedUser.profiles?.full_name || selectedUser.full_name,
+          phone: formData.whatsapp,
+          hierarchical_level: formData.hierarchy_level,
+          settings: {
+            whatsapp: formData.whatsapp,
+            specialties: formData.specialties,
+            notes: formData.notes,
+            active: formData.active,
+            commission_rate: formData.commission_rate,
+            sales_goal: formData.sales_goal,
+          },
+          office_id: formData.office_id,
+        };
+
         await createVendedor.mutateAsync(vendedorData);
         toast.success('Vendedor criado com sucesso!');
       }
@@ -107,7 +148,7 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
   // Filtrar usuários disponíveis que ainda não são vendedores
   const filteredUsers = availableUsers.filter(user => {
     // Se estamos editando, incluir o usuário atual
-    if (vendedor && user.user_id === vendedor.user_id) {
+    if (vendedor && (user.profiles?.id === vendedor.id || user.user_id === vendedor.id)) {
       return true;
     }
     // Caso contrário, só mostrar usuários que não são vendedores ainda
@@ -136,11 +177,14 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
               </SelectTrigger>
               <SelectContent>
                 {filteredUsers.map((user) => (
-                  <SelectItem key={user.user_id} value={user.user_id}>
+                  <SelectItem 
+                    key={user.profiles?.id || user.user_id} 
+                    value={user.profiles?.id || user.user_id}
+                  >
                     <div className="flex flex-col">
-                      <span>{user.profiles?.full_name}</span>
+                      <span>{user.profiles?.full_name || user.full_name}</span>
                       <span className="text-sm text-muted-foreground">
-                        {user.profiles?.email}
+                        {user.profiles?.email || user.email}
                       </span>
                     </div>
                   </SelectItem>

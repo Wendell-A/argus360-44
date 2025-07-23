@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ export default function Relatorios() {
   const activeClients = clients?.filter(client => client.status === 'active') || [];
   const prospectClients = clients?.filter(client => client.status === 'prospect') || [];
 
-  const activeVendedores = vendedores?.filter(vendedor => vendedor.active_status !== false) || [];
+  const activeVendedores = vendedores?.filter(vendedor => vendedor.active !== false) || [];
 
   // Função para exportar dados (placeholder)
   const handleExportReport = () => {
