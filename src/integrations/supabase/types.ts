@@ -1817,6 +1817,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_user_perform_action: {
+        Args: {
+          user_uuid: string
+          tenant_uuid: string
+          action_type: string
+          resource_type: string
+          resource_id?: string
+        }
+        Returns: boolean
+      }
       create_initial_user_setup: {
         Args: {
           user_id: string
