@@ -28,13 +28,20 @@ export const useInvitations = () => {
     queryFn: async () => {
       if (!activeTenant?.tenant_id) return [];
 
+      console.log('🔍 Buscando convites para tenant:', activeTenant.tenant_id);
+
       const { data, error } = await supabase
         .from('invitations')
         .select('*')
         .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar convites:', error);
+        throw error;
+      }
+
+      console.log('✅ Convites encontrados:', data?.length || 0);
       return data as Invitation[];
     },
     enabled: !!activeTenant?.tenant_id,
@@ -46,35 +53,60 @@ export const useInvitations = () => {
       if (!activeTenant?.tenant_id) throw new Error('Tenant não encontrado');
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      const token = await supabase.rpc('generate_invitation_token');
-      if (token.error) throw token.error;
+      console.log('📤 Iniciando envio de convite:', { email, role, tenant_id: activeTenant.tenant_id });
 
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // Expira em 7 dias
+      try {
+        // Gerar token usando a função corrigida
+        console.log('🔑 Gerando token de convite...');
+        const tokenResult = await supabase.rpc('generate_invitation_token');
+        
+        if (tokenResult.error) {
+          console.error('❌ Erro ao gerar token:', tokenResult.error);
+          throw tokenResult.error;
+        }
 
-      const { data, error } = await supabase
-        .from('invitations')
-        .insert({
-          tenant_id: activeTenant.tenant_id,
-          email,
-          invited_by: user.id,
-          role: role as 'owner' | 'admin' | 'manager' | 'user' | 'viewer',
-          token: token.data,
-          expires_at: expiresAt.toISOString(),
-        })
-        .select()
-        .single();
+        console.log('✅ Token gerado com sucesso:', tokenResult.data ? 'sim' : 'não');
 
-      if (error) throw error;
-      return data;
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // Expira em 7 dias
+
+        console.log('💾 Salvando convite no banco...');
+        const { data, error } = await supabase
+          .from('invitations')
+          .insert({
+            tenant_id: activeTenant.tenant_id,
+            email,
+            invited_by: user.id,
+            role: role as 'owner' | 'admin' | 'manager' | 'user' | 'viewer',
+            token: tokenResult.data,
+            expires_at: expiresAt.toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('❌ Erro ao salvar convite:', error);
+          throw error;
+        }
+
+        console.log('✅ Convite salvo com sucesso:', data.id);
+        return data;
+      } catch (error) {
+        console.error('❌ Erro completo no envio de convite:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('🎉 Convite enviado com sucesso! ID:', data.id);
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
       toast.success('Convite enviado com sucesso!');
     },
     onError: (error: any) => {
+      console.error('💥 Erro final ao enviar convite:', error);
       if (error.code === '23505') {
         toast.error('Usuário já foi convidado para este tenant');
+      } else if (error.message.includes('generate_invitation_token')) {
+        toast.error('Erro interno no sistema de tokens. Entre em contato com suporte.');
       } else {
         toast.error('Erro ao enviar convite: ' + error.message);
       }
@@ -84,18 +116,26 @@ export const useInvitations = () => {
   // Cancelar convite
   const cancelInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
+      console.log('❌ Cancelando convite:', invitationId);
+      
       const { error } = await supabase
         .from('invitations')
         .delete()
         .eq('id', invitationId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao cancelar convite:', error);
+        throw error;
+      }
+
+      console.log('✅ Convite cancelado com sucesso');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
       toast.success('Convite cancelado com sucesso!');
     },
     onError: (error: any) => {
+      console.error('💥 Erro ao cancelar convite:', error);
       toast.error('Erro ao cancelar convite: ' + error.message);
     },
   });
@@ -103,29 +143,52 @@ export const useInvitations = () => {
   // Reenviar convite
   const resendInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
-      const token = await supabase.rpc('generate_invitation_token');
-      if (token.error) throw token.error;
+      console.log('🔄 Reenviando convite:', invitationId);
+      
+      try {
+        // Gerar novo token
+        console.log('🔑 Gerando novo token...');
+        const tokenResult = await supabase.rpc('generate_invitation_token');
+        if (tokenResult.error) {
+          console.error('❌ Erro ao gerar novo token:', tokenResult.error);
+          throw tokenResult.error;
+        }
 
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
 
-      const { error } = await supabase
-        .from('invitations')
-        .update({
-          token: token.data,
-          expires_at: expiresAt.toISOString(),
-          status: 'pending',
-        })
-        .eq('id', invitationId);
+        console.log('🔄 Atualizando convite...');
+        const { error } = await supabase
+          .from('invitations')
+          .update({
+            token: tokenResult.data,
+            expires_at: expiresAt.toISOString(),
+            status: 'pending',
+          })
+          .eq('id', invitationId);
 
-      if (error) throw error;
+        if (error) {
+          console.error('❌ Erro ao atualizar convite:', error);
+          throw error;
+        }
+
+        console.log('✅ Convite reenviado com sucesso');
+      } catch (error) {
+        console.error('💥 Erro no reenvio de convite:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
       toast.success('Convite reenviado com sucesso!');
     },
     onError: (error: any) => {
-      toast.error('Erro ao reenviar convite: ' + error.message);
+      console.error('💥 Erro ao reenviar convite:', error);
+      if (error.message.includes('generate_invitation_token')) {
+        toast.error('Erro interno no sistema de tokens. Entre em contato com suporte.');
+      } else {
+        toast.error('Erro ao reenviar convite: ' + error.message);
+      }
     },
   });
 

@@ -1,23 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Mail, Building, UserCheck } from 'lucide-react';
-
-const roleNames = {
-  owner: 'Proprietário',
-  admin: 'Administrador',
-  manager: 'Gerente',
-  user: 'Usuário',
-  viewer: 'Visualizador'
-};
 
 interface ValidationResult {
   valid: boolean;
@@ -27,149 +17,107 @@ interface ValidationResult {
 
 interface AcceptResult {
   success: boolean;
-  error?: string;
-  tenant_id?: string;
-  role?: string;
+  message: string;
 }
 
 export default function AceitarConvite() {
-  const { token } = useParams<{ token: string }>();
+  const { token } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [invitation, setInvitation] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAccepting, setIsAccepting] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const [loading, setLoading] = useState(true);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [accepting, setAccepting] = useState(false);
 
   useEffect(() => {
     if (token) {
       validateInvitation();
+    } else {
+      setValidationResult({ valid: false, error: 'Token de convite não encontrado' });
+      setLoading(false);
     }
   }, [token]);
 
   const validateInvitation = async () => {
+    if (!token) return;
+    
     try {
+      console.log('🔍 Validando convite com token:', token);
+      setLoading(true);
+      
       const { data, error } = await supabase.rpc('validate_invitation', {
-        invitation_token: token
+        p_token: token
       });
 
-      if (error) throw error;
-
-      const result = (data as unknown) as ValidationResult;
-      if (result.valid) {
-        setInvitation(result.invitation);
-      } else {
-        toast.error(result.error || 'Convite inválido');
-        navigate('/auth/login');
+      if (error) {
+        console.error('❌ Erro na validação:', error);
+        setValidationResult({ valid: false, error: error.message });
+        return;
       }
+
+      console.log('✅ Resultado da validação:', data);
+      const result = (data as unknown) as ValidationResult;
+      setValidationResult(result);
+      
     } catch (error: any) {
-      toast.error('Erro ao validar convite: ' + error.message);
-      navigate('/auth/login');
+      console.error('💥 Erro inesperado na validação:', error);
+      setValidationResult({ 
+        valid: false, 
+        error: 'Erro interno ao validar convite. Tente novamente.' 
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleAcceptInvitation = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!invitation || !token) return;
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('As senhas não coincidem');
+  const handleAcceptInvitation = async () => {
+    if (!token || !user) {
+      toast.error('Usuário não autenticado ou token inválido');
       return;
     }
 
-    setIsAccepting(true);
-
     try {
-      // Se usuário já está logado, apenas aceita o convite
-      if (user) {
-        const { data, error } = await supabase.rpc('accept_invitation', {
-          invitation_token: token,
-          user_id: user.id,
-          user_email: user.email,
-          user_full_name: user.user_metadata?.full_name || user.email
-        });
+      console.log('✅ Aceitando convite:', token);
+      setAccepting(true);
+      
+      const { data, error } = await supabase.rpc('accept_invitation', {
+        p_token: token,
+        p_user_id: user.id
+      });
 
-        if (error) throw error;
-
-        const result = (data as unknown) as AcceptResult;
-        if (result.success) {
-          toast.success('Convite aceito com sucesso!');
-          navigate('/');
-        } else {
-          toast.error(result.error || 'Erro ao aceitar convite');
-        }
-      } else {
-        // Criar nova conta e aceitar convite
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: invitation.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.fullName,
-            }
-          }
-        });
-
-        if (signUpError) throw signUpError;
-
-        if (signUpData.user) {
-          const { data: acceptData, error: acceptError } = await supabase.rpc('accept_invitation', {
-            invitation_token: token,
-            user_id: signUpData.user.id,
-            user_email: invitation.email,
-            user_full_name: formData.fullName
-          });
-
-          if (acceptError) throw acceptError;
-
-          const result = (acceptData as unknown) as AcceptResult;
-          if (result.success) {
-            toast.success('Conta criada e convite aceito com sucesso!');
-            navigate('/');
-          } else {
-            toast.error(result.error || 'Erro ao aceitar convite');
-          }
-        }
+      if (error) {
+        console.error('❌ Erro ao aceitar convite:', error);
+        toast.error('Erro ao aceitar convite: ' + error.message);
+        return;
       }
+
+      console.log('🎉 Convite aceito com sucesso:', data);
+      const result = (data as unknown) as AcceptResult;
+      
+      if (result.success) {
+        toast.success('Convite aceito com sucesso! Redirecionando...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      } else {
+        toast.error(result.message || 'Erro ao aceitar convite');
+      }
+      
     } catch (error: any) {
-      toast.error('Erro ao aceitar convite: ' + error.message);
+      console.error('💥 Erro inesperado ao aceitar:', error);
+      toast.error('Erro interno ao aceitar convite. Tente novamente.');
     } finally {
-      setIsAccepting(false);
+      setAccepting(false);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Validando convite...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!invitation) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
-            <div className="text-center">
-              <Mail className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold mb-2">Convite Inválido</h2>
-              <p className="text-muted-foreground mb-4">
-                Este convite não é válido ou já expirou.
-              </p>
-              <Button onClick={() => navigate('/auth/login')}>
-                Ir para Login
-              </Button>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-muted-foreground">Validando convite...</p>
             </div>
           </CardContent>
         </Card>
@@ -177,113 +125,151 @@ export default function AceitarConvite() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <UserCheck className="h-12 w-12 text-green-500" />
-          </div>
-          <CardTitle>Aceitar Convite</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Você foi convidado para participar da organização
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4 mb-6">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Email:</span>
-              </div>
-              <p className="text-sm">{invitation.email}</p>
+  if (!validationResult || !validationResult.valid) {
+    const errorMessage = validationResult?.error || 'Convite inválido';
+    
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+              <XCircle className="h-6 w-6 text-red-600" />
+            </div>
+            <CardTitle className="text-red-600">Convite Inválido</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {errorMessage}
+              </AlertDescription>
+            </Alert>
+            
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>Possíveis motivos:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>O convite expirou</li>
+                <li>O convite já foi aceito</li>
+                <li>O link foi copiado incorretamente</li>
+              </ul>
             </div>
             
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Building className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Função:</span>
-              </div>
-              <Badge variant="outline">
-                {roleNames[invitation.role as keyof typeof roleNames] || invitation.role}
-              </Badge>
-            </div>
+            <Button onClick={() => navigate('/login')} className="w-full">
+              Ir para Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const invitation = validationResult.invitation;
+  const isExpired = invitation && new Date(invitation.expires_at) < new Date();
+  const isAlreadyAccepted = invitation && invitation.status === 'accepted';
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+            {isAlreadyAccepted ? (
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            ) : isExpired ? (
+              <Clock className="h-6 w-6 text-yellow-600" />
+            ) : (
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            )}
           </div>
-
-          {!user && (
-            <form onSubmit={handleAcceptInvitation} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="Seu nome completo"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Crie uma senha"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  placeholder="Confirme sua senha"
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isAccepting || !formData.fullName || !formData.password || !formData.confirmPassword}
-              >
-                {isAccepting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Criando conta...
-                  </>
-                ) : (
-                  'Aceitar Convite e Criar Conta'
-                )}
-              </Button>
-            </form>
-          )}
-
-          {user && (
+          <CardTitle className="text-green-600">
+            {isAlreadyAccepted 
+              ? 'Convite Já Aceito' 
+              : isExpired 
+                ? 'Convite Expirado'
+                : 'Convite Válido'
+            }
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {invitation && (
             <div className="space-y-4">
-              <p className="text-sm text-center text-muted-foreground">
-                Você já está logado como {user.email}
-              </p>
-              <Button
-                onClick={handleAcceptInvitation}
-                className="w-full"
-                disabled={isAccepting}
-              >
-                {isAccepting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Aceitando convite...
-                  </>
-                ) : (
-                  'Aceitar Convite'
+              <div className="text-center">
+                <p className="text-lg font-medium">Você foi convidado para:</p>
+                <p className="text-2xl font-bold text-primary">{invitation.tenant?.name || 'Organização'}</p>
+                <p className="text-muted-foreground">Como: {invitation.role}</p>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Email convidado:</span>
+                  <span className="font-medium">{invitation.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Convite expira em:</span>
+                  <span className="font-medium">
+                    {new Date(invitation.expires_at).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className={`font-medium ${
+                    isAlreadyAccepted ? 'text-green-600' :
+                    isExpired ? 'text-yellow-600' : 'text-blue-600'
+                  }`}>
+                    {isAlreadyAccepted ? 'Aceito' : isExpired ? 'Expirado' : 'Pendente'}
+                  </span>
+                </div>
+              </div>
+
+              {isAlreadyAccepted && (
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Este convite já foi aceito. Você pode acessar o sistema normalmente.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {isExpired && (
+                <Alert variant="destructive">
+                  <Clock className="h-4 w-4" />
+                  <AlertDescription>
+                    Este convite expirou. Entre em contato com o administrador para receber um novo convite.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex gap-2">
+                {!isAlreadyAccepted && !isExpired && user && (
+                  <Button 
+                    onClick={handleAcceptInvitation}
+                    disabled={accepting}
+                    className="flex-1"
+                  >
+                    {accepting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Aceitando...
+                      </>
+                    ) : (
+                      'Aceitar Convite'
+                    )}
+                  </Button>
                 )}
-              </Button>
+                
+                {!user && (
+                  <Button onClick={() => navigate('/login')} className="flex-1">
+                    Fazer Login para Aceitar
+                  </Button>
+                )}
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/dashboard')}
+                  className={user && !isAlreadyAccepted && !isExpired ? "flex-1" : "w-full"}
+                >
+                  {isAlreadyAccepted ? 'Ir para Dashboard' : 'Cancelar'}
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
