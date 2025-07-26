@@ -34,84 +34,95 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useUserMenuConfig } from "@/hooks/useUserMenuConfig";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const menuItems = [
+const allMenuItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
     icon: Home,
-    shortcut: "⌘D"
+    shortcut: "⌘D",
+    key: "dashboard"
   },
   {
     title: "CRM",
     url: "/crm",
     icon: Users,
-    shortcut: "⌘R"
+    shortcut: "⌘R",
+    key: "crm"
   },
   {
     title: "Clientes",
     url: "/clientes", 
     icon: UserCheck,
-    shortcut: "⌘C"
+    shortcut: "⌘C",
+    key: "clients"
   },
   {
     title: "Vendas",
     url: "/vendas",
     icon: ShoppingCart,
-    shortcut: "⌘V"
+    shortcut: "⌘V",
+    key: "sales"
   },
   {
     title: "Vendedores",
     url: "/vendedores",
     icon: Users,
-    shortcut: "⌘U"
+    shortcut: "⌘U",
+    key: "sellers"
   },
   {
     title: "Comissões",
     url: "/comissoes",
     icon: DollarSign,
-    shortcut: "⌘M"
+    shortcut: "⌘M",
+    key: "commissions"
   },
   {
     title: "Consórcios",
     url: "/consorcios",
     icon: Car,
-    shortcut: "⌘N"
+    shortcut: "⌘N",
+    key: "consortium"
   },
   {
     title: "Simulação",
     url: "/simulacao-consorcio",
     icon: Calculator,
-    shortcut: "⌘S"
+    shortcut: "⌘S",
+    key: "simulation"
   },
   {
     title: "Metas",
     url: "/metas",
     icon: Target,
-    shortcut: "⌘T"
+    shortcut: "⌘T",
+    key: "goals"
   },
   {
     title: "Relatórios",
     url: "/relatorios",
     icon: FileText,
-    shortcut: "⌘L"
+    shortcut: "⌘L",
+    key: "reports"
   }
 ];
 
-const managementItems = [
-  { title: "Escritórios", url: "/escritorios", icon: Building },
-  { title: "Equipes", url: "/equipes", icon: UsersIcon },
-  { title: "Departamentos", url: "/departamentos", icon: Building2 },
-  { title: "Cargos", url: "/cargos", icon: Briefcase },
+const allManagementItems = [
+  { title: "Escritórios", url: "/escritorios", icon: Building, key: "offices" },
+  { title: "Equipes", url: "/equipes", icon: UsersIcon, key: "teams" },
+  { title: "Departamentos", url: "/departamentos", icon: Building2, key: "departments" },
+  { title: "Cargos", url: "/cargos", icon: Briefcase, key: "positions" },
 ];
 
-const configItems = [
-  { title: "Convites", url: "/convites", icon: Mail },
-  { title: "Permissões", url: "/permissoes", icon: Shield },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
-  { title: "Auditoria", url: "/auditoria", icon: FileText },
+const allConfigItems = [
+  { title: "Convites", url: "/convites", icon: Mail, key: "invitations" },
+  { title: "Permissões", url: "/permissoes", icon: Shield, key: "permissions" },
+  { title: "Configurações", url: "/configuracoes", icon: Settings, key: "configurations" },
+  { title: "Auditoria", url: "/auditoria", icon: FileText, key: "audit" },
 ];
 
 export function AppSidebar() {
@@ -121,6 +132,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { activeTenant, signOut } = useAuth();
   const { currentUser, isLoading } = useCurrentUser();
+  const { data: menuConfig, isLoading: isMenuConfigLoading } = useUserMenuConfig();
 
   const isActive = (path: string) => {
     if (path === "/dashboard") {
@@ -131,13 +143,46 @@ export function AppSidebar() {
 
   const getRoleDisplayName = (role?: string) => {
     const roleMap: Record<string, string> = {
+      owner: 'Proprietário',
       admin: 'Administrador',
       manager: 'Gerente',
-      seller: 'Vendedor',
-      user: 'Usuário'
+      user: 'Usuário',
+      viewer: 'Visualizador'
     };
     return roleMap[role || 'user'] || 'Usuário';
   };
+
+  // Filtrar itens de menu baseado nas permissões do usuário
+  const getVisibleMenuItems = () => {
+    if (isMenuConfigLoading || !menuConfig) return [];
+    
+    return allMenuItems.filter(item => {
+      const moduleKey = item.key as keyof typeof menuConfig.modules;
+      return menuConfig.modules[moduleKey] === true;
+    });
+  };
+
+  const getVisibleManagementItems = () => {
+    if (isMenuConfigLoading || !menuConfig) return [];
+    
+    return allManagementItems.filter(item => {
+      const moduleKey = item.key as keyof typeof menuConfig.modules;
+      return menuConfig.modules[moduleKey] === true;
+    });
+  };
+
+  const getVisibleConfigItems = () => {
+    if (isMenuConfigLoading || !menuConfig) return [];
+    
+    return allConfigItems.filter(item => {
+      const moduleKey = item.key as keyof typeof menuConfig.modules;
+      return menuConfig.modules[moduleKey] === true;
+    });
+  };
+
+  const menuItems = getVisibleMenuItems();
+  const managementItems = getVisibleManagementItems();
+  const configItems = getVisibleConfigItems();
 
   const handleLogout = async () => {
     try {
@@ -273,89 +318,93 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          {!collapsed && (
-            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
-              Gestão
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent className={collapsed ? "" : "px-4"}>
-            <SidebarMenu className="space-y-1">
-              {managementItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive(item.url)} 
-                    tooltip={collapsed ? item.title : undefined}
-                    className="w-full"
-                  >
-                    <Link
-                      to={item.url}
-                      className={cn(
-                        "flex items-center rounded-lg transition-all duration-200 group",
-                        collapsed 
-                          ? "justify-center p-4 w-20 h-14 mx-auto" 
-                          : "justify-start space-x-3 px-3 py-2.5",
-                        isActive(item.url)
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      )}
+        {managementItems.length > 0 && (
+          <SidebarGroup>
+            {!collapsed && (
+              <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
+                Gestão
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent className={collapsed ? "" : "px-4"}>
+              <SidebarMenu className="space-y-1">
+                {managementItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(item.url)} 
+                      tooltip={collapsed ? item.title : undefined}
+                      className="w-full"
                     >
-                      <item.icon className={cn(
-                        "shrink-0 transition-all duration-200",
-                        collapsed ? "h-5 w-5" : "h-5 w-5",
-                        isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
-                      )} />
-                      {!collapsed && <span className="font-medium truncate">{item.title}</span>}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                      <Link
+                        to={item.url}
+                        className={cn(
+                          "flex items-center rounded-lg transition-all duration-200 group",
+                          collapsed 
+                            ? "justify-center p-4 w-20 h-14 mx-auto" 
+                            : "justify-start space-x-3 px-3 py-2.5",
+                          isActive(item.url)
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                        )}
+                      >
+                        <item.icon className={cn(
+                          "shrink-0 transition-all duration-200",
+                          collapsed ? "h-5 w-5" : "h-5 w-5",
+                          isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
+                        )} />
+                        {!collapsed && <span className="font-medium truncate">{item.title}</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
-        <SidebarGroup>
-          {!collapsed && (
-            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
-              Sistema
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent className={collapsed ? "" : "px-4"}>
-            <SidebarMenu className="space-y-1">
-              {configItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive(item.url)} 
-                    tooltip={collapsed ? item.title : undefined}
-                    className="w-full"
-                  >
-                    <Link
-                      to={item.url}
-                      className={cn(
-                        "flex items-center rounded-lg transition-all duration-200 group",
-                        collapsed 
-                          ? "justify-center p-4 w-20 h-14 mx-auto" 
-                          : "justify-start space-x-3 px-3 py-2.5",
-                        isActive(item.url)
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      )}
+        {configItems.length > 0 && (
+          <SidebarGroup>
+            {!collapsed && (
+              <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
+                Sistema
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent className={collapsed ? "" : "px-4"}>
+              <SidebarMenu className="space-y-1">
+                {configItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive(item.url)} 
+                      tooltip={collapsed ? item.title : undefined}
+                      className="w-full"
                     >
-                      <item.icon className={cn(
-                        "shrink-0 transition-all duration-200",
-                        collapsed ? "h-5 w-5" : "h-5 w-5",
-                        isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
-                      )} />
-                      {!collapsed && <span className="font-medium truncate">{item.title}</span>}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                      <Link
+                        to={item.url}
+                        className={cn(
+                          "flex items-center rounded-lg transition-all duration-200 group",
+                          collapsed 
+                            ? "justify-center p-4 w-20 h-14 mx-auto" 
+                            : "justify-start space-x-3 px-3 py-2.5",
+                          isActive(item.url)
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                        )}
+                      >
+                        <item.icon className={cn(
+                          "shrink-0 transition-all duration-200",
+                          collapsed ? "h-5 w-5" : "h-5 w-5",
+                          isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
+                        )} />
+                        {!collapsed && <span className="font-medium truncate">{item.title}</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <div className={cn(
           "mt-auto border-t border-sidebar-border p-4 transition-all duration-300",

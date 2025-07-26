@@ -1949,11 +1949,19 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_dashboard_stats_config: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: Json
+      }
       get_user_context_offices: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: string[]
       }
       get_user_full_context: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: Json
+      }
+      get_user_menu_config: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: Json
       }
