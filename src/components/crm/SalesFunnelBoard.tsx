@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Phone, MessageCircle, Mail, Plus } from 'lucide-react';
+import { Phone, MessageCircle, Mail, Plus, ChevronDown } from 'lucide-react';
 import { useSalesFunnelStages, useClientFunnelPositions, useUpdateClientFunnelPosition } from '@/hooks/useSalesFunnel';
 import { generateWhatsAppLink, formatPhoneNumber } from '@/lib/whatsapp';
 import { InteractionModal } from './InteractionModal';
@@ -139,10 +140,10 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
 
   const getClassificationColor = (classification: string) => {
     switch (classification) {
-      case 'hot': return 'bg-red-100 text-red-800';
-      case 'warm': return 'bg-yellow-100 text-yellow-800';
-      case 'cold': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'hot': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'warm': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'cold': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
 
@@ -169,122 +170,181 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-6">
+      {/* Grid otimizado para larguras adequadas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
         {funnelData.map((stage) => (
           <div
             key={stage.id}
-            className={`transition-colors duration-200 ${
-              isDragging ? 'bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg' : ''
+            className={`transition-all duration-200 ${
+              isDragging ? 'bg-gray-50 dark:bg-gray-800/50 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg' : ''
             }`}
             onDrop={(e) => handleDrop(e, stage.id)}
             onDragOver={handleDragOver}
             onDragEnter={handleDragEnter}
           >
-            <Card className="h-full">
+            <Card className="h-full min-w-[280px]">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle 
-                    className="text-sm font-medium"
+                    className="text-sm font-medium truncate"
                     style={{ color: stage.color }}
                   >
                     {stage.name}
                   </CardTitle>
-                  <Badge variant="secondary">
+                  <Badge 
+                    variant="secondary"
+                    className="shrink-0 ml-2"
+                  >
                     {stage.clients.length}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4 max-h-[600px] overflow-y-auto px-4">
-                {stage.clients.map((client) => (
-                  <Card
-                    key={client.id}
-                    className="cursor-move hover:shadow-md transition-shadow border-l-4 hover:bg-gray-50"
-                    style={{ borderLeftColor: stage.color }}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, client)}
-                    onDragEnd={handleDragEnd}
-                    onClick={() => handleClientClick(client)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {client.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{client.name}</p>
-                            <p className="text-xs text-gray-600">{client.email}</p>
+              
+              <CardContent className="px-4">
+                {/* Container com scroll otimizado */}
+                <div 
+                  className="space-y-3 max-h-[700px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#d1d5db transparent'
+                  }}
+                >
+                  {stage.clients.map((client) => (
+                    <Card
+                      key={client.id}
+                      className="cursor-move hover:shadow-md transition-all border-l-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 group"
+                      style={{ borderLeftColor: stage.color }}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, client)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => handleClientClick(client)}
+                    >
+                      <CardContent className="p-4 space-y-3">
+                        {/* Header do card otimizado */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <Avatar className="h-9 w-9 shrink-0">
+                              <AvatarFallback className="text-xs font-medium">
+                                {client.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm truncate" title={client.name}>
+                                {client.name}
+                              </p>
+                              {client.email && (
+                                <p className="text-xs text-gray-600 dark:text-gray-400 truncate" title={client.email}>
+                                  {client.email}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge className={`${getClassificationColor(client.classification)} shrink-0 text-xs`}>
+                            {client.classification}
+                          </Badge>
+                        </div>
+                        
+                        {/* Telefone */}
+                        {client.phone && (
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            {formatPhoneNumber(client.phone)}
+                          </div>
+                        )}
+                        
+                        {/* Métricas */}
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-4">
+                            <span className="text-gray-500 dark:text-gray-400">
+                              <span className="font-medium">{client.probability}%</span> prob.
+                            </span>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              <span className="font-medium">R$ {client.expected_value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+                            </span>
                           </div>
                         </div>
-                        <Badge className={getClassificationColor(client.classification)}>
-                          {client.classification}
-                        </Badge>
+                        
+                        {/* Botões de ação otimizados */}
+                        <div className="grid grid-cols-4 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWhatsAppClick(client);
+                            }}
+                            disabled={!client.phone}
+                            className="h-8 p-0 hover:bg-green-50 hover:text-green-600 hover:border-green-300 dark:hover:bg-green-900/30"
+                            title="WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`tel:${client.phone}`);
+                            }}
+                            disabled={!client.phone}
+                            className="h-8 p-0 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 dark:hover:bg-blue-900/30"
+                            title="Ligar"
+                          >
+                            <Phone className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`mailto:${client.email}`);
+                            }}
+                            disabled={!client.email}
+                            className="h-8 p-0 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-300 dark:hover:bg-orange-900/30"
+                            title="E-mail"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleInteractionClick(client);
+                            }}
+                            className="h-8 p-0 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-300 dark:hover:bg-purple-900/30"
+                            title="Nova Interação"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {/* Estado vazio otimizado */}
+                  {stage.clients.length === 0 && (
+                    <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-12 px-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg transition-colors">
+                      <div className="space-y-2">
+                        <p>Nenhum cliente nesta fase</p>
+                        {isDragging && (
+                          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                            <ChevronDown className="w-4 h-4" />
+                            <span>Solte o cliente aqui</span>
+                          </div>
+                        )}
                       </div>
-                      
-                      {client.phone && (
-                        <p className="text-xs text-gray-600 mb-2">
-                          {formatPhoneNumber(client.phone)}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                        <span>Prob: {client.probability}%</span>
-                        <span>
-                          Valor: R$ {client.expected_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
+                    </div>
+                  )}
+                  
+                  {/* Indicador de mais conteúdo */}
+                  {stage.clients.length > 6 && (
+                    <div className="sticky bottom-0 bg-gradient-to-t from-white dark:from-gray-900 via-white/80 dark:via-gray-900/80 to-transparent pt-4 pb-2 pointer-events-none">
+                      <div className="text-center">
+                        <ChevronDown className="w-4 h-4 mx-auto text-gray-400 animate-bounce" />
                       </div>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleWhatsAppClick(client)}
-                          disabled={!client.phone}
-                          className="flex-1 p-2 h-8"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(`tel:${client.phone}`)}
-                          disabled={!client.phone}
-                          className="flex-1 p-2 h-8"
-                        >
-                          <Phone className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(`mailto:${client.email}`)}
-                          disabled={!client.email}
-                          className="flex-1 p-2 h-8"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleInteractionClick(client)}
-                          className="flex-1 p-2 h-8"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {stage.clients.length === 0 && (
-                  <div className="text-center text-gray-500 text-sm py-10 px-4 border-2 border-dashed border-gray-200 rounded-lg">
-                    Nenhum cliente nesta fase
-                    {isDragging && (
-                      <p className="text-xs mt-2">Solte o cliente aqui</p>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
