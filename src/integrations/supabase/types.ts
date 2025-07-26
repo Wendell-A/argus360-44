@@ -1845,6 +1845,110 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_contextual_clients: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: {
+          id: string
+          name: string
+          email: string
+          phone: string
+          document: string
+          type: string
+          status: string
+          office_id: string
+          responsible_user_id: string
+          classification: string
+          monthly_income: number
+          birth_date: string
+          occupation: string
+          secondary_phone: string
+          address: Json
+          notes: string
+          source: string
+          settings: Json
+          created_at: string
+          updated_at: string
+          tenant_id: string
+        }[]
+      }
+      get_contextual_commissions: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: {
+          id: string
+          sale_id: string
+          recipient_id: string
+          recipient_type: string
+          commission_type: string
+          base_amount: number
+          commission_rate: number
+          commission_amount: number
+          installment_number: number
+          total_installments: number
+          installment_amount: number
+          due_date: string
+          payment_date: string
+          approval_date: string
+          status: string
+          payment_method: string
+          payment_reference: string
+          notes: string
+          settings: Json
+          parent_commission_id: string
+          created_at: string
+          updated_at: string
+          tenant_id: string
+        }[]
+      }
+      get_contextual_dashboard_stats: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: Json
+      }
+      get_contextual_sales: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: {
+          id: string
+          client_id: string
+          seller_id: string
+          product_id: string
+          office_id: string
+          sale_value: number
+          commission_rate: number
+          commission_amount: number
+          monthly_payment: number
+          installments: number
+          down_payment: number
+          status: string
+          sale_date: string
+          approval_date: string
+          completion_date: string
+          cancellation_date: string
+          contract_number: string
+          notes: string
+          settings: Json
+          created_at: string
+          updated_at: string
+          tenant_id: string
+        }[]
+      }
+      get_contextual_users: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: {
+          user_id: string
+          tenant_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          office_id: string
+          department_id: string
+          team_id: string
+          profile_id: string
+          active: boolean
+          context_level: number
+          permissions: Json
+          invited_at: string
+          joined_at: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
       get_user_context_offices: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: string[]

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useContextualDashboard } from './useContextualDashboard';
 
 export interface DashboardStats {
   totalSales: number;
@@ -12,6 +13,16 @@ export interface DashboardStats {
   recentSales: RecentSale[];
   topVendedores: TopVendedor[];
   monthlyData: MonthlyData[];
+}
+
+// Interface simples para compatibilidade
+export interface SimpleDashboardStats {
+  totalClients: number;
+  totalSales: number;
+  totalCommission: number;
+  pendingTasks: number;
+  monthSales: number;
+  monthCommission: number;
 }
 
 export interface RecentSale {
@@ -37,6 +48,34 @@ export interface MonthlyData {
   comissoes: number;
 }
 
+// Hook legado mantido para compatibilidade com dados contextuais simples
+export const useDashboardStatsSimple = () => {
+  const { 
+    data: contextualData, 
+    isLoading, 
+    error,
+    refetch 
+  } = useContextualDashboard();
+
+  // Transforma dados contextuais para formato legado simples
+  const legacyStats: SimpleDashboardStats | undefined = contextualData ? {
+    totalClients: contextualData.total_clients,
+    totalSales: contextualData.total_sales,
+    totalCommission: contextualData.total_commission,
+    pendingTasks: contextualData.pending_tasks,
+    monthSales: contextualData.month_sales,
+    monthCommission: contextualData.month_commission,
+  } : undefined;
+
+  return {
+    data: legacyStats,
+    isLoading,
+    error,
+    refetch
+  };
+};
+
+// Hook complexo original mantido
 export const useDashboardStats = () => {
   const { activeTenant } = useAuth();
 
