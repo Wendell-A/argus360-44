@@ -190,31 +190,31 @@ const Dashboard = () => {
         {/* Métricas Principais */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {renderWidget('total_sales') && (
-            <MetricCard
-              title="Total de Vendas"
-              value={activeStats?.total_sales?.toString() || "0"}
-              description="vendas realizadas"
-              icon={<TrendingUp className="h-4 w-4" />}
-              trend={12}
-            />
+          <MetricCard
+            title="Total de Vendas"
+            value={(contextualStats?.total_sales || dashboardStats?.monthSales || 0).toString()}
+            description="vendas realizadas"
+            icon={<TrendingUp className="h-4 w-4" />}
+            trend={12}
+          />
           )}
           {renderWidget('total_clients') && (
-            <MetricCard
-              title="Total de Clientes"
-              value={activeStats?.total_clients?.toString() || "0"}
-              description="clientes cadastrados"
-              icon={<Users className="h-4 w-4" />}
-              trend={8}
-            />
+          <MetricCard
+            title="Total de Clientes"
+            value={(contextualStats?.total_clients || dashboardStats?.totalClients || 0).toString()}
+            description="clientes cadastrados"
+            icon={<Users className="h-4 w-4" />}
+            trend={8}
+          />
           )}
           {renderWidget('monthly_performance') && (
-            <MetricCard
-              title="Vendas do Mês"
-              value={formatCurrency(activeStats?.month_sales || 0)}
-              description="faturamento mensal"
-              icon={<DollarSign className="h-4 w-4" />}
-              trend={2}
-            />
+          <MetricCard
+            title="Vendas do Mês"
+            value={formatCurrency(contextualStats?.month_sales || dashboardStats?.monthCommissions || 0)}
+            description="faturamento mensal"
+            icon={<DollarSign className="h-4 w-4" />}
+            trend={2}
+          />
           )}
           {renderWidget('personal_goals') && (
             <MetricCard
