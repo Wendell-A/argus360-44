@@ -9,6 +9,7 @@ import { useSalesFunnelStages, useClientFunnelPositions, useUpdateClientFunnelPo
 import { generateWhatsAppLink, formatPhoneNumber } from '@/lib/whatsapp';
 import { InteractionModal } from './InteractionModal';
 import { useToast } from '@/hooks/use-toast';
+import { useSidebar } from '@/components/ui/sidebar';
 
 interface ClientCard {
   id: string;
@@ -42,6 +43,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
+  const { open: sidebarOpen } = useSidebar();
 
   // Organizar dados por fase
   const funnelData: FunnelStage[] = stages.map(stage => ({
@@ -168,10 +170,21 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
     );
   }
 
+  // Grid responsivo que considera o estado da sidebar
+  const getGridCols = () => {
+    if (sidebarOpen) {
+      // Quando sidebar está aberta, usar menos colunas
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3';
+    } else {
+      // Quando sidebar está fechada, usar mais colunas
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+    }
+  };
+
   return (
     <div className="w-full">
-      {/* Grid otimizado para larguras adequadas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
+      {/* Grid adaptativo baseado no estado da sidebar */}
+      <div className={`grid ${getGridCols()} gap-6 pb-6`}>
         {funnelData.map((stage) => (
           <div
             key={stage.id}

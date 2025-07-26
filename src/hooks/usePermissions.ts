@@ -76,6 +76,29 @@ export const usePermissions = () => {
     enabled: !!activeTenant?.user_role && !!activeTenant?.tenant_id,
   });
 
+  // Nova função para buscar permissões de uma role específica
+  const useRolePermissions = (role: string) => {
+    return useQuery({
+      queryKey: ['specific-role-permissions', role, activeTenant?.tenant_id],
+      queryFn: async () => {
+        if (!role || !activeTenant?.tenant_id) return [];
+
+        const { data, error } = await supabase
+          .from('role_permissions')
+          .select(`
+            *,
+            permissions (*)
+          `)
+          .eq('role', role as UserRole)
+          .eq('tenant_id', activeTenant.tenant_id);
+
+        if (error) throw error;
+        return data;
+      },
+      enabled: !!role && !!activeTenant?.tenant_id,
+    });
+  };
+
   // Verificar se o usuário tem uma permissão específica
   const hasPermission = (check: PermissionCheck): boolean => {
     if (!user || !activeTenant) return false;
@@ -195,8 +218,9 @@ export const usePermissions = () => {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['specific-role-permissions', variables.role] });
     },
   });
 
@@ -217,6 +241,9 @@ export const usePermissions = () => {
     grantUserPermission,
     revokeUserPermission,
     updateRolePermissions,
+    
+    // New hook for specific role permissions
+    useRolePermissions,
   };
 };
 

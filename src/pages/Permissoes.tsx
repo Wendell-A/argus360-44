@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +9,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Shield, 
   Users, 
@@ -282,12 +282,27 @@ export default function Permissoes() {
   const { 
     allPermissions, 
     isLoading, 
-    updateRolePermissions 
+    updateRolePermissions,
+    useRolePermissions
   } = usePermissions();
   
   const [selectedRole, setSelectedRole] = useState<string>('user');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const { toast } = useToast();
+
+  // Buscar permissões da role selecionada
+  const { data: currentRolePermissions, isLoading: loadingRolePerms } = useRolePermissions(selectedRole);
+
+  // Atualizar estado quando carregar permissões da role
+  useEffect(() => {
+    if (currentRolePermissions) {
+      const permissionIds = currentRolePermissions.map(rp => rp.permission_id);
+      setSelectedPermissions(permissionIds);
+    } else {
+      setSelectedPermissions([]);
+    }
+  }, [currentRolePermissions, selectedRole]);
 
   const filteredModules = Object.entries(permissionExplanations).filter(([moduleKey, module]) =>
     module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -304,14 +319,29 @@ export default function Permissoes() {
     );
   };
 
+  const handleRoleChange = (role: string) => {
+    setSelectedRole(role);
+    // As permissões serão carregadas automaticamente pelo useEffect
+  };
+
   const handleSaveRolePermissions = async () => {
     try {
       await updateRolePermissions.mutateAsync({
         role: selectedRole,
         permissionIds: selectedPermissions
       });
+
+      toast({
+        title: "Permissões salvas com sucesso",
+        description: `As permissões da função ${roleDescriptions[selectedRole as keyof typeof roleDescriptions]?.name} foram atualizadas.`,
+      });
     } catch (error) {
       console.error('Erro ao salvar permissões:', error);
+      toast({
+        title: "Erro ao salvar permissões",
+        description: "Não foi possível salvar as permissões. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -405,7 +435,8 @@ export default function Permissoes() {
                   <Button
                     key={roleKey}
                     variant={selectedRole === roleKey ? "default" : "outline"}
-                    onClick={() => setSelectedRole(roleKey)}
+                    onClick={() => handleRoleChange(roleKey)}
+                    disabled={loadingRolePerms}
                   >
                     {role.name}
                   </Button>
@@ -413,7 +444,7 @@ export default function Permissoes() {
               </div>
               <Button 
                 onClick={handleSaveRolePermissions}
-                disabled={updateRolePermissions.isPending}
+                disabled={updateRolePermissions.isPending || loadingRolePerms}
               >
                 {updateRolePermissions.isPending ? 'Salvando...' : 'Salvar Permissões'}
               </Button>
@@ -477,18 +508,19 @@ export default function Permissoes() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                               {Object.entries(permission.actions).map(([actionKey, actionDesc]) => {
                                 const ActionIcon = actionIcons[actionKey as keyof typeof actionIcons] || Eye;
-                                const permissionId = allPermissions.find(p => 
+                                const permissionData = allPermissions.find(p => 
                                   p.module === moduleKey && 
                                   p.resource === permKey && 
                                   p.actions.includes(actionKey)
-                                )?.id;
+                                );
                                 
                                 return (
                                   <div key={actionKey} className="flex items-center space-x-2">
                                     <Switch
                                       id={`${moduleKey}-${permKey}-${actionKey}`}
-                                      checked={permissionId ? selectedPermissions.includes(permissionId) : false}
-                                      onCheckedChange={() => permissionId && handlePermissionToggle(permissionId)}
+                                      checked={permissionData ? selectedPermissions.includes(permissionData.id) : false}
+                                      onCheckedChange={() => permissionData && handlePermissionToggle(permissionData.id)}
+                                      disabled={loadingRolePerms}
                                     />
                                     <div className="flex items-center gap-1">
                                       <ActionIcon className="h-3 w-3" />
