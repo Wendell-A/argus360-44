@@ -22,7 +22,7 @@ export const useInvitations = () => {
   const { activeTenant, user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Buscar convites do tenant - Corrigido para não fazer join com tabelas protegidas
+  // Buscar convites do tenant - Política RLS corrigida
   const { data: invitations = [], isLoading } = useQuery({
     queryKey: ['invitations', activeTenant?.tenant_id],
     queryFn: async () => {
@@ -34,10 +34,22 @@ export const useInvitations = () => {
       console.log('🔍 Buscando convites para tenant:', activeTenant.tenant_id);
 
       try {
-        // Query simplificada sem joins que podem causar problemas de permissão
+        // Query totalmente isolada - sem referências externas
         const { data, error } = await supabase
           .from('invitations')
-          .select('*')
+          .select(`
+            id,
+            tenant_id,
+            email,
+            invited_by,
+            role,
+            token,
+            status,
+            expires_at,
+            accepted_at,
+            created_at,
+            updated_at
+          `)
           .eq('tenant_id', activeTenant.tenant_id)
           .order('created_at', { ascending: false });
 
