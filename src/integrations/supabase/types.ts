@@ -918,6 +918,50 @@ export type Database = {
           },
         ]
       }
+      permission_contexts: {
+        Row: {
+          context_id: string | null
+          context_type: string
+          created_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          tenant_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          context_id?: string | null
+          context_type: string
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          tenant_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          context_id?: string | null
+          context_type?: string
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          tenant_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_contexts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           actions: string[]
@@ -1498,49 +1542,82 @@ export type Database = {
       tenant_users: {
         Row: {
           active: boolean | null
+          context_level: number | null
           created_at: string | null
+          department_id: string | null
           id: string
           invited_at: string | null
           joined_at: string | null
+          office_id: string | null
           permissions: Json | null
           profile_id: string | null
           role: Database["public"]["Enums"]["user_role"] | null
+          team_id: string | null
           tenant_id: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
           active?: boolean | null
+          context_level?: number | null
           created_at?: string | null
+          department_id?: string | null
           id?: string
           invited_at?: string | null
           joined_at?: string | null
+          office_id?: string | null
           permissions?: Json | null
           profile_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          team_id?: string | null
           tenant_id: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
           active?: boolean | null
+          context_level?: number | null
           created_at?: string | null
+          department_id?: string | null
           id?: string
           invited_at?: string | null
           joined_at?: string | null
+          office_id?: string | null
           permissions?: Json | null
           profile_id?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          team_id?: string | null
           tenant_id?: string
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "tenant_users_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_users_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tenant_users_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_users_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
           {
@@ -1732,6 +1809,14 @@ export type Database = {
         Args: { p_sale_value: number; p_commission_rate: number }
         Returns: number
       }
+      can_access_user_data: {
+        Args: {
+          accessing_user_id: string
+          target_user_id: string
+          tenant_uuid: string
+        }
+        Returns: boolean
+      }
       create_initial_user_setup: {
         Args: {
           user_id: string
@@ -1748,6 +1833,14 @@ export type Database = {
       }
       get_authenticated_user_data: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_user_context_offices: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: string[]
+      }
+      get_user_full_context: {
+        Args: { user_uuid: string; tenant_uuid: string }
         Returns: Json
       }
       get_user_role_in_tenant: {
