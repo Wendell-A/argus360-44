@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,7 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
       setFormData({
         user_id: vendedor.id || '',
         office_id: vendedor.office_id || '',
-        team_id: vendedor.team_id || '',
+        team_id: vendedor.team_id || 'no-team',
         commission_rate: vendedor.commission_rate || 0,
         active: vendedor.active ?? true,
         hierarchy_level: vendedor.hierarchical_level || 1,
@@ -54,7 +53,7 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
       setFormData({
         user_id: '',
         office_id: '',
-        team_id: '',
+        team_id: 'no-team',
         commission_rate: 0,
         active: true,
         hierarchy_level: 1,
@@ -103,7 +102,7 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
             commission_rate: formData.commission_rate,
             sales_goal: formData.sales_goal,
             office_id: formData.office_id,
-            team_id: formData.team_id,
+            team_id: formData.team_id === 'no-team' ? null : formData.team_id,
           },
         };
 
@@ -227,7 +226,7 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
                 <SelectValue placeholder="Selecione uma equipe (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sem equipe</SelectItem>
+                <SelectItem value="no-team">Sem equipe</SelectItem>
                 {teams?.map((team) => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}
