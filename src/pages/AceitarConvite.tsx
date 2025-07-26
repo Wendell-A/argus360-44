@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +44,7 @@ export default function AceitarConvite() {
       setLoading(true);
       
       const { data, error } = await supabase.rpc('validate_invitation', {
-        p_token: token
+        invitation_token: token
       });
 
       if (error) {
@@ -80,8 +79,10 @@ export default function AceitarConvite() {
       setAccepting(true);
       
       const { data, error } = await supabase.rpc('accept_invitation', {
-        p_token: token,
-        p_user_id: user.id
+        invitation_token: token,
+        user_id: user.id,
+        user_email: user.email || '',
+        user_full_name: user.user_metadata?.full_name || ''
       });
 
       if (error) {
