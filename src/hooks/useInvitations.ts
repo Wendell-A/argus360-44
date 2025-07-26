@@ -22,27 +22,36 @@ export const useInvitations = () => {
   const { activeTenant, user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Buscar convites do tenant
+  // Buscar convites do tenant - Corrigido para não fazer join com tabelas protegidas
   const { data: invitations = [], isLoading } = useQuery({
     queryKey: ['invitations', activeTenant?.tenant_id],
     queryFn: async () => {
-      if (!activeTenant?.tenant_id) return [];
+      if (!activeTenant?.tenant_id) {
+        console.log('❌ Tenant não encontrado');
+        return [];
+      }
 
       console.log('🔍 Buscando convites para tenant:', activeTenant.tenant_id);
 
-      const { data, error } = await supabase
-        .from('invitations')
-        .select('*')
-        .eq('tenant_id', activeTenant.tenant_id)
-        .order('created_at', { ascending: false });
+      try {
+        // Query simplificada sem joins que podem causar problemas de permissão
+        const { data, error } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('tenant_id', activeTenant.tenant_id)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Erro ao buscar convites:', error);
+        if (error) {
+          console.error('❌ Erro ao buscar convites:', error);
+          throw error;
+        }
+
+        console.log('✅ Convites encontrados:', data?.length || 0);
+        return data as Invitation[];
+      } catch (error) {
+        console.error('💥 Erro completo na busca de convites:', error);
         throw error;
       }
-
-      console.log('✅ Convites encontrados:', data?.length || 0);
-      return data as Invitation[];
     },
     enabled: !!activeTenant?.tenant_id,
   });
@@ -107,6 +116,8 @@ export const useInvitations = () => {
         toast.error('Usuário já foi convidado para este tenant');
       } else if (error.message.includes('generate_invitation_token')) {
         toast.error('Erro interno no sistema de tokens. Entre em contato com suporte.');
+      } else if (error.code === '42501') {
+        toast.error('Permissão negada. Verifique se você tem permissão para enviar convites.');
       } else {
         toast.error('Erro ao enviar convite: ' + error.message);
       }
@@ -136,7 +147,11 @@ export const useInvitations = () => {
     },
     onError: (error: any) => {
       console.error('💥 Erro ao cancelar convite:', error);
-      toast.error('Erro ao cancelar convite: ' + error.message);
+      if (error.code === '42501') {
+        toast.error('Permissão negada. Você não tem permissão para cancelar este convite.');
+      } else {
+        toast.error('Erro ao cancelar convite: ' + error.message);
+      }
     },
   });
 
@@ -184,7 +199,9 @@ export const useInvitations = () => {
     },
     onError: (error: any) => {
       console.error('💥 Erro ao reenviar convite:', error);
-      if (error.message.includes('generate_invitation_token')) {
+      if (error.code === '42501') {
+        toast.error('Permissão negada. Você não tem permissão para reenviar este convite.');
+      } else if (error.message.includes('generate_invitation_token')) {
         toast.error('Erro interno no sistema de tokens. Entre em contato com suporte.');
       } else {
         toast.error('Erro ao reenviar convite: ' + error.message);

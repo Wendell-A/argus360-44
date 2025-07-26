@@ -16,7 +16,8 @@ import {
   LogOut,
   Calculator,
   Briefcase,
-  Car
+  Car,
+  Mail
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -107,6 +108,7 @@ const managementItems = [
 ];
 
 const configItems = [
+  { title: "Convites", url: "/convites", icon: Mail },
   { title: "Permissões", url: "/permissoes", icon: Shield },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
   { title: "Auditoria", url: "/auditoria", icon: FileText },
