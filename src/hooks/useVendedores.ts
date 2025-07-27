@@ -60,12 +60,21 @@ export const useVendedores = () => {
       const userIds = tenantUsers.map(tu => tu.user_id);
       console.log("Found user IDs for tenant:", userIds);
 
-      // Buscar profiles desses usuários com joins de escritórios e equipes
+      // Debug: Verificar office_users existentes
+      const { data: officeUsersDebug } = await supabase
+        .from("office_users")
+        .select("*")
+        .eq("tenant_id", activeTenant.tenant_id)
+        .in("user_id", userIds);
+      
+      console.log("Office users data for debugging:", officeUsersDebug);
+
+      // Buscar profiles desses usuários com LEFT joins de escritórios e equipes
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select(`
           *,
-          office_users!inner (
+          office_users (
             office_id,
             active,
             offices (
@@ -125,6 +134,7 @@ export const useVendedores = () => {
         const profileCommissions = commissions.filter(c => c.recipient_id === profile.id);
 
         // Extrair dados do escritório
+        console.log("Processing profile office data:", profile.id, profile.office_users);
         const activeOfficeUser = profile.office_users?.find((ou: any) => ou.active);
         const officeName = activeOfficeUser?.offices?.name || 'N/A';
 
