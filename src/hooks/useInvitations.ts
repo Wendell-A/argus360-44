@@ -88,7 +88,7 @@ export const useInvitations = () => {
     onSuccess: (data) => {
       console.log('🎉 Convite criado com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
-      toast.success('Convite salvo! Use o painel administrativo do Supabase para enviar o email.');
+      toast.success('Convite criado e email será enviado automaticamente!');
     },
     onError: (error: any) => {
       console.error('💥 Erro ao criar convite:', error);
