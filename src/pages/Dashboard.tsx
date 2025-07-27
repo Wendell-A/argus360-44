@@ -201,7 +201,7 @@ const Dashboard = () => {
           {renderWidget('total_clients') && (
           <MetricCard
             title="Total de Clientes"
-            value={(contextualStats?.total_clients || dashboardStats?.totalClients || 0).toString()}
+            value={(contextualStats?.total_clients || (dashboardStats as any)?.totalClients || 0).toString()}
             description="clientes cadastrados"
             icon={<Users className="h-4 w-4" />}
             trend={8}

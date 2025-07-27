@@ -1841,9 +1841,40 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_audit_statistics: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: Json
+      }
       get_authenticated_user_data: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_contextual_audit_logs: {
+        Args: {
+          user_uuid: string
+          tenant_uuid: string
+          p_limit?: number
+          p_offset?: number
+          p_resource_type?: string
+          p_action_filter?: string
+          p_date_from?: string
+          p_date_to?: string
+        }
+        Returns: {
+          id: string
+          user_id: string
+          tenant_id: string
+          table_name: string
+          record_id: string
+          action: string
+          old_values: Json
+          new_values: Json
+          ip_address: unknown
+          user_agent: string
+          created_at: string
+          user_role: string
+          context_level: number
+        }[]
       }
       get_contextual_clients: {
         Args: { user_uuid: string; tenant_uuid: string }
@@ -1953,6 +1984,10 @@ export type Database = {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: Json
       }
+      get_security_monitoring_data: {
+        Args: { user_uuid: string; tenant_uuid: string }
+        Returns: Json
+      }
       get_user_context_offices: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: string[]
@@ -1976,6 +2011,19 @@ export type Database = {
       is_tenant_owner: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: boolean
+      }
+      log_contextual_audit_event: {
+        Args: {
+          p_user_uuid: string
+          p_tenant_uuid: string
+          p_action: string
+          p_resource_type: string
+          p_resource_id?: string
+          p_old_values?: Json
+          p_new_values?: Json
+          p_additional_context?: Json
+        }
+        Returns: string
       }
       validate_invitation: {
         Args: { invitation_token: string }
