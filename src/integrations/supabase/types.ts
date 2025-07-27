@@ -709,53 +709,36 @@ export type Database = {
       }
       invitations: {
         Row: {
-          accepted_at: string | null
           created_at: string | null
           email: string
-          expires_at: string
           id: string
           invited_by: string
+          metadata: Json | null
           role: Database["public"]["Enums"]["user_role"]
-          status: string
           tenant_id: string
-          token: string
           updated_at: string | null
         }
         Insert: {
-          accepted_at?: string | null
           created_at?: string | null
           email: string
-          expires_at: string
           id?: string
           invited_by: string
+          metadata?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
-          status?: string
           tenant_id: string
-          token: string
           updated_at?: string | null
         }
         Update: {
-          accepted_at?: string | null
           created_at?: string | null
           email?: string
-          expires_at?: string
           id?: string
           invited_by?: string
+          metadata?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
-          status?: string
           tenant_id?: string
-          token?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "invitations_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       message_templates: {
         Row: {
@@ -2024,6 +2007,19 @@ export type Database = {
           p_additional_context?: Json
         }
         Returns: string
+      }
+      process_invitation_on_auth: {
+        Args: { p_user_id: string; p_email: string }
+        Returns: Json
+      }
+      send_invitation_via_auth: {
+        Args: {
+          p_tenant_id: string
+          p_email: string
+          p_role?: Database["public"]["Enums"]["user_role"]
+          p_redirect_to?: string
+        }
+        Returns: Json
       }
       validate_invitation: {
         Args: { invitation_token: string }

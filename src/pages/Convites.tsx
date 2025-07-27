@@ -33,32 +33,33 @@ export default function Convites() {
   const [copiedLinks, setCopiedLinks] = useState<Set<string>>(new Set());
 
   const getInvitationStatus = (invitation: any) => {
-    if (invitation.status === 'accepted') return 'accepted';
-    if (new Date(invitation.expires_at) < new Date()) return 'expired';
+    // Sistema padrão Supabase - status baseado na data de criação
+    const daysSinceCreated = Math.floor((Date.now() - new Date(invitation.created_at).getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSinceCreated > 7) return 'expired';
     return 'pending';
   };
 
-  const getInvitationLink = (token: string) => {
-    return `${window.location.origin}/aceitar-convite/${token}`;
+  const getInvitationInfo = (invitation: any) => {
+    return `Email: ${invitation.email} | Função: ${roleNames[invitation.role as keyof typeof roleNames]}`;
   };
 
-  const copyInvitationLink = async (token: string) => {
+  const copyInvitationInfo = async (invitation: any) => {
     try {
-      const link = getInvitationLink(token);
-      await navigator.clipboard.writeText(link);
-      setCopiedLinks(prev => new Set(prev).add(token));
-      toast.success('Link copiado para a área de transferência!');
+      const info = getInvitationInfo(invitation);
+      await navigator.clipboard.writeText(info);
+      setCopiedLinks(prev => new Set(prev).add(invitation.id));
+      toast.success('Informações copiadas! Use o painel administrativo do Supabase para enviar o email.');
       
-      // Remover o estado de copiado após 2 segundos
+      // Remover o estado de copiado após 3 segundos
       setTimeout(() => {
         setCopiedLinks(prev => {
           const newSet = new Set(prev);
-          newSet.delete(token);
+          newSet.delete(invitation.id);
           return newSet;
         });
-      }, 2000);
+      }, 3000);
     } catch (error) {
-      toast.error('Erro ao copiar link');
+      toast.error('Erro ao copiar informações');
     }
   };
 
@@ -76,7 +77,7 @@ export default function Convites() {
   }
 
   const pendingInvitations = invitations.filter(inv => getInvitationStatus(inv) === 'pending');
-  const acceptedInvitations = invitations.filter(inv => getInvitationStatus(inv) === 'accepted');
+  const acceptedInvitations = invitations.filter(() => false); // Sistema Supabase não rastreia aceitos na tabela
   const expiredInvitations = invitations.filter(inv => getInvitationStatus(inv) === 'expired');
 
   return (
@@ -182,7 +183,7 @@ export default function Convites() {
                       const status = getInvitationStatus(invitation);
                       const statusInfo = statusConfig[status];
                       const StatusIcon = statusInfo.icon;
-                      const isCopied = copiedLinks.has(invitation.token);
+                      const isCopied = copiedLinks.has(invitation.id);
 
                       return (
                         <TableRow key={invitation.id}>
@@ -204,7 +205,7 @@ export default function Convites() {
                             {format(new Date(invitation.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(invitation.expires_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            {format(new Date(new Date(invitation.created_at).getTime() + 7 * 24 * 60 * 60 * 1000), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -213,14 +214,14 @@ export default function Convites() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => copyInvitationLink(invitation.token)}
+                                    onClick={() => copyInvitationInfo(invitation)}
                                   >
                                     {isCopied ? (
                                       <Check className="h-3 w-3 mr-1" />
                                     ) : (
                                       <Copy className="h-3 w-3 mr-1" />
                                     )}
-                                    {isCopied ? 'Copiado!' : 'Copiar Link'}
+                                    {isCopied ? 'Copiado!' : 'Copiar Info'}
                                   </Button>
                                   <Button
                                     variant="outline"
@@ -244,7 +245,7 @@ export default function Convites() {
                                   Renovar
                                 </Button>
                               )}
-                              {status !== 'accepted' && (
+                              {(
                                 <Button
                                   variant="outline"
                                   size="sm"

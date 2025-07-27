@@ -10,10 +10,7 @@ export interface Invitation {
   email: string;
   invited_by: string;
   role: string;
-  token: string;
-  status: 'pending' | 'accepted' | 'expired';
-  expires_at: string;
-  accepted_at?: string;
+  metadata: any;
   created_at: string;
   updated_at: string;
 }
@@ -22,7 +19,7 @@ export const useInvitations = () => {
   const { activeTenant, user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Buscar convites do tenant - Política RLS corrigida
+  // Buscar convites do tenant
   const { data: invitations = [], isLoading } = useQuery({
     queryKey: ['invitations', activeTenant?.tenant_id],
     queryFn: async () => {
@@ -34,7 +31,6 @@ export const useInvitations = () => {
       console.log('🔍 Buscando convites para tenant:', activeTenant.tenant_id);
 
       try {
-        // Query totalmente isolada - sem referências externas
         const { data, error } = await supabase
           .from('invitations')
           .select(`
@@ -43,10 +39,7 @@ export const useInvitations = () => {
             email,
             invited_by,
             role,
-            token,
-            status,
-            expires_at,
-            accepted_at,
+            metadata,
             created_at,
             updated_at
           `)
@@ -68,96 +61,43 @@ export const useInvitations = () => {
     enabled: !!activeTenant?.tenant_id,
   });
 
-  // Enviar convite
+  // Enviar convite usando padrão Supabase
   const sendInvitation = useMutation({
     mutationFn: async ({ email, role }: { email: string; role: string }) => {
       if (!activeTenant?.tenant_id) throw new Error('Tenant não encontrado');
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      console.log('📤 Iniciando envio de convite:', { email, role, tenant_id: activeTenant.tenant_id });
+      console.log('📤 Enviando convite via Supabase Auth:', { email, role, tenant_id: activeTenant.tenant_id });
 
-      try {
-        // Gerar token usando a função corrigida
-        console.log('🔑 Gerando token de convite...');
-        const tokenResult = await supabase.rpc('generate_invitation_token');
-        
-        if (tokenResult.error) {
-          console.error('❌ Erro ao gerar token:', tokenResult.error);
-          throw tokenResult.error;
-        }
+      // Usar função que salva convite no banco e orienta usar o admin panel
+      const { data, error } = await supabase.rpc('send_invitation_via_auth', {
+        p_tenant_id: activeTenant.tenant_id,
+        p_email: email,
+        p_role: role as 'owner' | 'admin' | 'manager' | 'user' | 'viewer',
+        p_redirect_to: '/dashboard'
+      });
 
-        console.log('✅ Token gerado com sucesso:', tokenResult.data ? 'sim' : 'não');
-
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // Expira em 7 dias
-
-        console.log('💾 Salvando convite no banco...');
-        const { data, error } = await supabase
-          .from('invitations')
-          .insert({
-            tenant_id: activeTenant.tenant_id,
-            email,
-            invited_by: user.id,
-            role: role as 'owner' | 'admin' | 'manager' | 'user' | 'viewer',
-            token: tokenResult.data,
-            expires_at: expiresAt.toISOString(),
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('❌ Erro ao salvar convite:', error);
-          throw error;
-        }
-
-        console.log('✅ Convite salvo com sucesso:', data.id);
-        
-        // Enviar email de convite
-        try {
-          console.log('📧 Enviando email de convite...');
-          const emailResult = await supabase.functions.invoke('send-invitation-email', {
-            body: {
-              email,
-              inviterName: user.user_metadata?.full_name || user.email || 'Administrador',
-              tenantName: 'Organização',
-              role,
-              invitationToken: data.token,
-              invitationId: data.id
-            }
-          });
-
-          if (emailResult.error) {
-            console.error('❌ Erro ao enviar email:', emailResult.error);
-            // Não falha a operação se o email não for enviado
-          } else {
-            console.log('✅ Email de convite enviado com sucesso');
-          }
-        } catch (emailError) {
-          console.error('❌ Erro no envio do email:', emailError);
-          // Não falha a operação se o email não for enviado
-        }
-
-        return data;
-      } catch (error) {
-        console.error('❌ Erro completo no envio de convite:', error);
+      if (error) {
+        console.error('❌ Erro ao processar convite:', error);
         throw error;
       }
+
+      console.log('✅ Convite processado:', data);
+      return data;
     },
     onSuccess: (data) => {
-      console.log('🎉 Convite enviado com sucesso! ID:', data.id);
+      console.log('🎉 Convite criado com sucesso!');
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
-      toast.success('Convite enviado com sucesso!');
+      toast.success('Convite salvo! Use o painel administrativo do Supabase para enviar o email.');
     },
     onError: (error: any) => {
-      console.error('💥 Erro final ao enviar convite:', error);
+      console.error('💥 Erro ao criar convite:', error);
       if (error.code === '23505') {
         toast.error('Usuário já foi convidado para este tenant');
-      } else if (error.message.includes('generate_invitation_token')) {
-        toast.error('Erro interno no sistema de tokens. Entre em contato com suporte.');
       } else if (error.code === '42501') {
         toast.error('Permissão negada. Verifique se você tem permissão para enviar convites.');
       } else {
-        toast.error('Erro ao enviar convite: ' + error.message);
+        toast.error('Erro ao criar convite: ' + error.message);
       }
     },
   });
@@ -193,56 +133,35 @@ export const useInvitations = () => {
     },
   });
 
-  // Reenviar convite
+  // Reenviar convite (atualizar timestamp)
   const resendInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
       console.log('🔄 Reenviando convite:', invitationId);
       
-      try {
-        // Gerar novo token
-        console.log('🔑 Gerando novo token...');
-        const tokenResult = await supabase.rpc('generate_invitation_token');
-        if (tokenResult.error) {
-          console.error('❌ Erro ao gerar novo token:', tokenResult.error);
-          throw tokenResult.error;
-        }
+      const { error } = await supabase
+        .from('invitations')
+        .update({
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', invitationId);
 
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
-
-        console.log('🔄 Atualizando convite...');
-        const { error } = await supabase
-          .from('invitations')
-          .update({
-            token: tokenResult.data,
-            expires_at: expiresAt.toISOString(),
-            status: 'pending',
-          })
-          .eq('id', invitationId);
-
-        if (error) {
-          console.error('❌ Erro ao atualizar convite:', error);
-          throw error;
-        }
-
-        console.log('✅ Convite reenviado com sucesso');
-      } catch (error) {
-        console.error('💥 Erro no reenvio de convite:', error);
+      if (error) {
+        console.error('❌ Erro ao atualizar convite:', error);
         throw error;
       }
+
+      console.log('✅ Convite marcado para reenvio');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
-      toast.success('Convite reenviado com sucesso!');
+      toast.success('Convite atualizado! Use o painel administrativo do Supabase para reenviar o email.');
     },
     onError: (error: any) => {
-      console.error('💥 Erro ao reenviar convite:', error);
+      console.error('💥 Erro ao atualizar convite:', error);
       if (error.code === '42501') {
-        toast.error('Permissão negada. Você não tem permissão para reenviar este convite.');
-      } else if (error.message.includes('generate_invitation_token')) {
-        toast.error('Erro interno no sistema de tokens. Entre em contato com suporte.');
+        toast.error('Permissão negada. Você não tem permissão para atualizar este convite.');
       } else {
-        toast.error('Erro ao reenviar convite: ' + error.message);
+        toast.error('Erro ao atualizar convite: ' + error.message);
       }
     },
   });
