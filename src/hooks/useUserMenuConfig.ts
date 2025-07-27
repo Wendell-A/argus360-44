@@ -8,6 +8,17 @@ interface MenuConfig {
   context_level: number;
   modules: {
     users?: boolean;
+    sellers?: boolean;
+    commissions?: boolean;
+    reports?: boolean;
+    offices?: boolean;
+    departments?: boolean;
+    positions?: boolean;
+    teams?: boolean;
+    invitations?: boolean;
+    permissions?: boolean;
+    configurations?: boolean;
+    audit?: boolean;
     [key: string]: boolean | undefined;
   };
   [key: string]: any;

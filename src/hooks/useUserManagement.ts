@@ -91,7 +91,34 @@ export const useUserManagement = () => {
       }
 
       console.log('✅ Usuários encontrados:', data?.length || 0);
-      return data as unknown as UserTenantAssociation[];
+      
+      // Transformar os dados para o formato esperado
+      const transformedData = data?.map((item: any) => ({
+        user_id: item.user_id,
+        tenant_id: item.tenant_id,
+        role: item.role,
+        office_id: item.office_id,
+        department_id: item.department_id,
+        team_id: item.team_id,
+        active: item.active,
+        joined_at: item.joined_at,
+        profile: {
+          id: item.profile?.id || item.user_id,
+          email: item.profile?.email || 'Email não informado',
+          full_name: item.profile?.full_name || 'Nome não informado',
+          phone: item.profile?.phone,
+          avatar_url: item.profile?.avatar_url,
+          department: item.profile?.department,
+          position: item.profile?.position,
+          hire_date: item.profile?.hire_date,
+          last_access: item.profile?.last_access,
+          settings: item.profile?.settings,
+          created_at: item.profile?.created_at || item.created_at,
+          updated_at: item.profile?.updated_at || item.updated_at,
+        }
+      })) || [];
+
+      return transformedData as UserTenantAssociation[];
     },
     enabled: !!activeTenant?.tenant_id,
   });
@@ -184,7 +211,13 @@ export const useUserManagement = () => {
       tenantData 
     }: { 
       userId: string, 
-      tenantData: Partial<Pick<UserTenantAssociation, 'role' | 'office_id' | 'department_id' | 'team_id' | 'active'>>
+      tenantData: {
+        role?: Database['public']['Enums']['user_role'];
+        office_id?: string;
+        department_id?: string;
+        team_id?: string;
+        active?: boolean;
+      }
     }) => {
       if (!activeTenant?.tenant_id) {
         throw new Error('Tenant não encontrado');

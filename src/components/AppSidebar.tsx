@@ -1,261 +1,190 @@
 
-import React from "react";
-import {
-  Calendar,
-  ChevronUp,
-  Home,
-  Inbox,
-  Search,
-  Settings,
-  User2,
-  Building,
-  Building2,
-  Briefcase,
-  Users,
-  UserCog,
-  Target,
-  DollarSign,
-  TrendingUp,
-  Mail,
-  Shield,
-  FileText,
-  BarChart3,
-  Calculator,
-  Banknote,
-  Car,
+import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useUserMenuConfig } from '@/hooks/useUserMenuConfig';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { 
+  Home, 
+  Users, 
+  ShoppingCart, 
+  UserCheck, 
+  DollarSign, 
+  BarChart3, 
+  Building2, 
+  Settings, 
+  Shield, 
+  FileText, 
+  Target, 
+  UsersIcon, 
+  Building, 
   LogOut,
-} from "lucide-react";
+  Calculator,
+  Briefcase,
+  Car
+} from 'lucide-react';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useUserMenuConfig } from "@/hooks/useUserMenuConfig";
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/UserAvatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// Component for individual sidebar items
-const SidebarItem = ({ title, url, icon: Icon }: { title: string; url: string; icon: any }) => {
+// Componentes internos para resolver problemas de importação
+const SidebarItem = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+  <SidebarMenuItem {...props}>{children}</SidebarMenuItem>
+);
+
+const SidebarNav = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+  <SidebarMenu {...props}>{children}</SidebarMenu>
+);
+
+export default function AppSidebar() {
+  const { signOut, activeTenant, user } = useAuth();
+  const { currentUser, isLoading: userLoading } = useCurrentUser();
+  const { data: menuConfig, isLoading: configLoading } = useUserMenuConfig();
   const navigate = useNavigate();
   const location = useLocation();
-  const isActive = location.pathname === url;
-  
-  return (
-    <Button
-      variant={isActive ? "secondary" : "ghost"}
-      className="w-full justify-start"
-      onClick={() => navigate(url)}
-    >
-      <Icon className="mr-2 h-4 w-4" />
-      {title}
-    </Button>
-  );
-};
+  const { state } = useSidebar();
 
-// Component for sidebar navigation group
-const SidebarNav = ({ children }: { children: React.ReactNode }) => {
-  return <div className="space-y-1 px-2">{children}</div>;
-};
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
 
-const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
-  const { user, signOut, activeTenant } = useAuth();
-  const navigate = useNavigate();
-  const { data: menuConfig, isLoading: menuLoading } = useUserMenuConfig();
-
-  const navigationItems = [
+  const menuItems = [
     {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: Home,
+      group: 'Principal',
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: Home, enabled: true },
+        { name: 'CRM', path: '/crm', icon: Users, enabled: true },
+        { name: 'Clientes', path: '/clientes', icon: UserCheck, enabled: true },
+        { name: 'Vendas', path: '/vendas', icon: ShoppingCart, enabled: true },
+        { name: 'Vendedores', path: '/vendedores', icon: UsersIcon, enabled: menuConfig?.modules?.sellers || false },
+        { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
+        { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },
+        { name: 'Simulação Consórcio', path: '/simulacao-consorcio', icon: Calculator, enabled: true },
+      ]
     },
     {
-      title: "CRM",
-      url: "/crm",
-      icon: Inbox,
+      group: 'Gestão',
+      items: [
+        { name: 'Metas', path: '/metas', icon: Target, enabled: true },
+        { name: 'Relatórios', path: '/relatorios', icon: BarChart3, enabled: menuConfig?.modules?.reports || false },
+        { name: 'Escritórios', path: '/escritorios', icon: Building, enabled: menuConfig?.modules?.offices || false },
+        { name: 'Departamentos', path: '/departamentos', icon: Building2, enabled: menuConfig?.modules?.departments || false },
+        { name: 'Cargos', path: '/cargos', icon: Briefcase, enabled: menuConfig?.modules?.positions || false },
+        { name: 'Equipes', path: '/equipes', icon: UsersIcon, enabled: menuConfig?.modules?.teams || false },
+      ]
     },
+    {
+      group: 'Sistema',
+      items: [
+        { name: 'Usuários', path: '/usuarios', icon: Users, enabled: menuConfig?.modules?.users || false },
+        { name: 'Convites', path: '/convites', icon: FileText, enabled: menuConfig?.modules?.invitations || false },
+        { name: 'Permissões', path: '/permissoes', icon: Shield, enabled: menuConfig?.modules?.permissions || false },
+        { name: 'Configurações', path: '/configuracoes', icon: Settings, enabled: menuConfig?.modules?.configurations || false },
+        { name: 'Auditoria', path: '/auditoria', icon: FileText, enabled: menuConfig?.modules?.audit || false },
+        { name: 'Auditoria Segurança', path: '/auditoria-seguranca', icon: Shield, enabled: menuConfig?.modules?.audit || false },
+      ]
+    }
   ];
 
-  const crmItems = [
-    {
-      title: "Clientes",
-      url: "/clientes",
-      icon: User2,
-    },
-    {
-      title: "Vendas",
-      url: "/vendas",
-      icon: TrendingUp,
-    },
-    {
-      title: "Vendedores",
-      url: "/vendedores",
-      icon: User2,
-    },
-    {
-      title: "Comissões",
-      url: "/comissoes",
-      icon: DollarSign,
-    },
-    {
-      title: "Consórcios",
-      url: "/consorcios",
-      icon: Car,
-    },
-    {
-      title: "Simulação",
-      url: "/simulacao-consorcio",
-      icon: Calculator,
-    },
-    {
-      title: "Metas",
-      url: "/metas",
-      icon: Target,
-    },
-    {
-      title: "Relatórios",
-      url: "/relatorios",
-      icon: BarChart3,
-    },
-  ];
-
-  const configItems = [
-    {
-      title: "Escritórios",
-      url: "/escritorios",
-      icon: Building,
-    },
-    {
-      title: "Departamentos", 
-      url: "/departamentos",
-      icon: Building2,
-    },
-    {
-      title: "Cargos",
-      url: "/cargos",
-      icon: Briefcase,
-    },
-    {
-      title: "Equipes",
-      url: "/equipes",
-      icon: Users,
-    },
-    {
-      title: "Usuários",
-      url: "/usuarios", 
-      icon: UserCog,
-    },
-    {
-      title: "Convites",
-      url: "/convites",
-      icon: Mail,
-    },
-    {
-      title: "Permissões",
-      url: "/permissoes",
-      icon: Shield,
-    },
-    {
-      title: "Configurações",
-      url: "/configuracoes",
-      icon: Settings,
-    },
-    {
-      title: "Auditoria",
-      url: "/auditoria",
-      icon: FileText,
-    },
-  ];
-
-  return (
-    <Sidebar className="w-64">
-      <SidebarHeader>
-        <Button variant="ghost" asChild className="h-auto p-0" onClick={() => navigate("/dashboard")}>
-          <div className="flex items-center gap-2">
-            <Banknote className="h-6 w-6" />
-            <span className="font-bold text-xl">Argus 360</span>
+  if (userLoading || configLoading) {
+    return (
+      <Sidebar>
+        <SidebarContent>
+          <div className="p-4 space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-8 w-1/2" />
           </div>
-        </Button>
-      </SidebarHeader>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
+
+  return (
+    <Sidebar>
       <SidebarContent>
-        <ScrollArea>
-          <SidebarNav>
-            {navigationItems.map((item) => (
-              <SidebarItem key={item.title} title={item.title} url={item.url} icon={item.icon} />
-            ))}
-          </SidebarNav>
-          <Separator className="my-2" />
-          <Accordion type="single" collapsible className="pb-2">
-            <AccordionItem value="crm">
-              <AccordionTrigger className="hover:text-primary">
-                CRM <ChevronUp className="h-4 w-4" />
-              </AccordionTrigger>
-              <AccordionContent>
-                <SidebarNav>
-                  {crmItems.map((item) => (
-                    <SidebarItem key={item.title} title={item.title} url={item.url} icon={item.icon} />
-                  ))}
-                </SidebarNav>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-          <Separator className="my-2" />
-          <Accordion type="single" collapsible className="pb-2">
-            <AccordionItem value="config">
-              <AccordionTrigger className="hover:text-primary">
-                Sistema <ChevronUp className="h-4 w-4" />
-              </AccordionTrigger>
-              <AccordionContent>
-                <SidebarNav>
-                  {configItems.map((item) => (
-                    <SidebarItem key={item.title} title={item.title} url={item.url} icon={item.icon} />
-                  ))}
-                </SidebarNav>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </ScrollArea>
-      </SidebarContent>
-      <SidebarFooter>
-        <Separator />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex h-8 w-full p-0 px-2 justify-between">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.user_metadata?.avatar_url as string} alt={user?.user_metadata?.full_name as string} />
-                  <AvatarFallback>{user?.user_metadata?.full_name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col text-left">
-                  <span>{user?.user_metadata?.full_name}</span>
-                  <span className="text-muted-foreground text-sm">{activeTenant?.tenant_name}</span>
-                </div>
+        {/* Header com informações do usuário */}
+        <div className="p-4 border-b">
+          <div className="flex items-center gap-3">
+            <UserAvatar 
+              user={currentUser || { full_name: user?.email || 'Usuário', avatar_url: null }} 
+              size="md" 
+            />
+            {state !== 'collapsed' && (
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">
+                  {currentUser?.full_name || user?.email || 'Usuário'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {activeTenant?.tenant_name || 'Empresa'}
+                </p>
+                {currentUser?.office && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {currentUser.office.name}
+                  </p>
+                )}
               </div>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>Sair</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarFooter>
+            )}
+          </div>
+        </div>
+
+        {/* Menu de navegação */}
+        <div className="flex-1">
+          {menuItems.map((section) => (
+            <SidebarGroup key={section.group}>
+              <SidebarGroupLabel>{section.group}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarNav>
+                  {section.items
+                    .filter(item => item.enabled)
+                    .map((item) => (
+                      <SidebarItem key={item.name}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={location.pathname === item.path}
+                        >
+                          <Link to={item.path}>
+                            <item.icon className="w-4 h-4" />
+                            <span>{item.name}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarItem>
+                    ))}
+                </SidebarNav>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </div>
+
+        {/* Footer com logout */}
+        <div className="p-4 border-t">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSignOut}
+            className="w-full justify-start"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            {state !== 'collapsed' && <span>Sair</span>}
+          </Button>
+        </div>
+      </SidebarContent>
     </Sidebar>
   );
-};
-
-export default AppSidebar;
+}
