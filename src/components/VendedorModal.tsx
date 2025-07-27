@@ -18,7 +18,7 @@ interface VendedorModalProps {
 }
 
 export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [] }: VendedorModalProps) {
-  const { createVendedor, updateVendedor } = useVendedores();
+  const { createVendedor, updateVendedor, vendedores } = useVendedores();
   const { offices } = useOffices();
   const { teams } = useTeams();
   
@@ -37,23 +37,24 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
   useEffect(() => {
     if (vendedor) {
+      console.log('Initializing form with vendedor data:', vendedor);
       setFormData({
-        user_id: vendedor.id || '',
+        user_id: vendedor.user_id || vendedor.id || '',
         office_id: vendedor.office_id || '',
-        team_id: vendedor.team_id || 'no-team',
+        team_id: vendedor.team_id || '',
         commission_rate: vendedor.commission_rate || 0,
         active: vendedor.active ?? true,
-        hierarchy_level: vendedor.hierarchical_level || 1,
+        hierarchy_level: vendedor.hierarchy_level || vendedor.hierarchical_level || 1,
         sales_goal: vendedor.sales_goal || 0,
-        whatsapp: vendedor.phone || '',
+        whatsapp: vendedor.whatsapp || vendedor.phone || '',
         specialties: vendedor.settings?.specialties || [],
-        notes: vendedor.settings?.notes || '',
+        notes: vendedor.observations || vendedor.settings?.notes || '',
       });
     } else {
       setFormData({
         user_id: '',
         office_id: '',
-        team_id: 'no-team',
+        team_id: '',
         commission_rate: 0,
         active: true,
         hierarchy_level: 1,
@@ -68,8 +69,8 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.user_id || !formData.office_id) {
-      toast.error('Usuário e escritório são obrigatórios');
+    if (!formData.user_id) {
+      toast.error('Usuário é obrigatório');
       return;
     }
 
@@ -92,17 +93,19 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
           phone: formData.whatsapp,
           department: vendedor.department,
           position: vendedor.position,
-          hierarchical_level: formData.hierarchy_level,
+          commission_rate: formData.commission_rate,
+          hierarchy_level: formData.hierarchy_level,
+          sales_goal: formData.sales_goal,
+          whatsapp: formData.whatsapp,
+          observations: formData.notes,
+          office_id: formData.office_id,
+          team_id: formData.team_id || null,
           settings: {
             ...vendedor.settings,
             whatsapp: formData.whatsapp,
             specialties: formData.specialties,
             notes: formData.notes,
             active: formData.active,
-            commission_rate: formData.commission_rate,
-            sales_goal: formData.sales_goal,
-            office_id: formData.office_id,
-            team_id: formData.team_id === 'no-team' ? null : formData.team_id,
           },
         };
 
@@ -118,16 +121,19 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
           email: selectedUser.profiles?.email || selectedUser.email,
           full_name: selectedUser.profiles?.full_name || selectedUser.full_name,
           phone: formData.whatsapp,
-          hierarchical_level: formData.hierarchy_level,
+          commission_rate: formData.commission_rate,
+          hierarchy_level: formData.hierarchy_level,
+          sales_goal: formData.sales_goal,
+          whatsapp: formData.whatsapp,
+          observations: formData.notes,
+          office_id: formData.office_id,
+          team_id: formData.team_id || null,
           settings: {
             whatsapp: formData.whatsapp,
             specialties: formData.specialties,
             notes: formData.notes,
             active: formData.active,
-            commission_rate: formData.commission_rate,
-            sales_goal: formData.sales_goal,
           },
-          office_id: formData.office_id,
         };
 
         await createVendedor.mutateAsync(vendedorData);
@@ -136,22 +142,33 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
       
       onOpenChange(false);
     } catch (error: any) {
+      console.error('Error saving vendedor:', error);
       if (error.code === '23505') {
         toast.error('Este usuário já está cadastrado como vendedor');
       } else {
-        toast.error('Erro ao salvar vendedor: ' + error.message);
+        toast.error('Erro ao salvar vendedor: ' + (error.message || 'Erro desconhecido'));
       }
     }
   };
 
   // Filtrar usuários disponíveis que ainda não são vendedores
   const filteredUsers = availableUsers.filter(user => {
+    const userId = user.profiles?.id || user.user_id;
+    
     // Se estamos editando, incluir o usuário atual
-    if (vendedor && (user.profiles?.id === vendedor.id || user.user_id === vendedor.id)) {
+    if (vendedor && (userId === vendedor.user_id || userId === vendedor.id)) {
       return true;
     }
-    // Caso contrário, só mostrar usuários que não são vendedores ainda
-    return !vendedor;
+    
+    // Para novos vendedores, mostrar apenas usuários que não são vendedores ainda
+    if (!vendedor) {
+      const isAlreadyVendedor = vendedores?.some(v => 
+        v.user_id === userId || v.id === userId
+      );
+      return !isAlreadyVendedor;
+    }
+    
+    return false;
   });
 
   return (
@@ -175,19 +192,33 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
                 <SelectValue placeholder="Selecione um usuário" />
               </SelectTrigger>
               <SelectContent>
-                {filteredUsers.map((user) => (
-                  <SelectItem 
-                    key={user.profiles?.id || user.user_id} 
-                    value={user.profiles?.id || user.user_id}
-                  >
-                    <div className="flex flex-col">
-                      <span>{user.profiles?.full_name || user.full_name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {user.profiles?.email || user.email}
-                      </span>
-                    </div>
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => {
+                    const userId = user.profiles?.id || user.user_id;
+                    const userName = user.profiles?.full_name || user.full_name;
+                    const userEmail = user.profiles?.email || user.email;
+                    
+                    if (!userId) return null;
+                    
+                    return (
+                      <SelectItem 
+                        key={userId} 
+                        value={userId}
+                      >
+                        <div className="flex flex-col">
+                          <span>{userName || 'Nome não disponível'}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {userEmail || 'Email não disponível'}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    );
+                  }).filter(Boolean)
+                ) : (
+                  <SelectItem value="no-users" disabled>
+                    Nenhum usuário disponível
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
             {filteredUsers.length === 0 && !vendedor && (
@@ -320,8 +351,7 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
               disabled={
                 createVendedor.isPending || 
                 updateVendedor.isPending || 
-                !formData.user_id || 
-                !formData.office_id
+                !formData.user_id
               }
             >
               {(createVendedor.isPending || updateVendedor.isPending) ? 'Salvando...' : 'Salvar'}
