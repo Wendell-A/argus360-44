@@ -24,6 +24,7 @@ import { useUserManagement, UserTenantAssociation, UserDependencies } from '@/ho
 import { useOffices } from '@/hooks/useOffices';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useTeams } from '@/hooks/useTeams';
+import { usePositions } from '@/hooks/usePositions';
 import { toast } from 'sonner';
 
 interface UserEditModalProps {
@@ -37,12 +38,13 @@ export function UserEditModal({ user, open, onOpenChange }: UserEditModalProps) 
   const { offices = [] } = useOffices();
   const { departments = [] } = useDepartments();
   const { teams = [] } = useTeams();
+  const { positions = [] } = usePositions();
 
   const [profileData, setProfileData] = useState({
     full_name: '',
     phone: '',
-    department: '',
-    position: '',
+    position_id: '',
+    hire_date: '',
   });
 
   const [tenantData, setTenantData] = useState({
@@ -62,8 +64,8 @@ export function UserEditModal({ user, open, onOpenChange }: UserEditModalProps) 
       setProfileData({
         full_name: user.profile?.full_name || '',
         phone: user.profile?.phone || '',
-        department: user.profile?.department || '',
-        position: user.profile?.position || '',
+        position_id: user.profile?.position_id || '',
+        hire_date: user.profile?.hire_date ? user.profile.hire_date.split('T')[0] : '',
       });
 
       setTenantData({
@@ -268,21 +270,31 @@ export function UserEditModal({ user, open, onOpenChange }: UserEditModalProps) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="department">Departamento</Label>
-                  <Input
-                    id="department"
-                    value={profileData.department}
-                    onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
-                    placeholder="Nome do departamento"
-                  />
+                  <Label htmlFor="position">Cargo</Label>
+                  <Select
+                    value={profileData.position_id || 'none'}
+                    onValueChange={(value) => setProfileData({ ...profileData, position_id: value === 'none' ? '' : value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cargo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem cargo definido</SelectItem>
+                      {positions.map((position) => (
+                        <SelectItem key={position.id} value={position.id}>
+                          {position.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label htmlFor="position">Cargo</Label>
+                  <Label htmlFor="hire_date">Data de Admissão</Label>
                   <Input
-                    id="position"
-                    value={profileData.position}
-                    onChange={(e) => setProfileData({ ...profileData, position: e.target.value })}
-                    placeholder="Cargo do usuário"
+                    id="hire_date"
+                    type="date"
+                    value={profileData.hire_date}
+                    onChange={(e) => setProfileData({ ...profileData, hire_date: e.target.value })}
                   />
                 </div>
               </div>

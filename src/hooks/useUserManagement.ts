@@ -13,6 +13,7 @@ export interface UserProfile {
   avatar_url?: string;
   department?: string;
   position?: string;
+  position_id?: string;
   hire_date?: string;
   last_access?: string;
   settings?: any;
@@ -93,6 +94,7 @@ export const useUserManagement = () => {
           avatar_url,
           department,
           position,
+          position_id,
           hire_date,
           last_access,
           settings,
@@ -129,6 +131,7 @@ export const useUserManagement = () => {
             avatar_url: profile?.avatar_url,
             department: profile?.department,
             position: profile?.position,
+            position_id: profile?.position_id,
             hire_date: profile?.hire_date,
             last_access: profile?.last_access,
             settings: profile?.settings,

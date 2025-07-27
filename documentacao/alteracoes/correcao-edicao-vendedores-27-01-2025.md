@@ -1,97 +1,76 @@
-# Correção da Edição de Vendedores - 27/01/2025 14:55
+# Correção Modal de Edição de Usuários - 27/01/2025
 
-## Problema Identificado
-A funcionalidade de edição de vendedores estava apresentando problemas devido a:
+## Resumo das Alterações
+Implementação de melhorias no modal de edição de usuários (`UserEditModal.tsx`) conforme solicitado pelo usuário.
 
-1. **Merge Conflicts**: Havia marcadores de merge conflict nos arquivos que impediam a compilação
-2. **Estrutura de dados inconsistente**: A forma como os dados eram estruturados na atualização não estava alinhada com o banco de dados
-3. **Mapeamento incorreto de campos**: Os campos `office_id` e `team_id` não estavam sendo atualizados corretamente na tabela `tenant_users`
+## Alterações Realizadas
 
-## Problemas Corrigidos
+### 1. Remoção de Campo Duplicado
+- **Campo removido**: Departamento na seção "Dados Pessoais"
+- **Justificativa**: Campo estava duplicado entre "Dados Pessoais" e "Configurações do Sistema"
+- **Mantido apenas**: Departamento na seção "Configurações do Sistema" com select de departamentos cadastrados
 
-### 1. Merge Conflicts Resolvidos
-- **Arquivo**: `src/hooks/useVendedores.ts`
-- **Arquivo**: `src/components/VendedorModal.tsx`
-- Removidos todos os marcadores `<<<<<<< HEAD`, `=======`, e `>>>>>>> hash`
+### 2. Implementação de Select para Cargos
+- **Antes**: Campo de texto livre para cargo
+- **Depois**: Select com cargos cadastrados na tabela `positions`
+- **Hook utilizado**: `usePositions()` já existente
+- **Funcionalidades**:
+  - Lista todos os cargos cadastrados no tenant
+  - Opção "Sem cargo definido" para usuários sem cargo
+  - Integração com `position_id` na tabela profiles
 
-### 2. Estrutura de Dados Corrigida no useVendedores.ts
-- **Função updateVendedorMutation**: Corrigida para enviar dados no formato correto
-- **Campo hierarchical_level**: Ajustado para usar o nome correto da coluna do banco
-- **Atualização tenant_users**: Adicionada lógica para atualizar `office_id` e `team_id` na tabela `tenant_users`
+### 3. Adição de Campo Data de Admissão
+- **Campo adicionado**: `hire_date` na seção "Dados Pessoais"
+- **Tipo**: Input date
+- **Objetivo**: Registrar data de admissão para planejamento de férias
+- **Integração**: Campo já existente na tabela profiles
 
-### 3. Formulário VendedorModal.tsx
-- **Inicialização do formulário**: Corrigida para usar `vendedor.settings?.campo` para valores específicos
-- **Estrutura updateData**: Ajustada para enviar dados no formato esperado pelo hook
-- **Tratamento de team_id**: Adicionado tratamento especial para o valor 'no-team'
+### 4. Atualizações de Tipagem
+- **Interface `UserProfile`**: Adicionado campo `position_id?: string`
+- **Hook `useUserManagement`**: 
+  - Atualizada query para incluir `position_id`
+  - Ajustada transformação de dados para incluir `position_id`
 
-## Alterações Técnicas Realizadas
+## Arquivos Modificados
 
-### Hook useVendedores.ts
-```typescript
-// Antes (com merge conflicts)
-<<<<<<< HEAD
-commission_rate: data.commission_rate,
-hierarchy_level: data.hierarchy_level,
-=======
-hierarchical_level: data.hierarchical_level,
-settings: data.settings
->>>>>>> hash
+### `src/components/UserEditModal.tsx`
+- Removido campo departamento da seção "Dados Pessoais"
+- Substituído campo texto de cargo por select de positions
+- Adicionado campo de data de admissão
+- Adicionado import do hook `usePositions`
 
-// Depois (corrigido)
-hierarchical_level: data.hierarchical_level,
-settings: data.settings
-```
+### `src/hooks/useUserManagement.ts`
+- Adicionado `position_id?: string` na interface `UserProfile`
+- Incluído `position_id` na query de profiles
+- Atualizada transformação de dados para incluir o campo
 
-### Atualização tenant_users
-```typescript
-// Adicionado
-if (data.office_id !== undefined || data.team_id !== undefined) {
-  const { error: tenantUserError } = await supabase
-    .from("tenant_users")
-    .update({ 
-      office_id: data.office_id || null,
-      team_id: data.team_id === 'no-team' ? null : data.team_id
-    })
-    .eq("user_id", id)
-    .eq("tenant_id", activeTenant.tenant_id);
-}
-```
+## Estrutura Atual do Modal
 
-### Modal VendedorModal.tsx
-```typescript
-// Estrutura de dados corrigida para update
-const updateData = {
-  full_name: vendedor.full_name,
-  email: vendedor.email,
-  phone: formData.whatsapp,
-  department: vendedor.department,
-  position: vendedor.position,
-  hierarchical_level: formData.hierarchy_level,
-  office_id: formData.office_id,
-  team_id: formData.team_id === 'no-team' ? null : formData.team_id,
-  settings: {
-    ...vendedor.settings,
-    commission_rate: formData.commission_rate,
-    sales_goal: formData.sales_goal,
-    whatsapp: formData.whatsapp,
-    specialties: formData.specialties,
-    notes: formData.notes,
-    active: formData.active,
-  },
-};
-```
+### Seção "Dados Pessoais"
+1. Nome Completo
+2. Telefone  
+3. Cargo (Select com positions cadastradas)
+4. Data de Admissão (Input date)
 
-## Funcionalidades Restauradas
-1. ✅ **Edição de vendedores**: Agora funciona corretamente
-2. ✅ **Atualização de escritório**: office_id é atualizado em tenant_users
-3. ✅ **Atualização de equipe**: team_id é atualizado em tenant_users
-4. ✅ **Atualização de configurações**: Todos os campos do settings são preservados
-5. ✅ **Compilação**: Sistema compila sem erros
+### Seção "Configurações do Sistema"
+1. Perfil do Usuário (Role)
+2. Escritório
+3. Departamento
+4. Equipe
+5. Status Ativo/Inativo
 
-## Banco de Dados Impactado
-- **Tabela**: `profiles` - dados do vendedor
-- **Tabela**: `tenant_users` - associação com escritório e equipe
-- **Campos atualizados**: `office_id`, `team_id`, `hierarchical_level`, `settings`
+## Benefícios das Alterações
+- ✅ Eliminada duplicação de campos
+- ✅ Padronização de cargos através de cadastro específico
+- ✅ Registro de data de admissão para gestão de férias
+- ✅ Melhor organização e usabilidade do modal
+- ✅ Consistência com estrutura do banco de dados
 
-## Status
-✅ **CONCLUÍDO** - Sistema de edição de vendedores funcionando corretamente
+## Próximos Passos Sugeridos
+- Implementar validações de data de admissão
+- Criar funcionalidade de cálculo automático de período de férias
+- Considerar adição de campos relacionados a benefícios e progressão de carreira
+
+---
+*Documentação criada em: 27/01/2025 às 12:30*
+*Desenvolvedor: Sistema Lovable*
