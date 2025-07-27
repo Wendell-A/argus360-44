@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, CheckCircle, Building, Users, UserCheck } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertCircle, CheckCircle, Building, Users, UserCheck, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LinkData {
@@ -37,6 +38,7 @@ export default function RegistrarComToken() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [registering, setRegistering] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -155,8 +157,8 @@ export default function RegistrarComToken() {
         return;
       }
 
-      toast.success('Conta criada com sucesso! Você já está logado.');
-      navigate('/dashboard');
+      toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');
+      setShowEmailModal(true);
 
     } catch (error: any) {
       console.error('Erro no processo de registro:', error);
@@ -205,8 +207,9 @@ export default function RegistrarComToken() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
           <CardTitle>Criar Conta</CardTitle>
@@ -316,5 +319,33 @@ export default function RegistrarComToken() {
         </CardContent>
       </Card>
     </div>
+
+    {/* Modal de confirmação de email */}
+    <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+      <DialogContent className="max-w-md">
+        <DialogHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Mail className="h-6 w-6 text-primary" />
+          </div>
+          <DialogTitle>Verifique seu Email</DialogTitle>
+          <DialogDescription>
+            Enviamos um link de confirmação para <strong>{formData.email}</strong>. 
+            Clique no link para ativar sua conta e fazer login.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button 
+            onClick={() => {
+              setShowEmailModal(false);
+              navigate('/');
+            }}
+            className="w-full"
+          >
+            Ok, entendi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
