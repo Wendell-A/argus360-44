@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 
 import Index from '@/pages/Index';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
 import Dashboard from '@/pages/Dashboard';
 import CRM from '@/pages/CRM';
 import Clientes from '@/pages/Clientes';
@@ -29,15 +30,17 @@ import Configuracoes from '@/pages/Configuracoes';
 import Auditoria from '@/pages/Auditoria';
 import AuditoriaSeguranca from '@/pages/AuditoriaSeguranca';
 import NotFound from '@/pages/NotFound';
-import PublicRoute from '@/components/PublicRoute';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import ProtectedLayout from '@/components/ProtectedLayout';
+import PublicRoute from '@/components/auth/PublicRoute';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { ProtectedLayout } from '@/components/layout/ProtectedLayout';
 import AceitarConvite from '@/pages/AceitarConvite';
 import RegistrarComToken from '@/pages/RegistrarComToken';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
           <Toaster />
@@ -78,7 +81,7 @@ function App() {
           </BrowserRouter>
         </ThemeProvider>
       </AuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 

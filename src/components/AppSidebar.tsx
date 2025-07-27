@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Calendar,
@@ -42,10 +43,33 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarNav } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useUserMenuConfig } from "@/hooks/useUserMenuConfig";
+
+// Component for individual sidebar items
+const SidebarItem = ({ title, url, icon: Icon }: { title: string; url: string; icon: any }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = location.pathname === url;
+  
+  return (
+    <Button
+      variant={isActive ? "secondary" : "ghost"}
+      className="w-full justify-start"
+      onClick={() => navigate(url)}
+    >
+      <Icon className="mr-2 h-4 w-4" />
+      {title}
+    </Button>
+  );
+};
+
+// Component for sidebar navigation group
+const SidebarNav = ({ children }: { children: React.ReactNode }) => {
+  return <div className="space-y-1 px-2">{children}</div>;
+};
 
 const AppSidebar = ({ ...props }: React.ComponentProps<typeof Sidebar>) => {
   const { user, signOut, activeTenant } = useAuth();

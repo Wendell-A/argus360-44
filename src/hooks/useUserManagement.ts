@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface UserProfile {
   id: string;
@@ -22,7 +23,7 @@ export interface UserProfile {
 export interface UserTenantAssociation {
   user_id: string;
   tenant_id: string;
-  role: string;
+  role: Database['public']['Enums']['user_role'];
   office_id?: string;
   department_id?: string;
   team_id?: string;
@@ -66,7 +67,7 @@ export const useUserManagement = () => {
           joined_at,
           created_at,
           updated_at,
-          profile:profiles(
+          profile:profiles!inner(
             id,
             email,
             full_name,
@@ -90,7 +91,7 @@ export const useUserManagement = () => {
       }
 
       console.log('✅ Usuários encontrados:', data?.length || 0);
-      return data as UserTenantAssociation[];
+      return data as unknown as UserTenantAssociation[];
     },
     enabled: !!activeTenant?.tenant_id,
   });
@@ -183,7 +184,7 @@ export const useUserManagement = () => {
       tenantData 
     }: { 
       userId: string, 
-      tenantData: Partial<UserTenantAssociation> 
+      tenantData: Partial<Pick<UserTenantAssociation, 'role' | 'office_id' | 'department_id' | 'team_id' | 'active'>>
     }) => {
       if (!activeTenant?.tenant_id) {
         throw new Error('Tenant não encontrado');
@@ -212,7 +213,7 @@ export const useUserManagement = () => {
               user_id: userId,
               office_id: tenantData.office_id,
               tenant_id: activeTenant.tenant_id,
-              role: tenantData.role || 'user',
+              role: tenantData.role || 'user' as Database['public']['Enums']['user_role'],
               active: tenantData.active !== false
             });
         } else {

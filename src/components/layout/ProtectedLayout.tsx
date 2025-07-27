@@ -1,9 +1,10 @@
 
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import AppSidebar from "@/components/AppSidebar";
+import { Outlet } from "react-router-dom";
 
 interface ProtectedLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function ProtectedLayout({ children }: ProtectedLayoutProps) {
@@ -19,7 +20,7 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
             </div>
           </header>
           <main className="flex-1 bg-background">
-            {children}
+            {children || <Outlet />}
           </main>
         </SidebarInset>
       </div>
