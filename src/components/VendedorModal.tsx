@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -37,16 +38,29 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
   useEffect(() => {
     if (vendedor) {
+<<<<<<< HEAD
       console.log('Initializing form with vendedor data:', vendedor);
+=======
+      console.log("Loading vendedor data for editing:", vendedor);
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
       setFormData({
         user_id: vendedor.user_id || vendedor.id || '',
         office_id: vendedor.office_id || '',
+<<<<<<< HEAD
         team_id: vendedor.team_id || '',
         commission_rate: vendedor.commission_rate || 0,
         active: vendedor.active ?? true,
         hierarchy_level: vendedor.hierarchy_level || vendedor.hierarchical_level || 1,
         sales_goal: vendedor.sales_goal || 0,
         whatsapp: vendedor.whatsapp || vendedor.phone || '',
+=======
+        team_id: vendedor.team_id || 'no-team',
+        commission_rate: vendedor.settings?.commission_rate || 0,
+        active: vendedor.settings?.active !== false,
+        hierarchy_level: vendedor.hierarchical_level || 1,
+        sales_goal: vendedor.settings?.sales_goal || 0,
+        whatsapp: vendedor.phone || '',
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
         specialties: vendedor.settings?.specialties || [],
         notes: vendedor.observations || vendedor.settings?.notes || '',
       });
@@ -86,10 +100,12 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
     try {
       if (vendedor) {
-        // Atualizando vendedor existente
+        console.log("Updating existing vendedor:", vendedor.id);
+        
+        // Atualizando vendedor existente - ESTRUTURA CORRIGIDA
         const updateData = {
-          full_name: vendedor.full_name, // Manter o nome atual
-          email: vendedor.email, // Manter o email atual
+          full_name: vendedor.full_name,
+          email: vendedor.email,
           phone: formData.whatsapp,
           department: vendedor.department,
           position: vendedor.position,
@@ -108,6 +124,8 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
             active: formData.active,
           },
         };
+
+        console.log("Update data being sent:", updateData);
 
         await updateVendedor.mutateAsync({
           id: vendedor.id,
@@ -284,14 +302,25 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
             <div className="space-y-2">
               <Label htmlFor="hierarchy_level">Nível Hierárquico</Label>
-              <Input
-                id="hierarchy_level"
-                type="number"
-                min="1"
-                max="10"
-                value={formData.hierarchy_level}
-                onChange={(e) => setFormData({ ...formData, hierarchy_level: parseInt(e.target.value) || 1 })}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="hierarchy_level"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.hierarchy_level}
+                  onChange={(e) => setFormData({ ...formData, hierarchy_level: parseInt(e.target.value) || 1 })}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => alert('Nível Hierárquico:\n\n1 = Vendedor Júnior\n2 = Vendedor Pleno\n3 = Vendedor Sênior\n4 = Supervisor\n5 = Coordenador\n6 = Gerente\n7 = Diretor Regional\n8 = Diretor Nacional\n9 = Vice-Presidente\n10 = Presidente\n\nQuanto maior o nível, maior a autoridade e responsabilidade do vendedor na hierarquia organizacional.')}
+                  className="px-3"
+                >
+                  ?
+                </Button>
+              </div>
             </div>
           </div>
 

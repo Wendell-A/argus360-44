@@ -1,25 +1,28 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+
+import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useUserMenuConfig } from '@/hooks/useUserMenuConfig';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { 
   Home, 
   Users, 
   ShoppingCart, 
   UserCheck, 
   DollarSign, 
-  BarChart3,
-  Building2,
-  Settings,
-  Shield,
-  FileText,
-  Target,
-  UsersIcon,
-  Building,
+  BarChart3, 
+  Building2, 
+  Settings, 
+  Shield, 
+  FileText, 
+  Target, 
+  UsersIcon, 
+  Building, 
   LogOut,
   Calculator,
   Briefcase,
-  Car,
-  Mail
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Car
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -31,402 +34,156 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useUserMenuConfig } from "@/hooks/useUserMenuConfig";
-import { UserAvatar } from "@/components/UserAvatar";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/UserAvatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const allMenuItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-    shortcut: "⌘D",
-    key: "dashboard"
-  },
-  {
-    title: "CRM",
-    url: "/crm",
-    icon: Users,
-    shortcut: "⌘R",
-    key: "crm"
-  },
-  {
-    title: "Clientes",
-    url: "/clientes", 
-    icon: UserCheck,
-    shortcut: "⌘C",
-    key: "clients"
-  },
-  {
-    title: "Vendas",
-    url: "/vendas",
-    icon: ShoppingCart,
-    shortcut: "⌘V",
-    key: "sales"
-  },
-  {
-    title: "Vendedores",
-    url: "/vendedores",
-    icon: Users,
-    shortcut: "⌘U",
-    key: "sellers"
-  },
-  {
-    title: "Comissões",
-    url: "/comissoes",
-    icon: DollarSign,
-    shortcut: "⌘M",
-    key: "commissions"
-  },
-  {
-    title: "Consórcios",
-    url: "/consorcios",
-    icon: Car,
-    shortcut: "⌘N",
-    key: "consortium"
-  },
-  {
-    title: "Simulação",
-    url: "/simulacao-consorcio",
-    icon: Calculator,
-    shortcut: "⌘S",
-    key: "simulation"
-  },
-  {
-    title: "Metas",
-    url: "/metas",
-    icon: Target,
-    shortcut: "⌘T",
-    key: "goals"
-  },
-  {
-    title: "Relatórios",
-    url: "/relatorios",
-    icon: FileText,
-    shortcut: "⌘L",
-    key: "reports"
-  }
-];
+// Componentes internos para resolver problemas de importação
+const SidebarItem = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+  <SidebarMenuItem {...props}>{children}</SidebarMenuItem>
+);
 
-const allManagementItems = [
-  { title: "Escritórios", url: "/escritorios", icon: Building, key: "offices" },
-  { title: "Equipes", url: "/equipes", icon: UsersIcon, key: "teams" },
-  { title: "Departamentos", url: "/departamentos", icon: Building2, key: "departments" },
-  { title: "Cargos", url: "/cargos", icon: Briefcase, key: "positions" },
-];
+const SidebarNav = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+  <SidebarMenu {...props}>{children}</SidebarMenu>
+);
 
-const allConfigItems = [
-  { title: "Convites", url: "/convites", icon: Mail, key: "invitations" },
-  { title: "Permissões", url: "/permissoes", icon: Shield, key: "permissions" },
-  { title: "Configurações", url: "/configuracoes", icon: Settings, key: "configurations" },
-  { title: "Auditoria", url: "/auditoria", icon: FileText, key: "audit" },
-];
-
-export function AppSidebar() {
-  const { open } = useSidebar();
-  const collapsed = !open;
-  const location = useLocation();
+export default function AppSidebar() {
+  const { signOut, activeTenant, user } = useAuth();
+  const { currentUser, isLoading: userLoading } = useCurrentUser();
+  const { data: menuConfig, isLoading: configLoading } = useUserMenuConfig();
   const navigate = useNavigate();
-  const { activeTenant, signOut } = useAuth();
-  const { currentUser, isLoading } = useCurrentUser();
-  const { data: menuConfig, isLoading: isMenuConfigLoading } = useUserMenuConfig();
+  const location = useLocation();
+  const { state } = useSidebar();
 
-  const isActive = (path: string) => {
-    if (path === "/dashboard") {
-      return location.pathname === "/dashboard";
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  const getRoleDisplayName = (role?: string) => {
-    const roleMap: Record<string, string> = {
-      owner: 'Proprietário',
-      admin: 'Administrador',
-      manager: 'Gerente',
-      user: 'Usuário',
-      viewer: 'Visualizador'
-    };
-    return roleMap[role || 'user'] || 'Usuário';
-  };
-
-  // Filtrar itens de menu baseado nas permissões do usuário
-  const getVisibleMenuItems = () => {
-    if (isMenuConfigLoading || !menuConfig) return [];
-    
-    return allMenuItems.filter(item => {
-      const moduleKey = item.key as keyof typeof menuConfig.modules;
-      return menuConfig.modules[moduleKey] === true;
-    });
-  };
-
-  const getVisibleManagementItems = () => {
-    if (isMenuConfigLoading || !menuConfig) return [];
-    
-    return allManagementItems.filter(item => {
-      const moduleKey = item.key as keyof typeof menuConfig.modules;
-      return menuConfig.modules[moduleKey] === true;
-    });
-  };
-
-  const getVisibleConfigItems = () => {
-    if (isMenuConfigLoading || !menuConfig) return [];
-    
-    return allConfigItems.filter(item => {
-      const moduleKey = item.key as keyof typeof menuConfig.modules;
-      return menuConfig.modules[moduleKey] === true;
-    });
-  };
-
-  const menuItems = getVisibleMenuItems();
-  const managementItems = getVisibleManagementItems();
-  const configItems = getVisibleConfigItems();
-
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       await signOut();
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.clear();
-      navigate('/auth/login', { replace: true });
+      navigate('/login');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
-      navigate('/auth/login', { replace: true });
     }
   };
 
+  const menuItems = [
+    {
+      group: 'Principal',
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: Home, enabled: true },
+        { name: 'CRM', path: '/crm', icon: Users, enabled: true },
+        { name: 'Clientes', path: '/clientes', icon: UserCheck, enabled: true },
+        { name: 'Vendas', path: '/vendas', icon: ShoppingCart, enabled: true },
+        { name: 'Vendedores', path: '/vendedores', icon: UsersIcon, enabled: menuConfig?.modules?.sellers || false },
+        { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
+        { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },
+        { name: 'Simulação Consórcio', path: '/simulacao-consorcio', icon: Calculator, enabled: true },
+      ]
+    },
+    {
+      group: 'Gestão',
+      items: [
+        { name: 'Metas', path: '/metas', icon: Target, enabled: true },
+        { name: 'Relatórios', path: '/relatorios', icon: BarChart3, enabled: menuConfig?.modules?.reports || false },
+        { name: 'Escritórios', path: '/escritorios', icon: Building, enabled: menuConfig?.modules?.offices || false },
+        { name: 'Departamentos', path: '/departamentos', icon: Building2, enabled: menuConfig?.modules?.departments || false },
+        { name: 'Cargos', path: '/cargos', icon: Briefcase, enabled: menuConfig?.modules?.positions || false },
+        { name: 'Equipes', path: '/equipes', icon: UsersIcon, enabled: menuConfig?.modules?.teams || false },
+      ]
+    },
+    {
+      group: 'Sistema',
+      items: [
+        { name: 'Usuários', path: '/usuarios', icon: Users, enabled: menuConfig?.modules?.users || false },
+        { name: 'Convites', path: '/convites', icon: FileText, enabled: menuConfig?.modules?.invitations || false },
+        { name: 'Permissões', path: '/permissoes', icon: Shield, enabled: menuConfig?.modules?.permissions || false },
+        { name: 'Configurações', path: '/configuracoes', icon: Settings, enabled: menuConfig?.modules?.configurations || false },
+        { name: 'Auditoria', path: '/auditoria', icon: FileText, enabled: menuConfig?.modules?.audit || false },
+        { name: 'Auditoria Segurança', path: '/auditoria-seguranca', icon: Shield, enabled: menuConfig?.modules?.audit || false },
+      ]
+    }
+  ];
+
+  if (userLoading || configLoading) {
+    return (
+      <Sidebar>
+        <SidebarContent>
+          <div className="p-4 space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-8 w-1/2" />
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
+
   return (
-    <Sidebar 
-      collapsible="icon"
-      className="border-r border-sidebar-border"
-      variant="sidebar"
-    >
-      <SidebarContent className="bg-sidebar border-0">
-        <div className={cn(
-          "p-4 border-b border-sidebar-border transition-all duration-300",
-          collapsed ? "p-2" : "p-4"
-        )}>
-          <div className={cn(
-            "flex items-center transition-all duration-300",
-            collapsed ? "justify-center" : "space-x-2"
-          )}>
-            <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center shrink-0">
-              <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
-            </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0 opacity-100 transition-opacity duration-300">
-                <h2 className="text-lg font-semibold text-sidebar-foreground truncate">
-                  {activeTenant?.tenant_name || 'Argus360'}
-                </h2>
-                <p className="text-xs text-sidebar-foreground/70">Sistema de Vendas</p>
+    <Sidebar>
+      <SidebarContent>
+        {/* Header com informações do usuário */}
+        <div className="p-4 border-b">
+          <div className="flex items-center gap-3">
+            <UserAvatar 
+              avatarUrl={currentUser?.avatar_url}
+              fullName={currentUser?.full_name || user?.email || 'Usuário'}
+              size="md" 
+            />
+            {state !== 'collapsed' && (
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">
+                  {currentUser?.full_name || user?.email || 'Usuário'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {activeTenant?.tenant_name || 'Empresa'}
+                </p>
+                {currentUser?.office && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {currentUser.office.name}
+                  </p>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        <div className={cn(
-          "p-4 border-b border-sidebar-border transition-all duration-300",
-          collapsed ? "p-2" : "p-4"
-        )}>
-          {isLoading ? (
-            <div className={cn(
-              "flex items-center transition-all duration-300",
-              collapsed ? "justify-center" : "space-x-3"
-            )}>
-              <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-              {!collapsed && (
-                <div className="flex-1 space-y-1 opacity-100 transition-opacity duration-300">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className={cn(
-              "flex items-center transition-all duration-300",
-              collapsed ? "justify-center" : "space-x-3"
-            )}>
-              <UserAvatar 
-                avatarUrl={currentUser?.avatar_url}
-                fullName={currentUser?.full_name || 'Usuário'}
-                size="md"
-              />
-              {!collapsed && currentUser && (
-                <div className="flex-1 min-w-0 opacity-100 transition-opacity duration-300">
-                  <div className="text-sm font-medium text-sidebar-foreground truncate">
-                    {currentUser.full_name}
-                  </div>
-                  <div className="text-xs text-sidebar-foreground/70 truncate">
-                    {getRoleDisplayName(currentUser.role)}
-                  </div>
-                  {currentUser.department && (
-                    <div className="text-xs text-sidebar-foreground/60 truncate">
-                      {currentUser.department.name}
-                    </div>
-                  )}
-                  {currentUser.office && (
-                    <div className="text-xs text-sidebar-foreground/60 truncate">
-                      {currentUser.office.name}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+        {/* Menu de navegação */}
+        <div className="flex-1">
+          {menuItems.map((section) => (
+            <SidebarGroup key={section.group}>
+              <SidebarGroupLabel>{section.group}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarNav>
+                  {section.items
+                    .filter(item => item.enabled)
+                    .map((item) => (
+                      <SidebarItem key={item.name}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={location.pathname === item.path}
+                        >
+                          <Link to={item.path}>
+                            <item.icon className="w-4 h-4" />
+                            <span>{item.name}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarItem>
+                    ))}
+                </SidebarNav>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
         </div>
 
-        <SidebarGroup className="flex-1">
-          {!collapsed && (
-            <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
-              Principal
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent className={collapsed ? "" : "px-4"}>
-            <SidebarMenu className="space-y-1">
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isActive(item.url)} 
-                    tooltip={collapsed ? item.title : undefined}
-                    className="w-full"
-                  >
-                    <Link
-                      to={item.url}
-                      className={cn(
-                        "flex items-center rounded-lg transition-all duration-200 group",
-                        collapsed 
-                          ? "justify-center w-20 h-14 mx-auto" 
-                          : "justify-start space-x-3 px-3 py-2.5",
-                        isActive(item.url)
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <item.icon className={cn(
-                        "shrink-0 transition-all duration-200",
-                        collapsed ? "h-5 w-5" : "h-5 w-5",
-                        isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
-                      )} />
-                      {!collapsed && <span className="font-medium truncate">{item.title}</span>}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {managementItems.length > 0 && (
-          <SidebarGroup>
-            {!collapsed && (
-              <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
-                Gestão
-              </SidebarGroupLabel>
-            )}
-            <SidebarGroupContent className={collapsed ? "" : "px-4"}>
-              <SidebarMenu className="space-y-1">
-                {managementItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={isActive(item.url)} 
-                      tooltip={collapsed ? item.title : undefined}
-                      className="w-full"
-                    >
-                      <Link
-                        to={item.url}
-                        className={cn(
-                          "flex items-center rounded-lg transition-all duration-200 group",
-                          collapsed 
-                            ? "justify-center p-4 w-20 h-14 mx-auto" 
-                            : "justify-start space-x-3 px-3 py-2.5",
-                          isActive(item.url)
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                        )}
-                      >
-                        <item.icon className={cn(
-                          "shrink-0 transition-all duration-200",
-                          collapsed ? "h-5 w-5" : "h-5 w-5",
-                          isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
-                        )} />
-                        {!collapsed && <span className="font-medium truncate">{item.title}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {configItems.length > 0 && (
-          <SidebarGroup>
-            {!collapsed && (
-              <SidebarGroupLabel className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
-                Sistema
-              </SidebarGroupLabel>
-            )}
-            <SidebarGroupContent className={collapsed ? "" : "px-4"}>
-              <SidebarMenu className="space-y-1">
-                {configItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={isActive(item.url)} 
-                      tooltip={collapsed ? item.title : undefined}
-                      className="w-full"
-                    >
-                      <Link
-                        to={item.url}
-                        className={cn(
-                          "flex items-center rounded-lg transition-all duration-200 group",
-                          collapsed 
-                            ? "justify-center p-4 w-20 h-14 mx-auto" 
-                            : "justify-start space-x-3 px-3 py-2.5",
-                          isActive(item.url)
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm border-r-2 border-sidebar-primary"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                        )}
-                      >
-                        <item.icon className={cn(
-                          "shrink-0 transition-all duration-200",
-                          collapsed ? "h-5 w-5" : "h-5 w-5",
-                          isActive(item.url) ? "text-sidebar-accent-foreground" : "group-hover:scale-110"
-                        )} />
-                        {!collapsed && <span className="font-medium truncate">{item.title}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        <div className={cn(
-          "mt-auto border-t border-sidebar-border p-4 transition-all duration-300",
-          collapsed ? "p-2" : "p-4"
-        )}>
-          <SidebarMenuButton 
-            asChild 
-            tooltip={collapsed ? "Sair" : undefined}
-            className="w-full"
+        {/* Footer com logout */}
+        <div className="p-4 border-t">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSignOut}
+            className="w-full justify-start"
           >
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className={cn(
-                "w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200",
-                collapsed ? "justify-center h-14 w-20 mx-auto" : "justify-start h-10"
-              )}
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              {!collapsed && <span className="ml-2">Sair</span>}
-            </Button>
-          </SidebarMenuButton>
+            <LogOut className="w-4 h-4 mr-2" />
+            {state !== 'collapsed' && <span>Sair</span>}
+          </Button>
         </div>
       </SidebarContent>
     </Sidebar>

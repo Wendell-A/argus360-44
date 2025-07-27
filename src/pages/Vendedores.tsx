@@ -34,18 +34,33 @@ export default function Vendedores() {
         .from('tenant_users')
         .select(`
           user_id,
-          role,
-          profiles!inner (
-            id,
-            full_name,
-            email
-          )
+          role
         `)
         .eq('tenant_id', activeTenant.tenant_id)
         .eq('active', true);
 
       if (error) throw error;
-      return data || [];
+
+      if (!data || data.length === 0) return [];
+
+      // Buscar profiles separadamente
+      const userIds = data.map(item => item.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          full_name,
+          email
+        `)
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combinar dados
+      return data.map(item => ({
+        ...item,
+        profiles: profilesData?.find(p => p.id === item.user_id)
+      })).filter(item => item.profiles); // Só retorna itens com profile
     },
     enabled: !!activeTenant?.tenant_id,
   });

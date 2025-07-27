@@ -35,7 +35,7 @@ export const useVendedores = () => {
   const { toast } = useToast();
   const { activeTenant } = useAuth();
 
-  // Buscar todos os vendedores usando tenant_users como filtro principal
+  // Buscar todos os vendedores usando tenant_users como fonte principal
   const { data: vendedores = [], isLoading } = useQuery({
     queryKey: ["vendedores", activeTenant?.tenant_id],
     queryFn: async () => {
@@ -45,30 +45,58 @@ export const useVendedores = () => {
 
       console.log("Fetching vendedores for tenant:", activeTenant.tenant_id);
       
-      // Buscar usuários que pertencem ao tenant através de tenant_users
-      const { data: tenantUsers, error: tenantUsersError } = await supabase
+      // Buscar usuários do tenant
+      const { data: tenantUsersData, error: tenantUsersError } = await supabase
         .from("tenant_users")
-        .select("user_id")
+        .select(`
+          user_id,
+          office_id,
+          team_id,
+          active,
+          offices (
+            id,
+            name
+          ),
+          teams (
+            id,
+            name
+          )
+        `)
         .eq("tenant_id", activeTenant.tenant_id)
         .eq("active", true);
 
       if (tenantUsersError) {
-        console.error("Error fetching tenant users:", tenantUsersError);
+        console.error("Error fetching tenant users data:", tenantUsersError);
         throw tenantUsersError;
       }
 
-      if (!tenantUsers || tenantUsers.length === 0) {
+      if (!tenantUsersData || tenantUsersData.length === 0) {
         console.log("No tenant users found for tenant:", activeTenant.tenant_id);
         return [];
       }
 
+<<<<<<< HEAD
       const userIds = tenantUsers.map(tu => tu.user_id);
       console.log("Found user IDs for tenant:", userIds);
 
       // Buscar profiles desses usuários com informações de escritório e equipe
       const { data: profiles, error: profilesError } = await supabase
+=======
+      // Buscar profiles dos usuários separadamente
+      const userIds = tenantUsersData.map(tu => tu.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
         .from("profiles")
-        .select("*")
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          department,
+          position,
+          hierarchical_level,
+          settings
+        `)
         .in("id", userIds);
 
       if (profilesError) {
@@ -76,11 +104,9 @@ export const useVendedores = () => {
         throw profilesError;
       }
 
-      if (!profiles || profiles.length === 0) {
-        console.log("No profiles found for user IDs:", userIds);
-        return [];
-      }
+      console.log("Raw tenant users data:", tenantUsersData);
 
+<<<<<<< HEAD
       // Buscar associações com escritórios
       const { data: officeUsers, error: officeUsersError } = await supabase
         .from("office_users")
@@ -119,6 +145,9 @@ export const useVendedores = () => {
       }
 
       // Buscar vendas apenas para usuários do tenant atual
+=======
+      // Buscar dados de vendas para todos os usuários
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
       const { data: salesData, error: salesError } = await supabase
         .from("sales")
         .select("id, seller_id")
@@ -129,7 +158,7 @@ export const useVendedores = () => {
         console.error("Error fetching sales:", salesError);
       }
 
-      // Buscar comissões apenas para usuários do tenant atual
+      // Buscar comissões para todos os usuários
       const { data: commissionsData, error: commissionsError } = await supabase
         .from("commissions")
         .select("commission_amount, recipient_id")
@@ -144,8 +173,11 @@ export const useVendedores = () => {
       const sales = salesData || [];
       const commissions = commissionsData || [];
 
-      // Para cada profile, calcular dados de vendas e comissões
-      const processedData = profiles.map((profile) => {
+      // Processar dados dos vendedores
+      const processedData = tenantUsersData.map((tenantUser: any) => {
+        const profile = profilesData?.find(p => p.id === tenantUser.user_id);
+        if (!profile) return null;
+        
         const profileSales = sales.filter(s => s.seller_id === profile.id);
         const profileCommissions = commissions.filter(c => c.recipient_id === profile.id);
         
@@ -162,11 +194,16 @@ export const useVendedores = () => {
           team_id: userTeam?.team_id || '',
           sales_count: profileSales.length,
           commission_total: profileCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
-          active: true,
+          active: (profile.settings as any)?.active !== false,
+          office_id: tenantUser.office_id || null,
+          team_id: tenantUser.team_id || null,
+          commission_rate: (profile.settings as any)?.commission_rate || 0,
+          sales_goal: (profile.settings as any)?.sales_goal || 0,
           user: {
             full_name: profile.full_name,
             email: profile.email,
           },
+<<<<<<< HEAD
           office: userOffice ? {
             id: userOffice.office_id,
             name: userOffice.offices?.name || 'N/A'
@@ -177,6 +214,16 @@ export const useVendedores = () => {
           } : undefined
         } as VendedorData;
       });
+=======
+          office: {
+            name: tenantUser.offices?.name || 'Sem escritório'
+          },
+          team: {
+            name: tenantUser.teams?.name || 'Sem equipe'
+          }
+        };
+      }).filter(Boolean); // Remove nulls
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
 
       console.log("Processed vendedores data:", processedData);
       return processedData;
@@ -203,6 +250,8 @@ export const useVendedores = () => {
           phone: vendedor.phone,
           department: vendedor.department,
           position: vendedor.position,
+          hierarchical_level: vendedor.hierarchical_level,
+          settings: vendedor.settings,
         }])
         .select()
         .single();
@@ -212,44 +261,26 @@ export const useVendedores = () => {
         throw profileError;
       }
 
-      // Garantir que o usuário está associado ao tenant
+      // Garantir que o usuário está associado ao tenant com escritório
       const { error: tenantUserError } = await supabase
         .from("tenant_users")
         .insert([{
           user_id: profileData.id,
           tenant_id: activeTenant.tenant_id,
+          office_id: vendedor.office_id || null,
           role: "user",
           active: true,
         }]);
 
       if (tenantUserError) {
         console.error("Error creating tenant user:", tenantUserError);
-        // Não falhar a criação do vendedor por causa disso, mas logar o erro
-      }
-
-      // Se foi selecionado um escritório, criar a associação
-      if (vendedor.office_id && vendedor.office_id !== "") {
-        const { error: officeUserError } = await supabase
-          .from("office_users")
-          .insert([{
-            user_id: profileData.id,
-            office_id: vendedor.office_id,
-            tenant_id: activeTenant.tenant_id,
-            role: "user",
-            active: true,
-          }]);
-
-        if (officeUserError) {
-          console.error("Error creating office user:", officeUserError);
-          // Não falhar a criação do vendedor por causa disso
-        }
+        throw tenantUserError;
       }
 
       return profileData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendedores", activeTenant?.tenant_id] });
-      queryClient.invalidateQueries({ queryKey: ["office_users", activeTenant?.tenant_id] });
       toast({
         title: "Sucesso",
         description: "Vendedor criado com sucesso!",
@@ -265,7 +296,7 @@ export const useVendedores = () => {
     },
   });
 
-  // Atualizar vendedor
+  // Atualizar vendedor - CORRIGIDO
   const updateVendedorMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       if (!activeTenant?.tenant_id) {
@@ -274,7 +305,11 @@ export const useVendedores = () => {
 
       console.log("Updating vendedor:", id, data);
       
+<<<<<<< HEAD
       // Atualizar o profile
+=======
+      // Atualizar profile com todas as informações incluindo hierarchical_level e settings
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
       const { data: result, error } = await supabase
         .from("profiles")
         .update({
@@ -283,21 +318,27 @@ export const useVendedores = () => {
           phone: data.phone,
           department: data.department,
           position: data.position,
+<<<<<<< HEAD
           commission_rate: data.commission_rate,
           hierarchy_level: data.hierarchy_level,
           sales_goal: data.sales_goal,
           whatsapp: data.whatsapp,
           observations: data.observations,
+=======
+          hierarchical_level: data.hierarchical_level,
+          settings: data.settings
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
         })
         .eq("id", id)
         .select()
         .single();
 
       if (error) {
-        console.error("Error updating vendedor:", error);
+        console.error("Error updating profile:", error);
         throw error;
       }
 
+<<<<<<< HEAD
       // Atualizar associação com escritório se necessário
       if (data.office_id) {
         // Primeiro, desativar associações existentes
@@ -343,6 +384,22 @@ export const useVendedores = () => {
 
         if (teamError) {
           console.error("Error updating team association:", teamError);
+=======
+      // Atualizar tenant_users se office_id foi fornecido
+      if (data.settings?.office_id !== undefined) {
+        const { error: tenantUserError } = await supabase
+          .from("tenant_users")
+          .update({ 
+            office_id: data.settings.office_id || null,
+            team_id: data.settings.team_id || null
+          })
+          .eq("user_id", id)
+          .eq("tenant_id", activeTenant.tenant_id);
+
+        if (tenantUserError) {
+          console.error("Error updating tenant user:", tenantUserError);
+          // Não falhar a atualização por causa disso
+>>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
         }
       }
 
@@ -370,11 +427,12 @@ export const useVendedores = () => {
     mutationFn: async (id: string) => {
       console.log("Deactivating vendedor:", id);
       
-      // Desativar associações com escritórios
+      // Desativar na tabela tenant_users
       await supabase
-        .from("office_users")
+        .from("tenant_users")
         .update({ active: false })
-        .eq("user_id", id);
+        .eq("user_id", id)
+        .eq("tenant_id", activeTenant?.tenant_id);
 
       // Atualizar settings do profile
       const { error } = await supabase
@@ -391,7 +449,6 @@ export const useVendedores = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vendedores", activeTenant?.tenant_id] });
-      queryClient.invalidateQueries({ queryKey: ["office_users", activeTenant?.tenant_id] });
       toast({
         title: "Sucesso",
         description: "Vendedor desativado com sucesso!",
