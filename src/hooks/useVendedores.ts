@@ -60,10 +60,27 @@ export const useVendedores = () => {
       const userIds = tenantUsers.map(tu => tu.user_id);
       console.log("Found user IDs for tenant:", userIds);
 
-      // Buscar profiles desses usuários
+      // Buscar profiles desses usuários com joins de escritórios e equipes
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("*")
+        .select(`
+          *,
+          office_users!inner (
+            office_id,
+            active,
+            offices (
+              id,
+              name
+            )
+          ),
+          team_members (
+            team_id,
+            teams (
+              id,
+              name
+            )
+          )
+        `)
         .in("id", userIds);
 
       if (profilesError) {
@@ -103,24 +120,36 @@ export const useVendedores = () => {
       const commissions = commissionsData || [];
 
       // Para cada profile, calcular dados de vendas e comissões
-      const processedData = profiles.map((profile) => {
+      const processedData = profiles.map((profile: any) => {
         const profileSales = sales.filter(s => s.seller_id === profile.id);
         const profileCommissions = commissions.filter(c => c.recipient_id === profile.id);
+
+        // Extrair dados do escritório
+        const activeOfficeUser = profile.office_users?.find((ou: any) => ou.active);
+        const officeName = activeOfficeUser?.offices?.name || 'N/A';
+
+        // Extrair dados da equipe
+        const activeTeamMember = profile.team_members?.[0];
+        const teamName = activeTeamMember?.teams?.name || 'Sem equipe';
 
         return {
           ...profile,
           sales_count: profileSales.length,
           commission_total: profileCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
-          active: true,
+          active: profile.settings?.active !== false,
+          office_id: activeOfficeUser?.office_id,
+          team_id: activeTeamMember?.team_id,
+          commission_rate: profile.settings?.commission_rate || 0,
+          sales_goal: profile.settings?.sales_goal || 0,
           user: {
             full_name: profile.full_name,
             email: profile.email,
           },
           office: {
-            name: 'N/A' // Simplificado por enquanto
+            name: officeName
           },
           team: {
-            name: 'Sem equipe' // Simplificado por enquanto
+            name: teamName
           }
         } as VendedorData;
       });
@@ -215,7 +244,13 @@ export const useVendedores = () => {
   // Atualizar vendedor
   const updateVendedorMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      if (!activeTenant?.tenant_id) {
+        throw new Error("Tenant não encontrado");
+      }
+
       console.log("Updating vendedor:", id, data);
+      
+      // Atualizar profile com todas as informações
       const { data: result, error } = await supabase
         .from("profiles")
         .update({
@@ -224,14 +259,42 @@ export const useVendedores = () => {
           phone: data.phone,
           department: data.department,
           position: data.position,
+          hierarchical_level: data.hierarchical_level,
+          settings: data.settings
         })
         .eq("id", id)
         .select()
         .single();
 
       if (error) {
-        console.error("Error updating vendedor:", error);
+        console.error("Error updating profile:", error);
         throw error;
+      }
+
+      // Atualizar office_users se office_id foi fornecido
+      if (data.settings?.office_id) {
+        // Primeiro, desativar todas as associações existentes
+        await supabase
+          .from("office_users")
+          .update({ active: false })
+          .eq("user_id", id)
+          .eq("tenant_id", activeTenant.tenant_id);
+
+        // Criar nova associação com o escritório
+        const { error: officeError } = await supabase
+          .from("office_users")
+          .upsert({
+            user_id: id,
+            office_id: data.settings.office_id,
+            tenant_id: activeTenant.tenant_id,
+            role: "user",
+            active: true,
+          });
+
+        if (officeError) {
+          console.error("Error updating office association:", officeError);
+          // Não falhar a atualização por causa disso
+        }
       }
 
       return result;

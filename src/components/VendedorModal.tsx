@@ -41,10 +41,10 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
         user_id: vendedor.id || '',
         office_id: vendedor.office_id || '',
         team_id: vendedor.team_id || 'no-team',
-        commission_rate: vendedor.commission_rate || 0,
+        commission_rate: vendedor.commission_rate || vendedor.settings?.commission_rate || 0,
         active: vendedor.active ?? true,
         hierarchy_level: vendedor.hierarchical_level || 1,
-        sales_goal: vendedor.sales_goal || 0,
+        sales_goal: vendedor.sales_goal || vendedor.settings?.sales_goal || 0,
         whatsapp: vendedor.phone || '',
         specialties: vendedor.settings?.specialties || [],
         notes: vendedor.settings?.notes || '',
@@ -253,14 +253,25 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
             <div className="space-y-2">
               <Label htmlFor="hierarchy_level">Nível Hierárquico</Label>
-              <Input
-                id="hierarchy_level"
-                type="number"
-                min="1"
-                max="10"
-                value={formData.hierarchy_level}
-                onChange={(e) => setFormData({ ...formData, hierarchy_level: parseInt(e.target.value) || 1 })}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="hierarchy_level"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.hierarchy_level}
+                  onChange={(e) => setFormData({ ...formData, hierarchy_level: parseInt(e.target.value) || 1 })}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => alert('Nível Hierárquico:\n\n1 = Vendedor Júnior\n2 = Vendedor Pleno\n3 = Vendedor Sênior\n4 = Supervisor\n5 = Coordenador\n6 = Gerente\n7 = Diretor Regional\n8 = Diretor Nacional\n9 = Vice-Presidente\n10 = Presidente\n\nQuanto maior o nível, maior a autoridade e responsabilidade do vendedor na hierarquia organizacional.')}
+                  className="px-3"
+                >
+                  ?
+                </Button>
+              </div>
             </div>
           </div>
 
