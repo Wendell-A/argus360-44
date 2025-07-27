@@ -28,9 +28,9 @@ export function PublicLinkModal({ open, onOpenChange }: PublicLinkModalProps) {
 
   const [formData, setFormData] = useState({
     role: 'user',
-    office_id: '',
-    department_id: '',
-    team_id: '',
+    office_id: 'none',
+    department_id: 'none',
+    team_id: 'none',
     max_uses: '',
     expires_at: '',
   });
@@ -41,9 +41,9 @@ export function PublicLinkModal({ open, onOpenChange }: PublicLinkModalProps) {
     try {
       await createPublicLink.mutateAsync({
         role: formData.role,
-        office_id: formData.office_id || undefined,
-        department_id: formData.department_id || undefined,
-        team_id: formData.team_id || undefined,
+        office_id: formData.office_id === 'none' ? undefined : formData.office_id,
+        department_id: formData.department_id === 'none' ? undefined : formData.department_id,
+        team_id: formData.team_id === 'none' ? undefined : formData.team_id,
         max_uses: formData.max_uses ? parseInt(formData.max_uses) : undefined,
         expires_at: formData.expires_at || undefined,
       });
@@ -51,9 +51,9 @@ export function PublicLinkModal({ open, onOpenChange }: PublicLinkModalProps) {
       // Reset form
       setFormData({
         role: 'user',
-        office_id: '',
-        department_id: '',
-        team_id: '',
+        office_id: 'none',
+        department_id: 'none',
+        team_id: 'none',
         max_uses: '',
         expires_at: '',
       });
@@ -99,7 +99,7 @@ export function PublicLinkModal({ open, onOpenChange }: PublicLinkModalProps) {
                 <SelectValue placeholder="Selecione o escritório" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum escritório específico</SelectItem>
+                <SelectItem value="none">Nenhum escritório específico</SelectItem>
                 {offices.map((office) => (
                   <SelectItem key={office.id} value={office.id}>
                     {office.name}
@@ -116,7 +116,7 @@ export function PublicLinkModal({ open, onOpenChange }: PublicLinkModalProps) {
                 <SelectValue placeholder="Selecione o departamento" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum departamento específico</SelectItem>
+                <SelectItem value="none">Nenhum departamento específico</SelectItem>
                 {departments.map((department) => (
                   <SelectItem key={department.id} value={department.id}>
                     {department.name}
