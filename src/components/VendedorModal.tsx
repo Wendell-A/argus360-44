@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -37,14 +38,15 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
   useEffect(() => {
     if (vendedor) {
+      console.log("Loading vendedor data for editing:", vendedor);
       setFormData({
         user_id: vendedor.id || '',
         office_id: vendedor.office_id || '',
         team_id: vendedor.team_id || 'no-team',
-        commission_rate: vendedor.commission_rate || vendedor.settings?.commission_rate || 0,
-        active: vendedor.active ?? true,
+        commission_rate: vendedor.settings?.commission_rate || 0,
+        active: vendedor.settings?.active !== false,
         hierarchy_level: vendedor.hierarchical_level || 1,
-        sales_goal: vendedor.sales_goal || vendedor.settings?.sales_goal || 0,
+        sales_goal: vendedor.settings?.sales_goal || 0,
         whatsapp: vendedor.phone || '',
         specialties: vendedor.settings?.specialties || [],
         notes: vendedor.settings?.notes || '',
@@ -85,10 +87,12 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
     try {
       if (vendedor) {
-        // Atualizando vendedor existente
+        console.log("Updating existing vendedor:", vendedor.id);
+        
+        // Atualizando vendedor existente - ESTRUTURA CORRIGIDA
         const updateData = {
-          full_name: vendedor.full_name, // Manter o nome atual
-          email: vendedor.email, // Manter o email atual
+          full_name: vendedor.full_name,
+          email: vendedor.email,
           phone: formData.whatsapp,
           department: vendedor.department,
           position: vendedor.position,
@@ -105,6 +109,8 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
             team_id: formData.team_id === 'no-team' ? null : formData.team_id,
           },
         };
+
+        console.log("Update data being sent:", updateData);
 
         await updateVendedor.mutateAsync({
           id: vendedor.id,
