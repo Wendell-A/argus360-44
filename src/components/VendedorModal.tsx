@@ -38,29 +38,16 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
 
   useEffect(() => {
     if (vendedor) {
-<<<<<<< HEAD
-      console.log('Initializing form with vendedor data:', vendedor);
-=======
       console.log("Loading vendedor data for editing:", vendedor);
->>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
       setFormData({
         user_id: vendedor.user_id || vendedor.id || '',
         office_id: vendedor.office_id || '',
-<<<<<<< HEAD
-        team_id: vendedor.team_id || '',
-        commission_rate: vendedor.commission_rate || 0,
-        active: vendedor.active ?? true,
-        hierarchy_level: vendedor.hierarchy_level || vendedor.hierarchical_level || 1,
-        sales_goal: vendedor.sales_goal || 0,
-        whatsapp: vendedor.whatsapp || vendedor.phone || '',
-=======
         team_id: vendedor.team_id || 'no-team',
         commission_rate: vendedor.settings?.commission_rate || 0,
         active: vendedor.settings?.active !== false,
         hierarchy_level: vendedor.hierarchical_level || 1,
         sales_goal: vendedor.settings?.sales_goal || 0,
         whatsapp: vendedor.phone || '',
->>>>>>> 589d1908680ef0cc2ec077e53d0a035a5f1aaf9a
         specialties: vendedor.settings?.specialties || [],
         notes: vendedor.observations || vendedor.settings?.notes || '',
       });
@@ -109,15 +96,13 @@ export function VendedorModal({ open, onOpenChange, vendedor, availableUsers = [
           phone: formData.whatsapp,
           department: vendedor.department,
           position: vendedor.position,
-          commission_rate: formData.commission_rate,
-          hierarchy_level: formData.hierarchy_level,
-          sales_goal: formData.sales_goal,
-          whatsapp: formData.whatsapp,
-          observations: formData.notes,
+          hierarchical_level: formData.hierarchy_level,
           office_id: formData.office_id,
-          team_id: formData.team_id || null,
+          team_id: formData.team_id === 'no-team' ? null : formData.team_id,
           settings: {
             ...vendedor.settings,
+            commission_rate: formData.commission_rate,
+            sales_goal: formData.sales_goal,
             whatsapp: formData.whatsapp,
             specialties: formData.specialties,
             notes: formData.notes,

@@ -1,176 +1,97 @@
-
-# Correção da Edição de Vendedores - 27/01/2025 20:45
-
-**Data:** 27/01/2025 20:45  
-**Responsável:** Sistema de IA Lovable  
-**Tarefa:** Correção do problema de edição de vendedores na tela /vendedores
+# Correção da Edição de Vendedores - 27/01/2025 14:55
 
 ## Problema Identificado
+A funcionalidade de edição de vendedores estava apresentando problemas devido a:
 
-### Sintomas:
-- Ao clicar em "Editar" vendedor, o modal abria mas não conseguia salvar as informações
-- Loop infinito na consulta de dados dos vendedores
-- Dados de escritório não apareciam corretamente
-- Meta de vendas e taxa de comissão não eram persistidas
+1. **Merge Conflicts**: Havia marcadores de merge conflict nos arquivos que impediam a compilação
+2. **Estrutura de dados inconsistente**: A forma como os dados eram estruturados na atualização não estava alinhada com o banco de dados
+3. **Mapeamento incorreto de campos**: Os campos `office_id` e `team_id` não estavam sendo atualizados corretamente na tabela `tenant_users`
 
-### Root Cause Analysis:
-1. **Query com JOIN problemático**: A query em `useVendedores.ts` tentava fazer JOIN entre `profiles` e `office_users`, mas a tabela `office_users` estava vazia
-2. **Fonte de dados incorreta**: Os dados de escritório estão em `tenant_users`, não em `office_users`
-3. **Estrutura de dados inconsistente**: O modal não estava carregando/salvando os dados de `settings` corretamente
-4. **Identificação de vendedor**: A função de update não estava recebendo os dados no formato correto
+## Problemas Corrigidos
 
-## Soluções Implementadas
+### 1. Merge Conflicts Resolvidos
+- **Arquivo**: `src/hooks/useVendedores.ts`
+- **Arquivo**: `src/components/VendedorModal.tsx`
+- Removidos todos os marcadores `<<<<<<< HEAD`, `=======`, e `>>>>>>> hash`
 
-### 1. Correção da Query Principal (`useVendedores.ts`)
+### 2. Estrutura de Dados Corrigida no useVendedores.ts
+- **Função updateVendedorMutation**: Corrigida para enviar dados no formato correto
+- **Campo hierarchical_level**: Ajustado para usar o nome correto da coluna do banco
+- **Atualização tenant_users**: Adicionada lógica para atualizar `office_id` e `team_id` na tabela `tenant_users`
 
-**Antes:**
+### 3. Formulário VendedorModal.tsx
+- **Inicialização do formulário**: Corrigida para usar `vendedor.settings?.campo` para valores específicos
+- **Estrutura updateData**: Ajustada para enviar dados no formato esperado pelo hook
+- **Tratamento de team_id**: Adicionado tratamento especial para o valor 'no-team'
+
+## Alterações Técnicas Realizadas
+
+### Hook useVendedores.ts
 ```typescript
-// JOIN problemático entre profiles e office_users (tabela vazia)
-.select(`
-  profiles!inner (
-    *,
-    office_users!left (
-      office_id,
-      offices (name)
-    )
-  )
-`)
+// Antes (com merge conflicts)
+<<<<<<< HEAD
+commission_rate: data.commission_rate,
+hierarchy_level: data.hierarchy_level,
+=======
+hierarchical_level: data.hierarchical_level,
+settings: data.settings
+>>>>>>> hash
+
+// Depois (corrigido)
+hierarchical_level: data.hierarchical_level,
+settings: data.settings
 ```
 
-**Depois:**
+### Atualização tenant_users
 ```typescript
-// Query otimizada usando tenant_users como fonte única
-.select(`
-  user_id,
-  office_id,
-  team_id,
-  active,
-  profiles!inner (
-    id,
-    full_name,
-    email,
-    phone,
-    department,
-    position,
-    hierarchical_level,
-    settings
-  ),
-  offices (
-    id,
-    name
-  ),
-  teams (
-    id,
-    name
-  )
-`)
+// Adicionado
+if (data.office_id !== undefined || data.team_id !== undefined) {
+  const { error: tenantUserError } = await supabase
+    .from("tenant_users")
+    .update({ 
+      office_id: data.office_id || null,
+      team_id: data.team_id === 'no-team' ? null : data.team_id
+    })
+    .eq("user_id", id)
+    .eq("tenant_id", activeTenant.tenant_id);
+}
 ```
 
-### 2. Correção da Função de Update
-
-**Problema:** A função `updateVendedorMutation` não persistia `hierarchical_level` e `settings`
-
-**Solução:**
+### Modal VendedorModal.tsx
 ```typescript
-const { data: result, error } = await supabase
-  .from("profiles")
-  .update({
-    full_name: data.full_name,
-    email: data.email,
-    phone: data.phone,
-    department: data.department,
-    position: data.position,
-    hierarchical_level: data.hierarchical_level, // ADICIONADO
-    settings: data.settings // ADICIONADO
-  })
-```
-
-### 3. Correção do Modal (`VendedorModal.tsx`)
-
-**Problema:** Carregamento e estrutura de dados incorretos
-
-**Solução:**
-- Carregamento correto dos dados de `settings`:
-```typescript
-commission_rate: vendedor.settings?.commission_rate || 0,
-active: vendedor.settings?.active !== false,
-sales_goal: vendedor.settings?.sales_goal || 0,
-```
-
-- Estrutura correta de dados para update:
-```typescript
-settings: {
-  ...vendedor.settings,
-  whatsapp: formData.whatsapp,
-  specialties: formData.specialties,
-  notes: formData.notes,
-  active: formData.active,
-  commission_rate: formData.commission_rate,
-  sales_goal: formData.sales_goal,
+// Estrutura de dados corrigida para update
+const updateData = {
+  full_name: vendedor.full_name,
+  email: vendedor.email,
+  phone: formData.whatsapp,
+  department: vendedor.department,
+  position: vendedor.position,
+  hierarchical_level: formData.hierarchy_level,
   office_id: formData.office_id,
   team_id: formData.team_id === 'no-team' ? null : formData.team_id,
-},
+  settings: {
+    ...vendedor.settings,
+    commission_rate: formData.commission_rate,
+    sales_goal: formData.sales_goal,
+    whatsapp: formData.whatsapp,
+    specialties: formData.specialties,
+    notes: formData.notes,
+    active: formData.active,
+  },
+};
 ```
 
-### 4. Atualização da Associação com Escritórios
+## Funcionalidades Restauradas
+1. ✅ **Edição de vendedores**: Agora funciona corretamente
+2. ✅ **Atualização de escritório**: office_id é atualizado em tenant_users
+3. ✅ **Atualização de equipe**: team_id é atualizado em tenant_users
+4. ✅ **Atualização de configurações**: Todos os campos do settings são preservados
+5. ✅ **Compilação**: Sistema compila sem erros
 
-**Implementação:**
-- Adicionada lógica para atualizar `tenant_users` quando escritório é alterado
-- Garantia de consistência entre `profiles.settings` e `tenant_users`
+## Banco de Dados Impactado
+- **Tabela**: `profiles` - dados do vendedor
+- **Tabela**: `tenant_users` - associação com escritório e equipe
+- **Campos atualizados**: `office_id`, `team_id`, `hierarchical_level`, `settings`
 
-## Arquivos Modificados
-
-1. **src/hooks/useVendedores.ts**
-   - Query principal otimizada usando `tenant_users` + JOIN com `profiles`
-   - Função `updateVendedorMutation` corrigida
-   - Processamento de dados ajustado
-
-2. **src/components/VendedorModal.tsx**
-   - Carregamento correto de dados de `settings`
-   - Estrutura de dados para update corrigida
-   - Logs adicionados para debugging
-
-3. **documentacao/alteracoes/correcao-edicao-vendedores-27-01-2025.md**
-   - Documentação completa das correções
-
-## Validações Implementadas
-
-- ✅ Query otimizada sem JOINs problemáticos
-- ✅ Carregamento correto de dados de escritório de `tenant_users`
-- ✅ Persistência de `hierarchical_level` e `settings`
-- ✅ Estrutura consistente de dados entre carregamento e salvamento
-- ✅ Logs detalhados para debugging
-
-## Testes Recomendados
-
-1. **Teste de Listagem**:
-   - Acessar /vendedores
-   - Verificar se lista carrega sem loop infinito
-   - Confirmar se dados de escritório aparecem corretamente
-
-2. **Teste de Edição**:
-   - Clicar em "Editar" em qualquer vendedor
-   - Modificar dados (meta, comissão, escritório, hierarquia)
-   - Salvar e verificar persistência
-   - Confirmar atualização na lista
-
-3. **Teste de Persistência**:
-   - Editar vendedor e salvar
-   - Recarregar página
-   - Editar mesmo vendedor novamente
-   - Verificar se dados foram mantidos
-
-## Melhorias de Performance
-
-- Query otimizada com menos JOINs
-- Uso de uma única fonte de dados (`tenant_users`)
-- Eliminação do loop infinito
-- Carregamento mais eficiente de dados relacionais
-
-## Status: ✅ CONCLUÍDO
-
-A edição de vendedores agora funciona corretamente. O sistema:
-- Carrega a lista sem loop infinito
-- Identifica corretamente o vendedor a ser editado
-- Persiste todas as informações (meta, comissão, hierarquia, settings)
-- Mantém consistência de dados entre `profiles`, `tenant_users` e relações
+## Status
+✅ **CONCLUÍDO** - Sistema de edição de vendedores funcionando corretamente
