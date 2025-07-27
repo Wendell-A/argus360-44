@@ -30,6 +30,7 @@ import Auditoria from './pages/Auditoria';
 import Permissoes from './pages/Permissoes';
 import Convites from './pages/Convites';
 import AceitarConvite from './pages/AceitarConvite';
+import RegistrarComToken from './pages/RegistrarComToken';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -48,7 +49,8 @@ function App() {
               <Route path="/auth/register" element={<PublicRoute><Register /></PublicRoute>} />
               
               {/* Invitation Route - Can be accessed by both authenticated and unauthenticated users */}
-              <Route path="/aceitar-convite/:token" element={<AceitarConvite />} />
+        <Route path="/aceitar-convite/:token" element={<AceitarConvite />} />
+        <Route path="/registrar/:token" element={<RegistrarComToken />} />
               
               {/* Protected Routes */}
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />

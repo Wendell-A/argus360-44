@@ -1131,6 +1131,60 @@ export type Database = {
           },
         ]
       }
+      public_invitation_links: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          current_uses: number | null
+          department_id: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          metadata: Json | null
+          office_id: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          team_id: string | null
+          tenant_id: string
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          current_uses?: number | null
+          department_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          metadata?: Json | null
+          office_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          team_id?: string | null
+          tenant_id: string
+          token: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          current_uses?: number | null
+          department_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          metadata?: Json | null
+          office_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          team_id?: string | null
+          tenant_id?: string
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string | null
@@ -1778,6 +1832,15 @@ export type Database = {
         }
         Returns: Json
       }
+      accept_public_invitation: {
+        Args: {
+          p_token: string
+          p_user_id: string
+          p_email: string
+          p_full_name: string
+        }
+        Returns: Json
+      }
       add_user_to_tenant: {
         Args: {
           user_id: string
@@ -1821,6 +1884,10 @@ export type Database = {
         Returns: Json
       }
       generate_invitation_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_public_invitation_token: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
@@ -2023,6 +2090,10 @@ export type Database = {
       }
       validate_invitation: {
         Args: { invitation_token: string }
+        Returns: Json
+      }
+      validate_public_invitation_token: {
+        Args: { p_token: string }
         Returns: Json
       }
     }
