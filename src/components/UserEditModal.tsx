@@ -319,14 +319,14 @@ export function UserEditModal({ user, open, onOpenChange }: UserEditModalProps) 
                 <div>
                   <Label htmlFor="office">Escritório</Label>
                   <Select
-                    value={tenantData.office_id}
-                    onValueChange={(value) => setTenantData({ ...tenantData, office_id: value })}
+                    value={tenantData.office_id || 'none'}
+                    onValueChange={(value) => setTenantData({ ...tenantData, office_id: value === 'none' ? '' : value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um escritório" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sem escritório</SelectItem>
+                      <SelectItem value="none">Sem escritório</SelectItem>
                       {offices.map((office) => (
                         <SelectItem key={office.id} value={office.id}>
                           {office.name}
@@ -339,14 +339,14 @@ export function UserEditModal({ user, open, onOpenChange }: UserEditModalProps) 
                 <div>
                   <Label htmlFor="department">Departamento</Label>
                   <Select
-                    value={tenantData.department_id}
-                    onValueChange={(value) => setTenantData({ ...tenantData, department_id: value })}
+                    value={tenantData.department_id || 'none'}
+                    onValueChange={(value) => setTenantData({ ...tenantData, department_id: value === 'none' ? '' : value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um departamento" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sem departamento</SelectItem>
+                      <SelectItem value="none">Sem departamento</SelectItem>
                       {departments.map((department) => (
                         <SelectItem key={department.id} value={department.id}>
                           {department.name}
@@ -359,14 +359,14 @@ export function UserEditModal({ user, open, onOpenChange }: UserEditModalProps) 
                 <div>
                   <Label htmlFor="team">Equipe</Label>
                   <Select
-                    value={tenantData.team_id}
-                    onValueChange={(value) => setTenantData({ ...tenantData, team_id: value })}
+                    value={tenantData.team_id || 'none'}
+                    onValueChange={(value) => setTenantData({ ...tenantData, team_id: value === 'none' ? '' : value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma equipe" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sem equipe</SelectItem>
+                      <SelectItem value="none">Sem equipe</SelectItem>
                       {teams.map((team) => (
                         <SelectItem key={team.id} value={team.id}>
                           {team.name}
