@@ -11,7 +11,7 @@ export interface AuditLogEntry {
   action: string;
   old_values?: any;
   new_values?: any;
-  ip_address?: string;
+  ip_address?: unknown;
   user_agent?: string;
   created_at: string;
   user_role?: string;

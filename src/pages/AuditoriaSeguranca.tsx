@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DatePickerWithRange } from "@/components/ui/date-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { 
   Shield, 
   Activity, 
@@ -324,7 +324,7 @@ export default function AuditoriaSeguranca() {
                             {log.table_name}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {log.ip_address || 'N/A'}
+                            {log.ip_address ? String(log.ip_address) : 'N/A'}
                           </TableCell>
                           <TableCell>
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
