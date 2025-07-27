@@ -123,7 +123,7 @@ const SimulacaoConsorcio = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-blue-600" />
+                <Building2 className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Consórcio</p>
                   <p className="text-lg font-bold">{formatCurrency(consortiumCalculation.monthlyPayment)}</p>
@@ -135,7 +135,7 @@ const SimulacaoConsorcio = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Financiamento</p>
                   <p className="text-lg font-bold">{formatCurrency(priceCalculation.monthlyPayment)}</p>
@@ -147,10 +147,10 @@ const SimulacaoConsorcio = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-purple-600" />
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Economia</p>
-                  <p className={`text-lg font-bold ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`text-lg font-bold ${economyAmount > 0 ? 'text-primary' : 'text-destructive'}`}>
                     {formatCurrency(Math.abs(economyAmount))}
                   </p>
                 </div>
@@ -161,7 +161,7 @@ const SimulacaoConsorcio = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-orange-600" />
+                <Target className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Banco</p>
                   <p className="text-lg font-bold">{selectedBank}</p>
@@ -176,7 +176,7 @@ const SimulacaoConsorcio = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-blue-600" />
+                <Building2 className="h-5 w-5 text-muted-foreground" />
                 Simulação de Consórcio
               </CardTitle>
               <CardDescription>
@@ -251,8 +251,8 @@ const SimulacaoConsorcio = () => {
                 />
               </div>
 
-              <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Resultado do Consórcio</h4>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold text-foreground mb-2">Resultado do Consórcio</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Carta de Crédito:</span>
@@ -283,7 +283,7 @@ const SimulacaoConsorcio = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
+                <DollarSign className="h-5 w-5 text-muted-foreground" />
                 Simulação de Financiamento
               </CardTitle>
               <CardDescription>
@@ -336,8 +336,8 @@ const SimulacaoConsorcio = () => {
                 onBankSelect={handleBankSelect}
               />
 
-              <div className="p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Resultado do Financiamento</h4>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold text-foreground mb-2">Resultado do Financiamento</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Valor do Bem:</span>
@@ -383,27 +383,27 @@ const SimulacaoConsorcio = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-4 border rounded-lg">
-                <Building2 className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-blue-600 mb-2">Consórcio</h3>
+                <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <h3 className="font-semibold text-foreground mb-2">Consórcio</h3>
                 <p className="text-2xl font-bold mb-1">{formatCurrency(consortiumCalculation.monthlyPayment)}</p>
                 <p className="text-sm text-muted-foreground">parcela mensal</p>
                 <p className="text-sm mt-2">Total: {formatCurrency(consortiumCalculation.totalCost)}</p>
               </div>
 
               <div className="text-center p-4 border rounded-lg">
-                <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-green-600 mb-2">Financiamento {selectedBank}</h3>
+                <DollarSign className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <h3 className="font-semibold text-foreground mb-2">Financiamento {selectedBank}</h3>
                 <p className="text-2xl font-bold mb-1">{formatCurrency(priceCalculation.monthlyPayment)}</p>
                 <p className="text-sm text-muted-foreground">parcela mensal</p>
                 <p className="text-sm mt-2">Total: {formatCurrency(priceCalculation.totalAmount)}</p>
               </div>
 
-              <div className={`text-center p-4 border-2 rounded-lg ${economyAmount > 0 ? 'border-green-500 bg-green-50 dark:bg-green-950' : 'border-red-500 bg-red-50 dark:bg-red-950'}`}>
-                <Target className={`h-8 w-8 mx-auto mb-2 ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`} />
-                <h3 className={`font-semibold mb-2 ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-center p-4 border-2 rounded-lg ${economyAmount > 0 ? 'border-primary bg-muted' : 'border-destructive bg-muted'}`}>
+                <Target className={`h-8 w-8 mx-auto mb-2 ${economyAmount > 0 ? 'text-primary' : 'text-destructive'}`} />
+                <h3 className={`font-semibold mb-2 ${economyAmount > 0 ? 'text-primary' : 'text-destructive'}`}>
                   {economyAmount > 0 ? 'Economia' : 'Diferença'}
                 </h3>
-                <p className={`text-2xl font-bold mb-1 ${economyAmount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-2xl font-bold mb-1 ${economyAmount > 0 ? 'text-primary' : 'text-destructive'}`}>
                   {formatCurrency(Math.abs(economyAmount))}
                 </p>
                 <p className="text-sm text-muted-foreground">
