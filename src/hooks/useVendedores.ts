@@ -60,36 +60,10 @@ export const useVendedores = () => {
       const userIds = tenantUsers.map(tu => tu.user_id);
       console.log("Found user IDs for tenant:", userIds);
 
-      // Debug: Verificar office_users existentes
-      const { data: officeUsersDebug } = await supabase
-        .from("office_users")
-        .select("*")
-        .eq("tenant_id", activeTenant.tenant_id)
-        .in("user_id", userIds);
-      
-      console.log("Office users data for debugging:", officeUsersDebug);
-
-      // Buscar profiles desses usuários com LEFT joins de escritórios e equipes
+      // Buscar profiles desses usuários
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select(`
-          *,
-          office_users (
-            office_id,
-            active,
-            offices (
-              id,
-              name
-            )
-          ),
-          team_members (
-            team_id,
-            teams (
-              id,
-              name
-            )
-          )
-        `)
+        .select("*")
         .in("id", userIds);
 
       if (profilesError) {
@@ -101,6 +75,48 @@ export const useVendedores = () => {
         console.log("No profiles found for user IDs:", userIds);
         return [];
       }
+
+      // Buscar dados de escritórios separadamente
+      const { data: officeUsers, error: officeError } = await supabase
+        .from("office_users")
+        .select(`
+          user_id,
+          office_id,
+          active,
+          offices (
+            id,
+            name
+          )
+        `)
+        .eq("tenant_id", activeTenant.tenant_id)
+        .eq("active", true)
+        .in("user_id", userIds);
+
+      if (officeError) {
+        console.error("Error fetching office users:", officeError);
+      }
+
+      // Buscar dados de equipes separadamente  
+      const { data: teamMembers, error: teamError } = await supabase
+        .from("team_members")
+        .select(`
+          user_id,
+          team_id,
+          active,
+          teams (
+            id,
+            name
+          )
+        `)
+        .eq("active", true)
+        .in("user_id", userIds);
+
+      if (teamError) {
+        console.error("Error fetching team members:", teamError);
+      }
+
+      console.log("Office users data:", officeUsers);
+      console.log("Team members data:", teamMembers);
 
       // Buscar vendas apenas para usuários do tenant atual
       const { data: salesData, error: salesError } = await supabase
@@ -133,22 +149,23 @@ export const useVendedores = () => {
         const profileSales = sales.filter(s => s.seller_id === profile.id);
         const profileCommissions = commissions.filter(c => c.recipient_id === profile.id);
 
-        // Extrair dados do escritório
-        console.log("Processing profile office data:", profile.id, profile.office_users);
-        const activeOfficeUser = profile.office_users?.find((ou: any) => ou.active);
-        const officeName = activeOfficeUser?.offices?.name || 'N/A';
+        // Extrair dados do escritório das queries separadas
+        const userOffice = officeUsers?.find((ou: any) => ou.user_id === profile.id);
+        const officeName = userOffice?.offices?.name || 'Sem escritório';
+        const officeId = userOffice?.office_id;
 
-        // Extrair dados da equipe
-        const activeTeamMember = profile.team_members?.[0];
-        const teamName = activeTeamMember?.teams?.name || 'Sem equipe';
+        // Extrair dados da equipe das queries separadas
+        const userTeam = teamMembers?.find((tm: any) => tm.user_id === profile.id);
+        const teamName = userTeam?.teams?.name || 'Sem equipe';
+        const teamId = userTeam?.team_id;
 
         return {
           ...profile,
           sales_count: profileSales.length,
           commission_total: profileCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
           active: profile.settings?.active !== false,
-          office_id: activeOfficeUser?.office_id,
-          team_id: activeTeamMember?.team_id,
+          office_id: officeId,
+          team_id: teamId,
           commission_rate: profile.settings?.commission_rate || 0,
           sales_goal: profile.settings?.sales_goal || 0,
           user: {
