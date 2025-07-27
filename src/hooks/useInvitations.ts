@@ -111,6 +111,32 @@ export const useInvitations = () => {
         }
 
         console.log('✅ Convite salvo com sucesso:', data.id);
+        
+        // Enviar email de convite
+        try {
+          console.log('📧 Enviando email de convite...');
+          const emailResult = await supabase.functions.invoke('send-invitation-email', {
+            body: {
+              email,
+              inviterName: user.user_metadata?.full_name || user.email || 'Administrador',
+              tenantName: 'Organização',
+              role,
+              invitationToken: data.token,
+              invitationId: data.id
+            }
+          });
+
+          if (emailResult.error) {
+            console.error('❌ Erro ao enviar email:', emailResult.error);
+            // Não falha a operação se o email não for enviado
+          } else {
+            console.log('✅ Email de convite enviado com sucesso');
+          }
+        } catch (emailError) {
+          console.error('❌ Erro no envio do email:', emailError);
+          // Não falha a operação se o email não for enviado
+        }
+
         return data;
       } catch (error) {
         console.error('❌ Erro completo no envio de convite:', error);
