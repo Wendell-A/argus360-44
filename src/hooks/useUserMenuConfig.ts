@@ -35,18 +35,30 @@ export const useUserMenuConfig = () => {
         throw error;
       }
 
-      // Garantir que data é um objeto e tem as propriedades necessárias
-      const menuConfig = data as MenuConfig || {};
+      // Garantir que data é um objeto válido com as propriedades necessárias
+      const rawData = (data as any) || {};
       
-      // Adicionar configuração para tela de usuários se modules existe
-      if (menuConfig.modules && typeof menuConfig.modules === 'object') {
-        menuConfig.modules.users = menuConfig.role === 'owner' || menuConfig.role === 'admin';
-      } else {
-        // Se modules não existe, criar com configuração básica
-        menuConfig.modules = {
-          users: menuConfig.role === 'owner' || menuConfig.role === 'admin'
-        };
+      // Criar configuração base garantindo todas as propriedades necessárias
+      const menuConfig: MenuConfig = {
+        role: rawData.role || 'user',
+        context_level: rawData.context_level || 0,
+        modules: {}
+      };
+
+      // Copiar outras propriedades se existirem
+      Object.keys(rawData).forEach(key => {
+        if (!['role', 'context_level', 'modules'].includes(key)) {
+          menuConfig[key] = rawData[key];
+        }
+      });
+
+      // Configurar modules baseado no que existe ou criar padrão
+      if (rawData.modules && typeof rawData.modules === 'object') {
+        menuConfig.modules = { ...rawData.modules };
       }
+      
+      // Adicionar configuração para tela de usuários baseado no role
+      menuConfig.modules.users = menuConfig.role === 'owner' || menuConfig.role === 'admin';
 
       console.log('✅ Menu config loaded:', menuConfig);
       return menuConfig;
