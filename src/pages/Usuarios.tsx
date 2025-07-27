@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -117,10 +116,10 @@ export default function Usuarios() {
     return (
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-64"></div>
+          <div className="h-8 bg-muted rounded w-64"></div>
           <div className="grid gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+              <div key={i} className="h-24 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -148,7 +147,7 @@ export default function Usuarios() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
                 <p className="text-2xl font-bold">{users.length}</p>
@@ -170,7 +169,7 @@ export default function Usuarios() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <UserX className="w-5 h-5 text-red-600" />
+              <UserX className="w-5 h-5 text-destructive" />
               <div>
                 <p className="text-sm text-muted-foreground">Inativos</p>
                 <p className="text-2xl font-bold">{users.filter(u => !u.active).length}</p>
@@ -181,7 +180,7 @@ export default function Usuarios() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-purple-600" />
+              <Shield className="w-5 h-5 text-secondary" />
               <div>
                 <p className="text-sm text-muted-foreground">Admins</p>
                 <p className="text-2xl font-bold">{users.filter(u => u.role === 'admin' || u.role === 'owner').length}</p>
