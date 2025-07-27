@@ -123,7 +123,8 @@ export default function AppSidebar() {
         <div className="p-4 border-b">
           <div className="flex items-center gap-3">
             <UserAvatar 
-              user={currentUser || { full_name: user?.email || 'Usuário', avatar_url: null }} 
+              avatarUrl={currentUser?.avatar_url}
+              fullName={currentUser?.full_name || user?.email || 'Usuário'}
               size="md" 
             />
             {state !== 'collapsed' && (
