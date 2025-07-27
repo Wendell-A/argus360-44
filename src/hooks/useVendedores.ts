@@ -40,7 +40,7 @@ export const useVendedores = () => {
 
       console.log("Fetching vendedores for tenant:", activeTenant.tenant_id);
       
-      // Buscar usuários do tenant com dados de escritório e profile em uma query otimizada
+      // Buscar usuários do tenant
       const { data: tenantUsersData, error: tenantUsersError } = await supabase
         .from("tenant_users")
         .select(`
@@ -48,16 +48,6 @@ export const useVendedores = () => {
           office_id,
           team_id,
           active,
-          profiles!inner (
-            id,
-            full_name,
-            email,
-            phone,
-            department,
-            position,
-            hierarchical_level,
-            settings
-          ),
           offices (
             id,
             name
@@ -80,10 +70,28 @@ export const useVendedores = () => {
         return [];
       }
 
-      console.log("Raw tenant users data:", tenantUsersData);
-
+      // Buscar profiles dos usuários separadamente
       const userIds = tenantUsersData.map(tu => tu.user_id);
-      console.log("Found user IDs for tenant:", userIds);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          department,
+          position,
+          hierarchical_level,
+          settings
+        `)
+        .in("id", userIds);
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
+
+      console.log("Raw tenant users data:", tenantUsersData);
 
       // Buscar dados de vendas para todos os usuários
       const { data: salesData, error: salesError } = await supabase
@@ -113,7 +121,9 @@ export const useVendedores = () => {
 
       // Processar dados dos vendedores
       const processedData = tenantUsersData.map((tenantUser: any) => {
-        const profile = tenantUser.profiles;
+        const profile = profilesData?.find(p => p.id === tenantUser.user_id);
+        if (!profile) return null;
+        
         const profileSales = sales.filter(s => s.seller_id === profile.id);
         const profileCommissions = commissions.filter(c => c.recipient_id === profile.id);
 
@@ -121,11 +131,11 @@ export const useVendedores = () => {
           ...profile,
           sales_count: profileSales.length,
           commission_total: profileCommissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0),
-          active: profile.settings?.active !== false,
+          active: (profile.settings as any)?.active !== false,
           office_id: tenantUser.office_id || null,
           team_id: tenantUser.team_id || null,
-          commission_rate: profile.settings?.commission_rate || 0,
-          sales_goal: profile.settings?.sales_goal || 0,
+          commission_rate: (profile.settings as any)?.commission_rate || 0,
+          sales_goal: (profile.settings as any)?.sales_goal || 0,
           user: {
             full_name: profile.full_name,
             email: profile.email,
@@ -136,8 +146,8 @@ export const useVendedores = () => {
           team: {
             name: tenantUser.teams?.name || 'Sem equipe'
           }
-        } as VendedorData;
-      });
+        };
+      }).filter(Boolean); // Remove nulls
 
       console.log("Processed vendedores data:", processedData);
       return processedData;

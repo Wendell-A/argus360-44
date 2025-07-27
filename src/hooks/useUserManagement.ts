@@ -66,57 +66,77 @@ export const useUserManagement = () => {
           active,
           joined_at,
           created_at,
-          updated_at,
-          profile:profiles!inner(
-            id,
-            email,
-            full_name,
-            phone,
-            avatar_url,
-            department,
-            position,
-            hire_date,
-            last_access,
-            settings,
-            created_at,
-            updated_at
-          )
+          updated_at
         `)
         .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Erro ao buscar usuários:', error);
+        console.error('❌ Erro ao buscar tenant_users:', error);
         throw error;
+      }
+
+      // Buscar perfis dos usuários separadamente
+      if (!data || data.length === 0) {
+        console.log('✅ Nenhum tenant_user encontrado');
+        return [];
+      }
+
+      const userIds = data.map(item => item.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          full_name,
+          phone,
+          avatar_url,
+          department,
+          position,
+          hire_date,
+          last_access,
+          settings,
+          created_at,
+          updated_at
+        `)
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('❌ Erro ao buscar profiles:', profilesError);
+        throw profilesError;
       }
 
       console.log('✅ Usuários encontrados:', data?.length || 0);
       
       // Transformar os dados para o formato esperado
-      const transformedData = data?.map((item: any) => ({
-        user_id: item.user_id,
-        tenant_id: item.tenant_id,
-        role: item.role,
-        office_id: item.office_id,
-        department_id: item.department_id,
-        team_id: item.team_id,
-        active: item.active,
-        joined_at: item.joined_at,
-        profile: {
-          id: item.profile?.id || item.user_id,
-          email: item.profile?.email || 'Email não informado',
-          full_name: item.profile?.full_name || 'Nome não informado',
-          phone: item.profile?.phone,
-          avatar_url: item.profile?.avatar_url,
-          department: item.profile?.department,
-          position: item.profile?.position,
-          hire_date: item.profile?.hire_date,
-          last_access: item.profile?.last_access,
-          settings: item.profile?.settings,
-          created_at: item.profile?.created_at || item.created_at,
-          updated_at: item.profile?.updated_at || item.updated_at,
-        }
-      })) || [];
+      const transformedData = data?.map((item: any) => {
+        const profile = profilesData?.find(p => p.id === item.user_id);
+        
+        return {
+          user_id: item.user_id,
+          tenant_id: item.tenant_id,
+          role: item.role,
+          office_id: item.office_id,
+          department_id: item.department_id,
+          team_id: item.team_id,
+          active: item.active,
+          joined_at: item.joined_at,
+          profile: {
+            id: profile?.id || item.user_id,
+            email: profile?.email || 'Email não informado',
+            full_name: profile?.full_name || 'Nome não informado',
+            phone: profile?.phone,
+            avatar_url: profile?.avatar_url,
+            department: profile?.department,
+            position: profile?.position,
+            hire_date: profile?.hire_date,
+            last_access: profile?.last_access,
+            settings: profile?.settings,
+            created_at: profile?.created_at || item.created_at,
+            updated_at: profile?.updated_at || item.updated_at,
+          }
+        };
+      }) || [];
 
       return transformedData as UserTenantAssociation[];
     },
