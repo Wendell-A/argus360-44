@@ -9,6 +9,7 @@
 Após análise detalhada do sistema atual, foram identificadas **7 oportunidades críticas** de otimização que podem reduzir em **60-80%** a carga no banco de dados e melhorar a performance da aplicação em **40-60%**.
 
 ### 🎯 Métricas Atuais Observadas
+
 - **18 requisições simultâneas** no carregamento da tela de usuários
 - **Múltiplas consultas redundantes** para os mesmos dados
 - **Cache subutilizado** - apenas 15% dos hooks usam cache inteligente
@@ -19,12 +20,14 @@ Após análise detalhada do sistema atual, foram identificadas **7 oportunidades
 ### 1. Sistema de Cache Atual
 
 #### ✅ Pontos Positivos
+
 - **CacheManager implementado** com TTL inteligente (5 min padrão)
 - **Monitoramento integrado** com métricas de hit/miss
 - **Invalidação por padrão** disponível
 - **Limpeza automática** quando atinge limite (1000 entradas)
 
 #### ⚠️ Problemas Identificados
+
 - **Baixa adoção**: Apenas hooks contextuais usam cache
 - **TTL inadequado**: 5 minutos pode ser muito baixo para dados estáticos
 - **Falta de estratégia de preload**: Dados críticos não são pré-carregados
@@ -33,10 +36,11 @@ Após análise detalhada do sistema atual, foram identificadas **7 oportunidades
 ### 2. Padrões de Requisições Identificados
 
 #### A. Tela de Usuários (/usuarios)
+
 ```
 🔴 CRÍTICO: 18 requisições ao carregar a página
 ├── tenant_users (2x duplicada)
-├── offices (2x duplicada) 
+├── offices (2x duplicada)
 ├── profiles (2x duplicada)
 ├── departments (1x)
 ├── positions (1x)
@@ -45,11 +49,13 @@ Após análise detalhada do sistema atual, foram identificadas **7 oportunidades
 ```
 
 **Problemas:**
+
 - Hooks duplicados executando as mesmas queries
 - Falta de coordenação entre hooks
 - Dados relacionados buscados separadamente
 
 #### B. Dashboard Principal
+
 ```
 🔴 CRÍTICO: Queries pesadas executadas a cada renderização
 ├── useDashboardStats: ~8 queries separadas
@@ -59,6 +65,7 @@ Após análise detalhada do sistema atual, foram identificadas **7 oportunidades
 ```
 
 #### C. Hook useUserManagement
+
 ```
 🔴 CRÍTICO: N+1 Query Pattern
 1. Busca tenant_users
@@ -71,11 +78,13 @@ Após análise detalhada do sistema atual, foram identificadas **7 oportunidades
 Baseado nos logs de requisições observados:
 
 #### Requisições Redundantes Detectadas:
+
 1. **tenant_users**: Consultada 3x em 20 segundos
 2. **offices**: Consultada 2x idênticas
 3. **profiles**: Consultada para mesmos IDs múltiplas vezes
 
 #### Queries Ineficientes:
+
 1. **useUserManagement**: Separa tenant_users e profiles
 2. **useDashboardStats**: 8 queries independentes vs 1 RPC contextual
 3. **Busca de relacionamentos**: JOIN manual no frontend
@@ -87,10 +96,10 @@ Baseado nos logs de requisições observados:
 ```typescript
 // Nova estratégia de cache por tipo de dado
 const CACHE_STRATEGIES = {
-  'static-data': { ttl: 30 * 60 * 1000 }, // 30 min - offices, departments
-  'user-data': { ttl: 10 * 60 * 1000 },  // 10 min - profiles, roles
-  'dynamic-data': { ttl: 2 * 60 * 1000 }, // 2 min - sales, commissions
-  'real-time': { ttl: 30 * 1000 }         // 30 seg - dashboard stats
+  "static-data": { ttl: 30 * 60 * 1000 }, // 30 min - offices, departments
+  "user-data": { ttl: 10 * 60 * 1000 }, // 10 min - profiles, roles
+  "dynamic-data": { ttl: 2 * 60 * 1000 }, // 2 min - sales, commissions
+  "real-time": { ttl: 30 * 1000 }, // 30 seg - dashboard stats
 };
 ```
 
@@ -99,18 +108,20 @@ const CACHE_STRATEGIES = {
 ### 2. **PRIORIDADE ALTA**: Consolidar Hooks Redundantes
 
 #### A. UserManagement Otimizado
+
 ```typescript
 // Atual: 1 + N queries
-const { data: tenantUsers } = useQuery(['tenant-users']);
-const { data: profiles } = useQuery(['profiles', userIds]); // N queries
+const { data: tenantUsers } = useQuery(["tenant-users"]);
+const { data: profiles } = useQuery(["profiles", userIds]); // N queries
 
 // Proposta: 1 query com JOIN
-const { data: usersComplete } = useQuery(['users-complete'], () =>
-  supabase.rpc('get_users_with_profiles', { tenant_id })
+const { data: usersComplete } = useQuery(["users-complete"], () =>
+  supabase.rpc("get_users_with_profiles", { tenant_id })
 );
 ```
 
 #### B. Dashboard Consolidado
+
 ```typescript
 // Atual: 8 queries separadas
 // Proposta: Usar apenas useContextualDashboard (já implementado)
@@ -124,9 +135,9 @@ const usePreloadCriticalData = () => {
   useEffect(() => {
     if (activeTenant) {
       // Preload em background
-      queryClient.prefetchQuery(['offices', activeTenant.id]);
-      queryClient.prefetchQuery(['departments', activeTenant.id]);
-      queryClient.prefetchQuery(['positions', activeTenant.id]);
+      queryClient.prefetchQuery(["offices", activeTenant.id]);
+      queryClient.prefetchQuery(["departments", activeTenant.id]);
+      queryClient.prefetchQuery(["positions", activeTenant.id]);
     }
   }, [activeTenant]);
 };
@@ -138,10 +149,10 @@ const usePreloadCriticalData = () => {
 // Auto-invalidação baseada em mutations
 const useSmartCache = () => {
   const queryClient = useQueryClient();
-  
+
   const invalidateRelated = (table: string) => {
     const relations = CACHE_RELATIONS[table];
-    relations.forEach(pattern => {
+    relations.forEach((pattern) => {
       queryClient.invalidateQueries({ queryKey: [pattern] });
     });
   };
@@ -165,16 +176,19 @@ const useDedupedQuery = (key, fn) => {
 ## 📈 Plano de Implementação Recomendado
 
 ### Fase 1: Optimizações Críticas (Semana 1)
+
 1. ✅ Consolidar hooks duplicados em UserManagement
 2. ✅ Implementar cache automático em hooks principais
 3. ✅ Otimizar queries N+1 mais críticas
 
 ### Fase 2: Cache Inteligente (Semana 2)
+
 1. ✅ Implementar estratégias de TTL diferenciadas
 2. ✅ Background preloading de dados estáticos
 3. ✅ Auto-invalidação baseada em mutations
 
 ### Fase 3: Monitoramento Avançado (Semana 3)
+
 1. ✅ Dashboard de performance de cache
 2. ✅ Alertas para degradação de performance
 3. ✅ Métricas de otimização
@@ -182,16 +196,19 @@ const useDedupedQuery = (key, fn) => {
 ## 🎯 Resultados Esperados
 
 ### Performance
+
 - **60-80% redução** em requisições ao banco
 - **40-60% melhoria** no tempo de carregamento
 - **50% redução** no tempo de resposta médio
 
 ### Experiência do Usuário
+
 - **Carregamento instantâneo** de dados em cache
 - **Transições mais fluidas** entre telas
 - **Menor uso de dados** em conexões móveis
 
 ### Infraestrutura
+
 - **Redução de custos** no Supabase
 - **Menor latência** geral do sistema
 - **Melhor escalabilidade** para mais usuários
@@ -199,29 +216,31 @@ const useDedupedQuery = (key, fn) => {
 ## 🔧 Implementação Técnica Recomendada
 
 ### Hook Global de Cache
+
 ```typescript
 export const useOptimizedQuery = <T>(
   key: string[],
   fn: () => Promise<T>,
   options: CacheOptions = {}
 ) => {
-  const strategy = CACHE_STRATEGIES[options.type || 'user-data'];
-  
+  const strategy = CACHE_STRATEGIES[options.type || "user-data"];
+
   return useCachedQuery(key, {
     queryFn: fn,
     cacheTime: strategy.ttl,
     staleTime: strategy.ttl * 0.8,
-    ...options
+    ...options,
   });
 };
 ```
 
 ### Sistema de Preload
+
 ```typescript
 export const useDataPreloader = () => {
   const { activeTenant } = useAuth();
   const queryClient = useQueryClient();
-  
+
   useEffect(() => {
     if (activeTenant) {
       // Preload crítico em background
@@ -244,23 +263,23 @@ O padrão Cache Aside é ideal para nosso sistema, onde a aplicação gerencia d
 export class CacheAsideManager {
   private cache = new Map<string, CacheEntry>();
   private pendingWrites = new Set<string>();
-  
+
   async get<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
     // 1. Tentar buscar no cache primeiro
     const cached = this.cache.get(key);
     if (cached && !this.isExpired(cached)) {
       return cached.data;
     }
-    
+
     // 2. Buscar no banco se não estiver no cache
     const data = await fetcher();
-    
+
     // 3. Armazenar no cache para próximas consultas
     this.set(key, data);
-    
+
     return data;
   }
-  
+
   async invalidate(key: string) {
     this.cache.delete(key);
     // Invalidar no banco também se necessário
@@ -271,30 +290,33 @@ export class CacheAsideManager {
 ### Estratégias por Tipo de Dado
 
 #### A. Dados Estáticos (Write-Around Cache)
+
 ```typescript
 // Offices, Departments, Positions - Raramente mudam
 const STATIC_DATA_STRATEGY = {
-  pattern: 'write-around',
+  pattern: "write-around",
   ttl: 30 * 60 * 1000, // 30 minutos
-  invalidation: 'manual', // Só invalida quando há mudança
+  invalidation: "manual", // Só invalida quando há mudança
 };
 ```
 
 #### B. Dados Dinâmicos (Write-Through Cache)
+
 ```typescript
 // Sales, Commissions - Mudam frequentemente
 const DYNAMIC_DATA_STRATEGY = {
-  pattern: 'write-through',
+  pattern: "write-through",
   ttl: 2 * 60 * 1000, // 2 minutos
-  invalidation: 'automatic', // Invalida automaticamente
+  invalidation: "automatic", // Invalida automaticamente
 };
 ```
 
 #### C. Dados de Sessão (Write-Behind Cache)
+
 ```typescript
 // User preferences, dashboard configs
 const SESSION_DATA_STRATEGY = {
-  pattern: 'write-behind',
+  pattern: "write-behind",
   ttl: 10 * 60 * 1000, // 10 minutos
   batchWrites: true, // Agrupa escritas
 };
@@ -308,18 +330,18 @@ class HierarchicalCache {
   private l1Cache = new Map(); // Memória (mais rápido)
   private l2Cache = window.localStorage; // Persistente
   private l3Cache = new IndexedDB(); // Offline
-  
+
   async get(key: string) {
     // L1: Memória primeiro
     if (this.l1Cache.has(key)) return this.l1Cache.get(key);
-    
+
     // L2: LocalStorage
     const l2Data = this.l2Cache.getItem(key);
     if (l2Data) {
       this.l1Cache.set(key, l2Data); // Promover para L1
       return l2Data;
     }
-    
+
     // L3: IndexedDB para dados offline
     const l3Data = await this.l3Cache.get(key);
     if (l3Data) {
@@ -327,7 +349,7 @@ class HierarchicalCache {
       this.l2Cache.setItem(key, l3Data);
       return l3Data;
     }
-    
+
     return null;
   }
 }
@@ -339,37 +361,38 @@ class HierarchicalCache {
 
 ```typescript
 // sw.js - Service Worker para cache offline
-self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('/api/')) {
+self.addEventListener("fetch", (event) => {
+  if (event.request.url.includes("/api/")) {
     event.respondWith(
-      caches.match(event.request)
-        .then(cachedResponse => {
-          if (cachedResponse) {
-            // Retorna do cache se disponível
-            return cachedResponse;
-          }
-          
-          // Tenta buscar da rede
-          return fetch(event.request)
-            .then(response => {
-              // Armazena resposta no cache
-              const responseClone = response.clone();
-              caches.open('api-cache-v1')
-                .then(cache => {
-                  cache.put(event.request, responseClone);
-                });
-              return response;
-            })
-            .catch(() => {
-              // Fallback para dados em cache se rede falhar
-              return new Response(JSON.stringify({
-                error: 'Offline mode',
-                cached: true
-              }), {
-                headers: { 'Content-Type': 'application/json' }
-              });
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          // Retorna do cache se disponível
+          return cachedResponse;
+        }
+
+        // Tenta buscar da rede
+        return fetch(event.request)
+          .then((response) => {
+            // Armazena resposta no cache
+            const responseClone = response.clone();
+            caches.open("api-cache-v1").then((cache) => {
+              cache.put(event.request, responseClone);
             });
-        })
+            return response;
+          })
+          .catch(() => {
+            // Fallback para dados em cache se rede falhar
+            return new Response(
+              JSON.stringify({
+                error: "Offline mode",
+                cached: true,
+              }),
+              {
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          });
+      })
     );
   }
 });
@@ -381,23 +404,23 @@ self.addEventListener('fetch', (event) => {
 // OfflineDataManager.ts
 export class OfflineDataManager {
   private db: IDBDatabase;
-  
+
   async storeOfflineData(type: string, data: any[]) {
-    const transaction = this.db.transaction([type], 'readwrite');
+    const transaction = this.db.transaction([type], "readwrite");
     const store = transaction.objectStore(type);
-    
+
     // Armazenar dados críticos para acesso offline
-    data.forEach(item => {
+    data.forEach((item) => {
       store.put(item);
     });
   }
-  
+
   async getOfflineData(type: string): Promise<any[]> {
     return new Promise((resolve) => {
-      const transaction = this.db.transaction([type], 'readonly');
+      const transaction = this.db.transaction([type], "readonly");
       const store = transaction.objectStore(type);
       const request = store.getAll();
-      
+
       request.onsuccess = () => {
         resolve(request.result);
       };
@@ -412,22 +435,22 @@ export class OfflineDataManager {
 // SyncManager.ts - Gerencia sincronização quando volta online
 export class SyncManager {
   private pendingOperations: Operation[] = [];
-  
+
   async addPendingOperation(operation: Operation) {
     this.pendingOperations.push(operation);
     // Armazenar no IndexedDB para persistir entre sessões
     await this.persistPendingOperations();
   }
-  
+
   async syncWhenOnline() {
     if (!navigator.onLine) return;
-    
+
     for (const operation of this.pendingOperations) {
       try {
         await this.executeOperation(operation);
         this.removePendingOperation(operation);
       } catch (error) {
-        console.error('Sync failed:', error);
+        console.error("Sync failed:", error);
         // Manter operação na fila para tentar novamente
       }
     }
@@ -441,27 +464,29 @@ export class SyncManager {
 // useOfflineCapability.ts
 export const useOfflineCapability = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [syncStatus, setSyncStatus] = useState<'synced' | 'pending' | 'error'>('synced');
-  
+  const [syncStatus, setSyncStatus] = useState<"synced" | "pending" | "error">(
+    "synced"
+  );
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       syncManager.syncWhenOnline();
     };
-    
+
     const handleOffline = () => {
       setIsOnline(false);
     };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
-  
+
   return { isOnline, syncStatus };
 };
 ```
@@ -469,6 +494,7 @@ export const useOfflineCapability = () => {
 ## 🔧 Implementação Prática Recomendada
 
 ### Fase 1: Cache Aside Básico
+
 ```typescript
 // useOptimizedQuery.ts - Hook principal
 export const useOptimizedQuery = <T>(
@@ -477,22 +503,20 @@ export const useOptimizedQuery = <T>(
   options: QueryOptions = {}
 ) => {
   const cacheManager = useCacheManager();
-  
+
   return useQuery({
     queryKey,
     queryFn: async () => {
-      return cacheManager.get(
-        JSON.stringify(queryKey),
-        queryFn
-      );
+      return cacheManager.get(JSON.stringify(queryKey), queryFn);
     },
     staleTime: options.ttl || 5 * 60 * 1000,
-    ...options
+    ...options,
   });
 };
 ```
 
 ### Fase 2: Offline Capability
+
 ```typescript
 // OfflineFirstHook.ts
 export const useOfflineFirstQuery = <T>(
@@ -501,7 +525,7 @@ export const useOfflineFirstQuery = <T>(
 ) => {
   const { isOnline } = useOfflineCapability();
   const offlineManager = useOfflineDataManager();
-  
+
   return useQuery({
     queryKey,
     queryFn: async () => {
@@ -518,7 +542,7 @@ export const useOfflineFirstQuery = <T>(
     retry: (failureCount, error) => {
       // Não tentar novamente se offline
       return isOnline && failureCount < 3;
-    }
+    },
   });
 };
 ```
@@ -526,6 +550,7 @@ export const useOfflineFirstQuery = <T>(
 ## 📊 Métricas de Monitoramento Expandidas
 
 ### KPIs Propostos
+
 1. **Cache Hit Rate**: Meta > 70%
 2. **Average Query Time**: Meta < 200ms
 3. **Requests per Page Load**: Meta < 5
@@ -535,6 +560,7 @@ export const useOfflineFirstQuery = <T>(
 7. **Cache Size Efficiency**: Meta < 50MB
 
 ### Alertas Recomendados
+
 - Cache hit rate < 50% por 5 minutos
 - Query time médio > 500ms
 - Mais de 10 requests simultâneas
@@ -544,33 +570,58 @@ export const useOfflineFirstQuery = <T>(
 - Cache size > 100MB
 
 ### Dashboard de Performance
+
 ```typescript
 interface PerformanceMetrics {
   cacheHitRate: number;
   offlineDataAge: number;
   syncQueueSize: number;
   averageQueryTime: number;
-  networkStatus: 'online' | 'offline' | 'slow';
+  networkStatus: "online" | "offline" | "slow";
 }
 ```
 
 ## 🎯 Benefícios Esperados da Implementação Completa
 
 ### Performance
+
 - **80-90% redução** em requisições ao banco
 - **50-70% melhoria** no tempo de carregamento
 - **90% funcionalidade** disponível offline
 
 ### Experiência do Usuário
+
 - **Acesso contínuo** mesmo sem internet
 - **Sincronização automática** quando volta online
 - **Interface responsiva** independente da conexão
 
 ### Robustez do Sistema
+
 - **Tolerância a falhas** de rede
 - **Recuperação automática** de dados
 - **Operações em modo degradado**
 
 ---
+
+# Pontos de Segurança e Boas Práticas de Cache (Complemento)
+
+## Segurança no Cache
+
+- **Nunca armazenar dados sensíveis no cache**: Dados como senhas, tokens de autenticação, informações bancárias, dados pessoais sensíveis (CPF, RG, endereço completo, etc.) e qualquer informação protegida por LGPD/GDPR não devem ser armazenados em cache, nem mesmo temporariamente.
+- **Validação de conteúdo antes do cache**: Implementar validação explícita nos hooks e no CacheManager para impedir que dados sensíveis sejam armazenados. Sugere-se criar uma função utilitária (ex: `isSensitiveData`) para bloquear tentativas de cache de objetos que contenham campos sensíveis.
+- **Escopo do cache por tenant**: Garantir que o cache seja sempre segregado por tenant, evitando vazamento de dados entre organizações. O cacheKey deve sempre incluir o identificador do tenant.
+- **Política de expiração dinâmica**: Dados potencialmente sensíveis ou críticos devem ter TTL reduzido e nunca serem persistidos além do necessário.
+- **Auditoria e logging de operações de cache**: Registrar operações de set/get/delete no cache, incluindo o contexto do tenant e o tipo de dado, para facilitar auditoria e rastreamento de incidentes.
+- **Automação de invalidação multi-tenant**: Implementar mecanismos automáticos para invalidar cache de dados sensíveis em caso de alteração de permissões, logout, ou revogação de acesso.
+- **Criptografia opcional para dados em cache**: Para dados que, por necessidade de performance, precisem ser cacheados e tenham algum grau de sensibilidade, considerar criptografia em memória e nunca persistir em disco.
+- **Monitoramento de uso do cache**: Utilizar métricas e alertas para identificar padrões anômalos de acesso ao cache, que possam indicar vazamento ou uso indevido.
+
+## Boas Práticas Complementares
+
+- **Testes automatizados de segurança**: Incluir testes automatizados para garantir que dados sensíveis não sejam armazenados em cache durante o ciclo de desenvolvimento.
+- **Documentação clara para desenvolvedores**: Orientar a equipe sobre os riscos de cache de dados sensíveis e as práticas recomendadas, incluindo exemplos de uso seguro dos hooks e do CacheManager.
+- **Revisão de código focada em segurança**: Adotar revisões de código obrigatórias para alterações que envolvam cache, com checklist específico para segurança de dados.
+
+Essas recomendações devem ser incorporadas ao plano de otimização de cache e requisições, garantindo que a performance do sistema não comprometa a segurança e a privacidade dos dados dos usuários, especialmente em ambientes multi-tenant.
 
 **Próximos Passos**: Implementar cache aside pattern primeiro, depois capacidades offline, priorizando dados críticos como vendas e clientes.
