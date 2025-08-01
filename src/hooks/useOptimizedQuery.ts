@@ -17,7 +17,7 @@ import { monitoring } from '@/lib/monitoring';
 import { DataSensitivity, getMaxSensitivity, containsSensitiveData } from '@/lib/security/DataClassification';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface OptimizedQueryOptions<T> extends Omit<UseQueryOptions<T>, 'queryFn'> {
+interface OptimizedQueryOptions<T> extends Omit<UseQueryOptions<T>, 'queryFn' | 'queryKey'> {
   queryFn: () => Promise<T>;
   cacheStrategy?: keyof typeof CACHE_STRATEGIES;
   sensitivity?: DataSensitivity;
@@ -264,11 +264,9 @@ export const useInvalidateOptimizedCache = () => {
 // Hooks específicos para diferentes tipos de dados
 export const useOptimizedUserQuery = <T>(
   queryKey: readonly unknown[],
-  queryFn: () => Promise<T>,
-  options?: Partial<OptimizedQueryOptions<T>>
+  options: { queryFn: () => Promise<T> } & Partial<OptimizedQueryOptions<T>>
 ) => {
   return useOptimizedQuery(queryKey, {
-    queryFn,
     cacheStrategy: 'user-profile',
     sensitivity: DataSensitivity.PERSONAL,
     rateLimitKey: 'personal_data_access',
@@ -278,11 +276,9 @@ export const useOptimizedUserQuery = <T>(
 
 export const useOptimizedBusinessQuery = <T>(
   queryKey: readonly unknown[],
-  queryFn: () => Promise<T>,
-  options?: Partial<OptimizedQueryOptions<T>>
+  options: { queryFn: () => Promise<T> } & Partial<OptimizedQueryOptions<T>>
 ) => {
   return useOptimizedQuery(queryKey, {
-    queryFn,
     cacheStrategy: 'commission-data',
     sensitivity: DataSensitivity.BUSINESS,
     rateLimitKey: 'api_calls',
@@ -292,11 +288,9 @@ export const useOptimizedBusinessQuery = <T>(
 
 export const useOptimizedPublicQuery = <T>(
   queryKey: readonly unknown[],
-  queryFn: () => Promise<T>,
-  options?: Partial<OptimizedQueryOptions<T>>
+  options: { queryFn: () => Promise<T> } & Partial<OptimizedQueryOptions<T>>
 ) => {
   return useOptimizedQuery(queryKey, {
-    queryFn,
     cacheStrategy: 'office-list',
     sensitivity: DataSensitivity.PUBLIC,
     rateLimitKey: 'public_operations',

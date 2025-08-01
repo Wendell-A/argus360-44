@@ -2030,9 +2030,39 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_crm_complete_optimized: {
+        Args: { tenant_uuid: string; limit_param?: number }
+        Returns: {
+          client_id: string
+          client_data: Json
+          funnel_position: Json
+          recent_interactions: Json
+          pending_tasks: Json
+          sales_data: Json
+        }[]
+      }
+      get_dashboard_complete_optimized: {
+        Args: { tenant_uuid: string }
+        Returns: {
+          stats_data: Json
+          recent_sales: Json
+          recent_clients: Json
+          pending_tasks: Json
+          goals_data: Json
+          commission_summary: Json
+        }[]
+      }
       get_dashboard_stats_config: {
         Args: { user_uuid: string; tenant_uuid: string }
         Returns: Json
+      }
+      get_query_performance_metrics: {
+        Args: { tenant_uuid: string }
+        Returns: {
+          metric_name: string
+          metric_value: number
+          measurement_time: string
+        }[]
       }
       get_security_monitoring_data: {
         Args: { user_uuid: string; tenant_uuid: string }
@@ -2057,6 +2087,23 @@ export type Database = {
       get_user_tenant_ids: {
         Args: { user_uuid: string }
         Returns: string[]
+      }
+      get_users_complete_optimized: {
+        Args: {
+          tenant_uuid: string
+          limit_param?: number
+          offset_param?: number
+        }
+        Returns: {
+          user_id: string
+          user_data: Json
+          profile_data: Json
+          office_data: Json
+          department_data: Json
+          position_data: Json
+          permissions_data: Json
+          stats_data: Json
+        }[]
       }
       is_tenant_owner: {
         Args: { user_uuid: string; tenant_uuid: string }

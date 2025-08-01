@@ -124,20 +124,6 @@ export class HybridCacheSystem {
         const l2Result = await this.getFromIndexedDB<T>(tenantKey);
         if (l2Result) {
           this.recordCacheHit('L2', tenantKey);
-          
-          // Promote para L1 se público
-          if (autoSensitivity === DataSensitivity.PUBLIC) {
-            this.l1Memory.set(tenantKey, {
-              data: l2Result,
-              timestamp: Date.now(),
-              ttl: CACHE_STRATEGIES['office-list'].ttl,
-              sensitivity: autoSensitivity,
-              tenantId: this.currentTenant,
-              userId: this.currentUser,
-              encrypted: false
-            });
-          }
-          
           timer.end();
           return l2Result;
         }
