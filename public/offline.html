@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Argos - Offline</title>
+    <style>
+        :root {
+            --primary: 220 14% 35%;
+            --background: 0 0% 100%;
+            --foreground: 220 14% 11%;
+            --muted: 220 14% 96%;
+            --border: 220 13% 91%;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .offline-container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: hsl(var(--muted));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid hsl(var(--border));
+        }
+        
+        .offline-icon svg {
+            width: 60px;
+            height: 60px;
+            opacity: 0.7;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: hsl(var(--primary));
+        }
+        
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+        
+        .retry-btn {
+            background: hsl(var(--primary));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .retry-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .retry-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: hsl(var(--muted));
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .online {
+            color: #059669;
+        }
+        
+        .offline {
+            color: #dc2626;
+        }
+        
+        .features {
+            margin-top: 2rem;
+            text-align: left;
+        }
+        
+        .features h3 {
+            margin-bottom: 1rem;
+            color: hsl(var(--primary));
+        }
+        
+        .features ul {
+            list-style: none;
+        }
+        
+        .features li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .features li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #059669;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+            
+            .offline-icon {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .offline-icon svg {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M18.364 5.636l-1.414 1.414m-11.314 0L7.05 5.636m11.314 11.314l-1.414-1.414M5.636 18.364l1.414-1.414m4.95-4.95L12 13m0-9v6m0 0l-3-3m3 3l3-3"/>
+            </svg>
+        </div>
+        
+        <h1>Você está offline</h1>
+        <p>
+            Não foi possível conectar com o servidor. Verifique sua conexão com a internet
+            e tente novamente. Algumas funcionalidades estão disponíveis no modo offline.
+        </p>
+        
+        <button class="retry-btn" onclick="retryConnection()">
+            Tentar Novamente
+        </button>
+        
+        <div class="status">
+            Status da conexão: <span id="connection-status" class="offline">Offline</span>
+        </div>
+        
+        <div class="features">
+            <h3>Funcionalidades Offline Disponíveis:</h3>
+            <ul>
+                <li>Visualizar dados em cache</li>
+                <li>Criar/editar registros (serão sincronizados)</li>
+                <li>Consultar relatórios armazenados</li>
+                <li>Navegar pelo sistema</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let retryAttempts = 0;
+        const maxRetries = 5;
+        
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connection-status');
+            const retryBtn = document.querySelector('.retry-btn');
+            
+            if (navigator.onLine) {
+                statusElement.textContent = 'Online';
+                statusElement.className = 'online';
+                
+                // Tentar redirecionar automaticamente quando voltar online
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                statusElement.textContent = 'Offline';
+                statusElement.className = 'offline';
+            }
+        }
+        
+        function retryConnection() {
+            const retryBtn = document.querySelector('.retry-btn');
+            
+            if (retryAttempts >= maxRetries) {
+                retryBtn.textContent = 'Muitas tentativas';
+                retryBtn.disabled = true;
+                return;
+            }
+            
+            retryAttempts++;
+            retryBtn.textContent = `Tentando... (${retryAttempts}/${maxRetries})`;
+            retryBtn.disabled = true;
+            
+            // Simular tentativa de conexão
+            setTimeout(() => {
+                if (navigator.onLine) {
+                    window.location.href = '/';
+                } else {
+                    retryBtn.textContent = 'Tentar Novamente';
+                    retryBtn.disabled = false;
+                    
+                    if (retryAttempts >= maxRetries) {
+                        retryBtn.textContent = 'Limite de tentativas atingido';
+                        retryBtn.disabled = true;
+                    }
+                }
+            }, 2000);
+        }
+        
+        // Event listeners para mudanças de conectividade
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Verificar status inicial
+        updateConnectionStatus();
+        
+        // Auto-retry a cada 30 segundos se offline
+        setInterval(() => {
+            if (!navigator.onLine && retryAttempts < maxRetries) {
+                retryConnection();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
