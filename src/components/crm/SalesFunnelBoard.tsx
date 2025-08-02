@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Phone, MessageCircle, Mail, Plus, ChevronDown } from 'lucide-react';
+import { Phone, MessageCircle, Mail, Plus, ChevronDown, Settings } from 'lucide-react';
 import { useSalesFunnelStages, useClientFunnelPositions, useUpdateClientFunnelPosition } from '@/hooks/useSalesFunnel';
 import { generateWhatsAppLink, formatPhoneNumber } from '@/lib/whatsapp';
 import { InteractionModal } from './InteractionModal';
+import { ClientFunnelModal } from '../ClientFunnelModal';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/components/ui/sidebar';
 
@@ -41,6 +42,8 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
   const { updatePositionAsync } = useUpdateClientFunnelPosition();
   const [selectedClient, setSelectedClient] = useState<ClientCard | null>(null);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+  const [isFunnelModalOpen, setIsFunnelModalOpen] = useState(false);
+  const [funnelModalMode, setFunnelModalMode] = useState<'edit' | 'view'>('edit');
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const { open: sidebarOpen } = useSidebar();
@@ -162,6 +165,12 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
     setIsInteractionModalOpen(true);
   };
 
+  const handleFunnelConfigClick = (client: ClientCard) => {
+    setSelectedClient(client);
+    setFunnelModalMode('edit');
+    setIsFunnelModalOpen(true);
+  };
+
   if (stagesLoading || positionsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -277,7 +286,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                         </div>
                         
                         {/* Botões de ação otimizados */}
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-5 gap-1">
                           <Button
                             size="sm"
                             variant="outline"
@@ -329,6 +338,18 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                           >
                             <Plus className="w-4 h-4" />
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleFunnelConfigClick(client);
+                            }}
+                            className="h-8 p-0 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 dark:hover:bg-indigo-900/30"
+                            title="Configurar Funil"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -368,6 +389,24 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
         isOpen={isInteractionModalOpen}
         onClose={() => setIsInteractionModalOpen(false)}
         client={selectedClient}
+      />
+      
+      <ClientFunnelModal
+        isOpen={isFunnelModalOpen}
+        onClose={() => setIsFunnelModalOpen(false)}
+        client={selectedClient ? {
+          id: selectedClient.id,
+          name: selectedClient.name,
+          email: selectedClient.email,
+          phone: selectedClient.phone,
+          classification: selectedClient.classification,
+          status: selectedClient.status,
+          probability: selectedClient.probability,
+          expected_value: selectedClient.expected_value,
+          stage_id: funnelData.find(stage => stage.clients.some(c => c.id === selectedClient.id))?.id,
+          entered_at: selectedClient.entered_at,
+        } : null}
+        mode={funnelModalMode}
       />
     </div>
   );
