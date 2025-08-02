@@ -34,7 +34,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, TrendingUp, Target, DollarSign, Percent } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { CalendarIcon, TrendingUp, Target, DollarSign, Percent, User, ShoppingCart, Lightbulb } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -43,6 +49,7 @@ import {
   useUpdateClientFunnelPosition,
   useClientFunnelHistory 
 } from "@/hooks/useSalesFunnel";
+import { useClientSalesHistory, useProductSuggestions } from "@/hooks/useClientSalesHistory";
 import { toast } from "@/hooks/use-toast";
 
 const clientFunnelSchema = z.object({
@@ -79,6 +86,8 @@ export function ClientFunnelModal({ isOpen, onClose, client, mode }: ClientFunne
   const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
   const { updatePositionAsync, isUpdating } = useUpdateClientFunnelPosition();
   const { history } = useClientFunnelHistory(client?.id);
+  const { data: salesHistory, isLoading: salesHistoryLoading } = useClientSalesHistory(client?.id);
+  const { data: suggestions, isLoading: suggestionsLoading } = useProductSuggestions(client?.id);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClientFunnelFormData>({
@@ -139,19 +148,19 @@ export function ClientFunnelModal({ isOpen, onClose, client, mode }: ClientFunne
 
   const getClassificationColor = (classification: string) => {
     switch (classification) {
-      case "hot": return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
-      case "warm": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-      case "cold": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
+      case "hot": return "bg-red-500 text-white border-red-500";
+      case "warm": return "bg-yellow-500 text-white border-yellow-500";
+      case "cold": return "bg-blue-500 text-white border-blue-500";
+      default: return "bg-gray-500 text-white border-gray-500";
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
-      case "prospect": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-      case "inactive": return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
+      case "active": return "bg-green-600 text-white border-green-600";
+      case "prospect": return "bg-blue-600 text-white border-blue-600";
+      case "inactive": return "bg-gray-600 text-white border-gray-600";
+      default: return "bg-gray-600 text-white border-gray-600";
     }
   };
 
@@ -225,8 +234,16 @@ export function ClientFunnelModal({ isOpen, onClose, client, mode }: ClientFunne
               </div>
             )}
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Tabs */}
+            <Tabs defaultValue="funnel" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="funnel">Configurações do Funil</TabsTrigger>
+                <TabsTrigger value="sales">Vendas & Sugestões</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="funnel" className="space-y-6">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Configurações do Funil */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -407,18 +424,93 @@ export function ClientFunnelModal({ isOpen, onClose, client, mode }: ClientFunne
                   </div>
                 )}
 
-                {!isReadOnly && (
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={onClose}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting || isUpdating}>
-                      {isSubmitting ? "Salvando..." : "Salvar Alterações"}
-                    </Button>
-                  </DialogFooter>
-                )}
-              </form>
-            </Form>
+                    {!isReadOnly && (
+                      <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>
+                          Cancelar
+                        </Button>
+                        <Button type="submit" disabled={isSubmitting || isUpdating}>
+                          {isSubmitting ? "Salvando..." : "Salvar Alterações"}
+                        </Button>
+                      </DialogFooter>
+                    )}
+                  </form>
+                </Form>
+              </TabsContent>
+              
+              <TabsContent value="sales" className="space-y-6">
+                {/* Histórico de Vendas */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Histórico de Vendas
+                  </h3>
+                  
+                  {salesHistoryLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : salesHistory && salesHistory.length > 0 ? (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {salesHistory.map((sale) => (
+                        <div key={sale.id} className="flex items-center justify-between p-3 bg-muted/30 rounded">
+                          <div>
+                            <p className="font-medium">{sale.consortium_products?.name || 'Produto não identificado'}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Categoria: {sale.consortium_products?.category || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">
+                              {sale.sale_value ? `R$ ${sale.sale_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {sale.sale_date ? format(new Date(sale.sale_date), "dd/MM/yyyy", { locale: ptBR }) : 'Data não informada'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">
+                      Nenhuma venda encontrada para este cliente.
+                    </p>
+                  )}
+                </div>
+                
+                {/* Sugestões de Produtos */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5" />
+                    Sugestões de Produtos
+                  </h3>
+                  
+                  {suggestionsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : suggestions && suggestions.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {suggestions.map((product) => (
+                        <div key={product.id} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <h4 className="font-medium">{product.name}</h4>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Categoria: {product.category}
+                          </p>
+                          <p className="text-sm">
+                            Valor: R$ {product.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">
+                      Nenhuma sugestão disponível no momento.
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
       </DialogContent>
