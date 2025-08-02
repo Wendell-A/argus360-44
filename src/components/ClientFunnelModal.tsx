@@ -455,10 +455,10 @@ export function ClientFunnelModal({ isOpen, onClose, client, mode }: ClientFunne
                       {salesHistory.map((sale) => (
                         <div key={sale.id} className="flex items-center justify-between p-3 bg-muted/30 rounded">
                           <div>
-                            <p className="font-medium">{sale.consortium_products?.name || 'Produto não identificado'}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Categoria: {sale.consortium_products?.category || 'N/A'}
-                            </p>
+                             <p className="font-medium">Venda #{sale.id?.slice(0, 8)}</p>
+                             <p className="text-sm text-muted-foreground">
+                               Status: {sale.status || 'N/A'}
+                             </p>
                           </div>
                           <div className="text-right">
                             <p className="font-medium">
@@ -497,9 +497,9 @@ export function ClientFunnelModal({ isOpen, onClose, client, mode }: ClientFunne
                           <p className="text-sm text-muted-foreground mb-2">
                             Categoria: {product.category}
                           </p>
-                          <p className="text-sm">
-                            Valor: R$ {product.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
+                           <p className="text-sm">
+                             Valor: R$ {product.min_credit_value?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || 'N/A'}
+                           </p>
                         </div>
                       ))}
                     </div>
