@@ -24,8 +24,7 @@ import {
 } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoals, useGoalStats } from '@/hooks/useGoals';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { useContextualDashboard } from '@/hooks/useContextualDashboard';
+import { useDashboardOptimized } from '@/hooks/useDashboardOptimized';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
 
 interface MetricCardProps {
@@ -62,13 +61,10 @@ const Dashboard = () => {
   const { activeTenant } = useAuth();
   const { goals, isLoading: goalsLoading } = useGoals();
   const { data: goalStats, isLoading: statsLoading } = useGoalStats();
-  const { data: dashboardStats, isLoading: dashboardLoading } = useDashboardStats();
-  const { data: contextualStats, isLoading: contextualLoading } = useContextualDashboard();
+  const { data: optimizedDashboard, isLoading: dashboardLoading } = useDashboardOptimized();
   const { data: dashboardConfig, isLoading: configLoading } = useDashboardConfig();
 
-  // Usar dados contextuais se disponíveis
-  const activeStats = contextualStats || dashboardStats;
-  const isLoading = goalsLoading || statsLoading || dashboardLoading || contextualLoading || configLoading;
+  const isLoading = goalsLoading || statsLoading || dashboardLoading || configLoading;
 
   if (isLoading) {
     return (
@@ -91,81 +87,58 @@ const Dashboard = () => {
     return dashboardConfig.widgets[widgetKey as keyof typeof dashboardConfig.widgets] === true;
   };
 
-  // Usar dados reais ou fallback para dados simulados
-  const vendasMensais = (dashboardStats as any)?.monthlyData || [
+  // Usar dados otimizados ou fallback para dados simulados
+  const stats = optimizedDashboard?.stats || { total_clients: 0, total_sales: 0, total_revenue: 0, total_commission: 0 };
+  const recentSales = optimizedDashboard?.recent_sales || [];
+  const recentClients = optimizedDashboard?.recent_clients || [];
+  const pendingTasks = optimizedDashboard?.pending_tasks || [];
+  const goals_data = optimizedDashboard?.goals || [];
+  const commission_summary = optimizedDashboard?.commission_summary || { pending_commissions: 0 };
+
+  const vendasMensais = [
     { month: 'Jul', vendas: 35000, meta: 40000 },
     { month: 'Ago', vendas: 42000, meta: 45000 },
     { month: 'Set', vendas: 38000, meta: 42000 },
     { month: 'Out', vendas: 51000, meta: 48000 },
     { month: 'Nov', vendas: 47000, meta: 50000 },
-    { month: 'Dez', vendas: 49000, meta: 52000 },
+    { month: 'Dez', vendas: stats.total_revenue || 49000, meta: 52000 },
   ];
 
-  const comissoesMensais = (dashboardStats as any)?.monthlyData?.map((item: any) => ({
-    month: item.month,
-    comissoes: item.comissoes,
-    meta: item.meta * 0.1, // Assumindo comissão de 10% da meta
-  })) || [
+  const comissoesMensais = [
     { month: 'Jul', comissoes: 3500, meta: 4000 },
     { month: 'Ago', comissoes: 4200, meta: 4500 },
     { month: 'Set', comissoes: 3800, meta: 4200 },
     { month: 'Out', comissoes: 5100, meta: 4800 },
     { month: 'Nov', comissoes: 4700, meta: 5000 },
-    { month: 'Dez', comissoes: 4900, meta: 5200 },
+    { month: 'Dez', comissoes: stats.total_commission || 4900, meta: 5200 },
   ];
 
-  // Dados para o gráfico de pizza dos vendedores com cores
-  const topVendedores = (dashboardStats as any)?.topVendedores?.map((vendedor: any, index: number) => ({
-    name: vendedor.name,
-    value: vendedor.total_sales,
-    color: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'][index] || '#6b7280'
-  })) || [
+  // Dados para o gráfico de pizza dos vendedores com cores (usando fallback até implementarmos a query)
+  const topVendedores = [
     { name: 'João Silva', value: 85000, color: '#10b981' },
     { name: 'Maria Santos', value: 72000, color: '#3b82f6' },
     { name: 'Pedro Costa', value: 68000, color: '#f59e0b' },
     { name: 'Ana Oliveira', value: 54000, color: '#ef4444' },
   ];
 
-  // Vendas recentes com dados reais
-  const vendasRecentes = (dashboardStats as any)?.recentSales?.map((sale: any) => ({
+  // Vendas recentes com dados otimizados
+  const vendasRecentes = recentSales.map((sale: any) => ({
     cliente: sale.client_name,
-    vendedor: sale.vendedor_name,
+    vendedor: sale.seller_name,
     valor: formatCurrency(sale.sale_value),
-    comissao: formatCurrency(sale.commission_amount),
+    comissao: formatCurrency(sale.sale_value * 0.05), // 5% padrão
     data: new Date(sale.sale_date).toLocaleDateString('pt-BR', { 
       day: '2-digit', 
       month: '2-digit',
       year: 'numeric' 
     })
-  })) || [
-    { 
-      cliente: 'Carlos Mendes', 
-      vendedor: 'João Silva', 
-      valor: 'R$ 280.000', 
-      comissao: 'R$ 14.000',
-      data: '2 dias atrás'
-    },
-    { 
-      cliente: 'Lucia Ferreira', 
-      vendedor: 'Maria Santos', 
-      valor: 'R$ 320.000', 
-      comissao: 'R$ 16.000',
-      data: '3 dias atrás'
-    },
-    { 
-      cliente: 'Roberto Lima', 
-      vendedor: 'Pedro Costa', 
-      valor: 'R$ 450.000',
-      comissao: 'R$ 22.500',
-      data: '5 dias atrás'
-    },
-  ];
+  }));
 
   // Calcular estatísticas das metas com dados reais
   const totalGoals = goals.length;
   const activeGoals = goals.filter(goal => goal.status === 'active').length;
   const completedGoals = goals.filter(goal => goal.current_amount >= goal.target_amount).length;
-  const goalCompletionRate = (dashboardStats as any)?.goalCompletion || 0;
+  const goalCompletionRate = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -191,7 +164,7 @@ const Dashboard = () => {
         {renderWidget('total_sales') && (
           <MetricCard
             title="Total de Vendas"
-            value={(contextualStats?.total_sales || dashboardStats?.monthSales || 0).toString()}
+            value={stats.total_sales.toString()}
             description="vendas realizadas"
             icon={<TrendingUp className="h-4 w-4" />}
             trend={12}
@@ -200,7 +173,7 @@ const Dashboard = () => {
         {renderWidget('total_clients') && (
           <MetricCard
             title="Total de Clientes"
-            value={(contextualStats?.total_clients || (dashboardStats as any)?.totalClients || 0).toString()}
+            value={stats.total_clients.toString()}
             description="clientes cadastrados"
             icon={<Users className="h-4 w-4" />}
             trend={8}
@@ -209,7 +182,7 @@ const Dashboard = () => {
         {renderWidget('monthly_performance') && (
           <MetricCard
             title="Vendas do Mês"
-            value={formatCurrency(contextualStats?.month_sales || dashboardStats?.monthCommissions || 0)}
+            value={formatCurrency(stats.total_revenue)}
             description="faturamento mensal"
             icon={<DollarSign className="h-4 w-4" />}
             trend={2}

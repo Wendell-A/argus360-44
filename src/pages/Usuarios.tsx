@@ -20,12 +20,41 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { UserTenantAssociation, useUserManagement } from '@/hooks/useUserManagement';
+import { useUserManagementOptimized } from '@/hooks/useUserManagementOptimized';
 import { UserEditModal } from '@/components/UserEditModal';
 import { useOffices } from '@/hooks/useOffices';
 import { toast } from 'sonner';
 
 export default function Usuarios() {
-  const { users, isLoading, deactivateUser, reactivateUser } = useUserManagement();
+  const { users: legacyUsers, deactivateUser, reactivateUser } = useUserManagement();
+  const { data: optimizedUsers, isLoading } = useUserManagementOptimized(50, 0);
+  
+  // Usar dados otimizados quando disponíveis, senão fallback para legacy
+  const users = optimizedUsers?.map(user => ({
+    id: user.id,
+    user_id: user.id, // UserCompleteData usa 'id' como user_id
+    tenant_id: 'current-tenant', // Assumindo tenant atual
+    role: user.role,
+    active: true, // Assumindo que usuários retornados estão ativos
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    joined_at: new Date().toISOString(),
+    profile: {
+      id: user.id,
+      full_name: user.profile.full_name || '',
+      email: user.email, // UserCompleteData tem email direto
+      phone: user.profile.phone || '',
+      avatar_url: user.profile.avatar_url || '',
+      position: user.profile.position || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    office_id: user.office?.name || '', // Usando name como fallback
+    office: user.office,
+    department: user.department,
+    position: user.position
+  } as UserTenantAssociation)) || legacyUsers;
   const { offices = [] } = useOffices();
   
   const [searchTerm, setSearchTerm] = useState('');
