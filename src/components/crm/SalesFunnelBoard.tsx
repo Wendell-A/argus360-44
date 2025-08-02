@@ -225,7 +225,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                   {stage.clients.map((client) => (
                     <Card
                       key={client.id}
-                      className="cursor-move hover:shadow-md transition-all border-l-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 group"
+                      className="cursor-move hover:shadow-lg transition-all duration-300 border-l-4 hover:border-slate-200 dark:hover:border-slate-700 group"
                       style={{ borderLeftColor: stage.color }}
                       draggable
                       onDragStart={(e) => handleDragStart(e, client)}

@@ -18,10 +18,10 @@ const Landing = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/auth/login">
+              <Link to="/login">
                 <Button variant="ghost">Entrar</Button>
               </Link>
-              <Link to="/auth/register">
+              <Link to="/register">
                 <Button>Começar Grátis</Button>
               </Link>
             </div>
@@ -44,12 +44,12 @@ const Landing = () => {
             Controle vendas, comissões, clientes e relatórios em um só lugar.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth/register">
+            <Link to="/register">
               <Button size="lg" className="text-lg px-8 py-3">
                 Começar Teste Grátis
               </Button>
             </Link>
-            <Link to="/auth/login">
+            <Link to="/login">
               <Button variant="outline" size="lg" className="text-lg px-8 py-3">
                 Fazer Login
               </Button>

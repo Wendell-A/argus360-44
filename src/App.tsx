@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 
-import Index from '@/pages/Index';
+import Landing from '@/pages/Landing';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import Dashboard from '@/pages/Dashboard';
@@ -46,7 +46,7 @@ function App() {
           <Toaster />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
               <Route path="/aceitar-convite/:token" element={<AceitarConvite />} />
