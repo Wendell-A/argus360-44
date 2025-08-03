@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -7,7 +7,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Calendar, TrendingUp, DollarSign, Users, Target, Award, ShoppingCart, BarChart3, Building } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Users, Target, Award, ShoppingCart, BarChart3, Building, Activity } from 'lucide-react';
 import { 
   ResponsiveContainer, 
   BarChart, 
@@ -24,9 +24,12 @@ import {
 } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoals, useGoalStats } from '@/hooks/useGoals';
-import { useDashboardFilters } from '@/hooks/useDashboardFilters';
+import { useDashboardComplete, DashboardCompleteFilters } from '@/hooks/useDashboardComplete';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
-import { DashboardFilters } from '@/components/DashboardFilters';
+import { TopProductsChart } from '@/components/dashboard/TopProductsChart';
+import { OfficePerformanceChart } from '@/components/dashboard/OfficePerformanceChart';
+import { VendorsPerformanceTable } from '@/components/dashboard/VendorsPerformanceTable';
+import { DashboardFiltersAdvanced } from '@/components/dashboard/DashboardFiltersAdvanced';
 
 interface MetricCardProps {
   title: string;
@@ -64,15 +67,18 @@ const Dashboard = () => {
   const { data: goalStats, isLoading: statsLoading } = useGoalStats();
   const { data: dashboardConfig, isLoading: configLoading } = useDashboardConfig();
   
-  // Hook com filtros e paginação
-  const {
-    data: dashboardData,
-    isLoading: dashboardLoading,
-    filters,
-    updateFilters,
-    resetFilters,
-    pagination
-  } = useDashboardFilters();
+  // Estado dos filtros
+  const [filters, setFilters] = useState<DashboardCompleteFilters>({
+    dateRange: {
+      start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+      end: new Date().toISOString().split('T')[0]
+    },
+    limit: 10,
+    offset: 0
+  });
+
+  // Hook com dados completos
+  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardComplete(filters);
 
   const isLoading = goalsLoading || statsLoading || dashboardLoading || configLoading;
 
@@ -99,11 +105,12 @@ const Dashboard = () => {
 
   // Usar dados reais dos filtros ou fallback
   const stats = dashboardData?.stats || { total_clients: 0, total_sales: 0, total_revenue: 0, total_commission: 0 };
-  const recentSales = dashboardData?.recent_sales || [];
-  const recentClients = dashboardData?.recent_clients || [];
-  const pendingTasks = dashboardData?.pending_tasks || [];
+  const recentSales = dashboardData?.sales || [];
+  const recentClients = dashboardData?.clients || [];
   const goals_data = dashboardData?.goals || [];
-  const commission_summary = dashboardData?.commission_summary || { pending_commissions: 0 };
+  const topProducts = dashboardData?.top_products || [];
+  const vendorsData = dashboardData?.vendors || [];
+  const officePerformance = dashboardData?.office_performance || [];
 
   const vendasMensais = [
     { month: 'Jul', vendas: 35000, meta: 40000 },
@@ -171,13 +178,30 @@ const Dashboard = () => {
 
       {/* Filtros do Dashboard */}
       <div className="mb-6">
-        <DashboardFilters
+        <DashboardFiltersAdvanced
           filters={filters}
-          onFiltersChange={updateFilters}
-          onReset={resetFilters}
-          pagination={pagination}
+          onFiltersChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
+          onReset={() => setFilters({
+            dateRange: {
+              start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+              end: new Date().toISOString().split('T')[0]
+            },
+            limit: 10,
+            offset: 0
+          })}
+          totalResults={dashboardData?.total_count || 0}
           isLoading={dashboardLoading}
         />
+      </div>
+
+      {/* Novos Componentes com Dados Reais */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+        <TopProductsChart products={topProducts} isLoading={dashboardLoading} />
+        <OfficePerformanceChart officeData={officePerformance} isLoading={dashboardLoading} />
+      </div>
+
+      <div className="mb-6">
+        <VendorsPerformanceTable vendors={vendorsData} isLoading={dashboardLoading} />
       </div>
 
       {/* Métricas Principais */}
