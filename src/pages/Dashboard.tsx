@@ -31,9 +31,6 @@ import { OfficePerformanceChart } from '@/components/dashboard/OfficePerformance
 import { VendorsPerformanceTable } from '@/components/dashboard/VendorsPerformanceTable';
 import { DashboardFiltersAdvanced } from '@/components/dashboard/DashboardFiltersAdvanced';
 
-// Debug: confirmar que o componente está sendo importado corretamente
-console.log('DashboardFiltersAdvanced:', DashboardFiltersAdvanced);
-
 interface MetricCardProps {
   title: string;
   value: string;
