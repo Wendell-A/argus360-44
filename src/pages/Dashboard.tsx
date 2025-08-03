@@ -1,15 +1,34 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Calendar, TrendingUp, DollarSign, Users, Target, Award, ShoppingCart, BarChart3, Building, Activity } from 'lucide-react';
+  Calendar, 
+  TrendingUp, 
+  DollarSign, 
+  Users, 
+  Target, 
+  Award, 
+  Plus,
+  Eye,
+  ArrowUpRight,
+  ArrowDownRight,
+  Filter,
+  Download,
+  RefreshCw,
+  MoreHorizontal,
+  Activity,
+  Building2,
+  UserCheck,
+  Clock
+} from 'lucide-react';
 import { 
   ResponsiveContainer, 
+  AreaChart,
+  Area,
   BarChart, 
   Bar, 
   XAxis, 
@@ -23,73 +42,138 @@ import {
   Cell
 } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGoals, useGoalStats } from '@/hooks/useGoals';
-import { useDashboardComplete, DashboardCompleteFilters } from '@/hooks/useDashboardComplete';
+import { useDashboardOptimized } from '@/hooks/useDashboardOptimized';
+import { useContextualDashboard } from '@/hooks/useContextualDashboard';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
-import { TopProductsChart } from '@/components/dashboard/TopProductsChart';
-import { OfficePerformanceChart } from '@/components/dashboard/OfficePerformanceChart';
-import { VendorsPerformanceTable } from '@/components/dashboard/VendorsPerformanceTable';
-import { DashboardFiltersAdvanced } from '@/components/dashboard/DashboardFiltersAdvanced';
 
-interface MetricCardProps {
+// Componente de Métrica Moderna
+interface ModernMetricCardProps {
   title: string;
-  value: string;
-  description: string;
+  value: string | number;
+  subtitle?: string;
   icon: React.ReactNode;
-  trend: number;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+  color?: string;
+  onClick?: () => void;
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ title, value, description, icon, trend }) => {
+const ModernMetricCard: React.FC<ModernMetricCardProps> = ({ 
+  title, 
+  value, 
+  subtitle, 
+  icon, 
+  trend, 
+  color = "primary",
+  onClick 
+}) => {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <CardDescription>
-          {description}
-          {trend !== 0 && (
-            <span className={`ml-2 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {trend > 0 ? '▲' : '▼'} {Math.abs(trend)}%
-            </span>
+    <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${onClick ? 'cursor-pointer' : ''}`} onClick={onClick}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className={`p-2 rounded-lg bg-${color}/10`}>
+            <div className={`text-${color}`}>
+              {icon}
+            </div>
+          </div>
+          {trend && (
+            <div className={`flex items-center text-xs ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
+              {trend.isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {trend.value}%
+            </div>
           )}
-        </CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-1">
+          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
 };
 
+// Componente de Ação Rápida
+interface QuickActionProps {
+  title: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  color?: string;
+}
+
+const QuickAction: React.FC<QuickActionProps> = ({ title, icon, onClick, color = "primary" }) => {
+  return (
+    <Button
+      variant="outline"
+      className={`h-20 flex flex-col items-center justify-center space-y-2 hover:bg-${color}/10 transition-colors`}
+      onClick={onClick}
+    >
+      <div className={`text-${color}`}>
+        {icon}
+      </div>
+      <span className="text-xs font-medium">{title}</span>
+    </Button>
+  );
+};
+
 const Dashboard = () => {
-  const { activeTenant } = useAuth();
-  const { goals, isLoading: goalsLoading } = useGoals();
-  const { data: goalStats, isLoading: statsLoading } = useGoalStats();
-  const { data: dashboardConfig, isLoading: configLoading } = useDashboardConfig();
+  const { activeTenant, user } = useAuth();
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [selectedOffice, setSelectedOffice] = useState('all');
   
-  // Estado dos filtros
-  const [filters, setFilters] = useState<DashboardCompleteFilters>({
-    dateRange: {
-      start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-      end: new Date().toISOString().split('T')[0]
-    },
-    limit: 10,
-    offset: 0
-  });
+  // Hooks de dados contextuais
+  const { data: contextualData, isLoading: contextualLoading } = useContextualDashboard();
+  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardOptimized();
+  const { data: dashboardConfig, isLoading: configLoading } = useDashboardConfig();
 
-  // Hook com dados completos
-  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardComplete(filters);
+  const isLoading = contextualLoading || dashboardLoading || configLoading;
 
-  const isLoading = goalsLoading || statsLoading || dashboardLoading || configLoading;
+  // Dados do dashboard com fallbacks
+  const stats = contextualData || {
+    total_clients: 0,
+    total_sales: 0,
+    total_commission: 0,
+    pending_tasks: 0,
+    month_sales: 0,
+    month_commission: 0,
+    user_role: 'user',
+    accessible_offices: [],
+    context_level: 4
+  };
+
+  // Dados dos gráficos
+  const chartData = dashboardData || {
+    monthlyTrend: [],
+    topProducts: [],
+    recentActivities: [],
+    officePerformance: []
+  };
+
+  const offices = [
+    { id: 'all', name: 'Todos os Escritórios' },
+    { id: 'office1', name: 'Matriz' },
+    { id: 'office2', name: 'Filial São Paulo' }
+  ];
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+      <div className="min-h-screen bg-background">
+        <div className="animate-pulse p-6 space-y-6">
+          <div className="h-8 bg-muted rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              <div key={i} className="h-32 bg-muted rounded"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-64 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -97,324 +181,366 @@ const Dashboard = () => {
     );
   }
 
-  // Função para verificar se um widget deve ser exibido
-  const renderWidget = (widgetKey: string) => {
-    if (!dashboardConfig?.widgets) return true; // Se não há config, mostrar tudo
-    return dashboardConfig.widgets[widgetKey as keyof typeof dashboardConfig.widgets] === true;
-  };
-
-  // Usar dados reais dos filtros ou fallback
-  const stats = dashboardData?.stats || { total_clients: 0, total_sales: 0, total_revenue: 0, total_commission: 0 };
-  const recentSales = dashboardData?.sales || [];
-  const recentClients = dashboardData?.clients || [];
-  const goals_data = dashboardData?.goals || [];
-  const topProducts = dashboardData?.top_products || [];
-  const vendorsData = dashboardData?.vendors || [];
-  const officePerformance = dashboardData?.office_performance || [];
-
-  const vendasMensais = [
-    { month: 'Jul', vendas: 35000, meta: 40000 },
-    { month: 'Ago', vendas: 42000, meta: 45000 },
-    { month: 'Set', vendas: 38000, meta: 42000 },
-    { month: 'Out', vendas: 51000, meta: 48000 },
-    { month: 'Nov', vendas: 47000, meta: 50000 },
-    { month: 'Dez', vendas: stats.total_revenue || 49000, meta: 52000 },
+  // Dados de exemplo para demonstração
+  const monthlyTrend = [
+    { month: 'Jan', vendas: 32000, comissoes: 3200, metas: 35000 },
+    { month: 'Fev', vendas: 28000, comissoes: 2800, metas: 35000 },
+    { month: 'Mar', vendas: 42000, comissoes: 4200, metas: 35000 },
+    { month: 'Abr', vendas: 38000, comissoes: 3800, metas: 40000 },
+    { month: 'Mai', vendas: 45000, comissoes: 4500, metas: 40000 },
+    { month: 'Jun', vendas: stats.month_sales || 48000, comissoes: stats.month_commission || 4800, metas: 45000 },
   ];
 
-  const comissoesMensais = [
-    { month: 'Jul', comissoes: 3500, meta: 4000 },
-    { month: 'Ago', comissoes: 4200, meta: 4500 },
-    { month: 'Set', comissoes: 3800, meta: 4200 },
-    { month: 'Out', comissoes: 5100, meta: 4800 },
-    { month: 'Nov', comissoes: 4700, meta: 5000 },
-    { month: 'Dez', comissoes: stats.total_commission || 4900, meta: 5200 },
+  const topProducts = [
+    { name: 'Consórcio Imóvel', value: 45, color: '#3b82f6' },
+    { name: 'Consórcio Veículo', value: 30, color: '#10b981' },
+    { name: 'Consórcio Moto', value: 15, color: '#f59e0b' },
+    { name: 'Outros', value: 10, color: '#ef4444' },
   ];
 
-  // Dados para o gráfico de pizza dos vendedores com cores (usando fallback até implementarmos a query)
-  const topVendedores = [
-    { name: 'João Silva', value: 85000, color: '#10b981' },
-    { name: 'Maria Santos', value: 72000, color: '#3b82f6' },
-    { name: 'Pedro Costa', value: 68000, color: '#f59e0b' },
-    { name: 'Ana Oliveira', value: 54000, color: '#ef4444' },
+  const recentActivities = [
+    { 
+      id: 1, 
+      client: 'Maria Silva', 
+      action: 'Nova venda', 
+      value: 'R$ 25.000', 
+      time: '2 min atrás',
+      status: 'success'
+    },
+    { 
+      id: 2, 
+      client: 'João Santos', 
+      action: 'Reunião agendada', 
+      value: 'Amanhã 14h', 
+      time: '15 min atrás',
+      status: 'pending'
+    },
+    { 
+      id: 3, 
+      client: 'Ana Costa', 
+      action: 'Proposta enviada', 
+      value: 'R$ 18.500', 
+      time: '1h atrás',
+      status: 'info'
+    },
   ];
-
-  // Vendas recentes com dados otimizados
-  const vendasRecentes = recentSales.map((sale: any) => ({
-    cliente: sale.client_name,
-    vendedor: sale.seller_name,
-    valor: formatCurrency(sale.sale_value),
-    comissao: formatCurrency(sale.sale_value * 0.05), // 5% padrão
-    data: new Date(sale.sale_date).toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: '2-digit',
-      year: 'numeric' 
-    })
-  }));
-
-  // Calcular estatísticas das metas com dados reais
-  const totalGoals = goals.length;
-  const activeGoals = goals.filter(goal => goal.status === 'active').length;
-  const completedGoals = goals.filter(goal => goal.current_amount >= goal.target_amount).length;
-  const goalCompletionRate = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Janeiro 2024
-            {dashboardConfig && (
-              <span className="text-sm ml-4 px-2 py-1 bg-primary/10 rounded-md">
-                {dashboardConfig.data_scope === 'global' ? 'Visão Global' : 
-                 dashboardConfig.data_scope === 'office' ? 'Visão Escritório' : 'Visão Pessoal'}
-              </span>
-            )}
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Header Moderno */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+                <p className="text-sm text-muted-foreground">
+                  Bem-vindo de volta, {user?.user_metadata?.full_name || 'Usuário'}
+                </p>
+              </div>
+              {dashboardConfig && (
+                <Badge variant="secondary" className="ml-4">
+                  {dashboardConfig.data_scope === 'global' ? 'Visão Global' : 
+                   dashboardConfig.data_scope === 'office' ? 'Visão Escritório' : 'Visão Pessoal'}
+                </Badge>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Hoje</SelectItem>
+                  <SelectItem value="week">Semana</SelectItem>
+                  <SelectItem value="month">Mês</SelectItem>
+                  <SelectItem value="quarter">Trimestre</SelectItem>
+                  <SelectItem value="year">Ano</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedOffice} onValueChange={setSelectedOffice}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {offices.map((office) => (
+                    <SelectItem key={office.id} value={office.id}>
+                      {office.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Button variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Atualizar
+              </Button>
+              
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Exportar
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Filtros do Dashboard */}
-      <div className="mb-6">
-        <DashboardFiltersAdvanced
-          filters={filters}
-          onFiltersChange={(newFilters) => setFilters(prev => ({ ...prev, ...newFilters }))}
-          onReset={() => setFilters({
-            dateRange: {
-              start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-              end: new Date().toISOString().split('T')[0]
-            },
-            limit: 10,
-            offset: 0
-          })}
-          totalResults={dashboardData?.total_count || 0}
-          isLoading={dashboardLoading}
-        />
-      </div>
-
-      {/* Novos Componentes com Dados Reais */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-        <TopProductsChart products={topProducts} isLoading={dashboardLoading} />
-        <OfficePerformanceChart officeData={officePerformance} isLoading={dashboardLoading} />
-      </div>
-
-      <div className="mb-6">
-        <VendorsPerformanceTable vendors={vendorsData} isLoading={dashboardLoading} />
-      </div>
-
-      {/* Métricas Principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {renderWidget('total_sales') && (
-          <MetricCard
+      {/* Conteúdo Principal */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Métricas Principais */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <ModernMetricCard
             title="Total de Vendas"
-            value={stats.total_sales.toString()}
-            description="vendas realizadas"
-            icon={<TrendingUp className="h-4 w-4" />}
-            trend={12}
+            value={stats.total_sales}
+            subtitle="vendas realizadas"
+            icon={<TrendingUp className="w-5 h-5" />}
+            trend={{ value: 12, isPositive: true }}
+            color="blue"
           />
-        )}
-        {renderWidget('total_clients') && (
-          <MetricCard
-            title="Total de Clientes"
-            value={stats.total_clients.toString()}
-            description="clientes cadastrados"
-            icon={<Users className="h-4 w-4" />}
-            trend={8}
+          <ModernMetricCard
+            title="Clientes Ativos"
+            value={stats.total_clients}
+            subtitle="clientes cadastrados"
+            icon={<Users className="w-5 h-5" />}
+            trend={{ value: 8, isPositive: true }}
+            color="green"
           />
-        )}
-        {renderWidget('monthly_performance') && (
-          <MetricCard
-            title="Vendas do Mês"
-            value={formatCurrency(stats.total_revenue)}
-            description="faturamento mensal"
-            icon={<DollarSign className="h-4 w-4" />}
-            trend={2}
+          <ModernMetricCard
+            title="Receita Mensal"
+            value={formatCurrency(stats.month_sales)}
+            subtitle="faturamento do mês"
+            icon={<DollarSign className="w-5 h-5" />}
+            trend={{ value: 5, isPositive: true }}
+            color="purple"
           />
-        )}
-        {renderWidget('personal_goals') && (
-          <MetricCard
-            title="Meta Mensal"
-            value={`${goalCompletionRate.toFixed(1)}%`}
-            description="da meta atingida"
-            icon={<Target className="h-4 w-4" />}
-            trend={goalCompletionRate >= 80 ? 15 : -5}
+          <ModernMetricCard
+            title="Tarefas Pendentes"
+            value={stats.pending_tasks}
+            subtitle="tarefas em aberto"
+            icon={<Clock className="w-5 h-5" />}
+            color="orange"
           />
-        )}
-      </div>
+        </div>
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-        {/* Gráfico de Vendas Mensais */}
-        {renderWidget('monthly_performance') && (
+        {/* Ações Rápidas */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Ações Rápidas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <QuickAction
+                title="Nova Venda"
+                icon={<Plus className="w-5 h-5" />}
+                onClick={() => window.location.href = '/vendas'}
+                color="green"
+              />
+              <QuickAction
+                title="Novo Cliente"
+                icon={<UserCheck className="w-5 h-5" />}
+                onClick={() => window.location.href = '/clientes'}
+                color="blue"
+              />
+              <QuickAction
+                title="Nova Meta"
+                icon={<Target className="w-5 h-5" />}
+                onClick={() => window.location.href = '/metas'}
+                color="purple"
+              />
+              <QuickAction
+                title="Relatórios"
+                icon={<Activity className="w-5 h-5" />}
+                onClick={() => window.location.href = '/relatorios'}
+                color="orange"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Gráficos Principais */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          
+          {/* Tendência Mensal */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Desempenho Mensal
+                <Activity className="w-5 h-5" />
+                Tendência de Vendas
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={vendasMensais}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <AreaChart data={monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="vendas" fill="#10b981" name="Vendas" />
-                  <Bar dataKey="meta" fill="#3b82f6" name="Meta" />
-                </BarChart>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="vendas" 
+                    stroke="hsl(var(--primary))" 
+                    fill="hsl(var(--primary))" 
+                    fillOpacity={0.2}
+                    name="Vendas"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="metas" 
+                    stroke="hsl(var(--muted-foreground))" 
+                    fill="transparent" 
+                    strokeDasharray="5 5"
+                    name="Meta"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        )}
 
-        {/* Gráfico de Comissões */}
-        {renderWidget('commission_breakdown') && (
+          {/* Produtos Mais Vendidos */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Evolução das Comissões
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={comissoesMensais}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="comissoes" stroke="#10b981" strokeWidth={2} name="Comissões" />
-                  <Line type="monotone" dataKey="meta" stroke="#3b82f6" strokeWidth={2} name="Meta" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Seção Inferior - Top Vendedores e Vendas Recentes */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Top Vendedores */}
-        {renderWidget('top_sellers') && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Top Vendedores
+                <Award className="w-5 h-5" />
+                Produtos Mais Vendidos
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={topVendedores}
+                    data={topProducts}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
-                    outerRadius={80}
-                    fill="#8884d8"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
                     dataKey="value"
                   >
-                    {topVendedores.map((entry, index) => (
+                    {topProducts.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {topProducts.map((product, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: product.color }}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {product.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        )}
+        </div>
 
-        {/* Atividades Recentes */}
-        {renderWidget('recent_activities') && (
-          <Card>
+        {/* Atividades Recentes e Insights */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Atividades Recentes */}
+          <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
-                Atividades Recentes
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Atividades Recentes
+                </CardTitle>
+                <Button variant="ghost" size="sm">
+                  <Eye className="w-4 h-4 mr-2" />
+                  Ver Todas
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {vendasRecentes.map((venda, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <div>
-                      <div className="font-medium">{venda.cliente}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Vendedor: {venda.vendedor}
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-4 rounded-lg border bg-card/50">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        activity.status === 'success' ? 'bg-green-500' :
+                        activity.status === 'pending' ? 'bg-yellow-500' :
+                        'bg-blue-500'
+                      }`} />
+                      <div>
+                        <p className="font-medium text-sm">{activity.client}</p>
+                        <p className="text-xs text-muted-foreground">{activity.action}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">{venda.valor}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Comissão: {venda.comissao}
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {venda.data}
+                      <p className="font-medium text-sm">{activity.value}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-        )}
+
+          {/* Resumo Rápido */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Resumo do Dia
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Meta Diária</span>
+                  <span className="font-medium">R$ 5.000</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div className="bg-primary h-2 rounded-full" style={{ width: '75%' }} />
+                </div>
+                <p className="text-xs text-muted-foreground">75% da meta atingida</p>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Reuniões Hoje</span>
+                  <Badge variant="secondary">3</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Follow-ups</span>
+                  <Badge variant="outline">2</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Propostas Enviadas</span>
+                  <Badge variant="default">5</Badge>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <Button className="w-full" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Atividade
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {/* Estatísticas das Metas */}
-      {renderWidget('personal_goals') && goalStats && goalStats.totalGoals > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Estatísticas das Metas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{goalStats.totalGoals}</div>
-                <div className="text-sm text-muted-foreground">Total de Metas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{goalStats.totalGoals}</div>
-                <div className="text-sm text-muted-foreground">Metas Ativas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{goalStats.completedGoals}</div>
-                <div className="text-sm text-muted-foreground">Metas Concluídas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{goalStats.averageProgress.toFixed(1)}%</div>
-                <div className="text-sm text-muted-foreground">Progresso Médio</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Widget de Comparação de Escritórios - apenas para Owners/Admins */}
-      {renderWidget('office_comparison') && dashboardConfig?.data_scope === 'global' && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              Comparação de Escritórios
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center text-muted-foreground py-8">
-              <p>Dados de comparação entre escritórios serão exibidos aqui</p>
-              <p className="text-sm mt-2">Funcionalidade disponível apenas para administradores</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
