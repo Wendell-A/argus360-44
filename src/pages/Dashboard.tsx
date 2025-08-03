@@ -24,8 +24,9 @@ import {
 } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGoals, useGoalStats } from '@/hooks/useGoals';
-import { useDashboardOptimized } from '@/hooks/useDashboardOptimized';
+import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { useDashboardConfig } from '@/hooks/useDashboardConfig';
+import { DashboardFilters } from '@/components/DashboardFilters';
 
 interface MetricCardProps {
   title: string;
@@ -61,8 +62,17 @@ const Dashboard = () => {
   const { activeTenant } = useAuth();
   const { goals, isLoading: goalsLoading } = useGoals();
   const { data: goalStats, isLoading: statsLoading } = useGoalStats();
-  const { data: optimizedDashboard, isLoading: dashboardLoading } = useDashboardOptimized();
   const { data: dashboardConfig, isLoading: configLoading } = useDashboardConfig();
+  
+  // Hook com filtros e paginação
+  const {
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    filters,
+    updateFilters,
+    resetFilters,
+    pagination
+  } = useDashboardFilters();
 
   const isLoading = goalsLoading || statsLoading || dashboardLoading || configLoading;
 
@@ -87,13 +97,13 @@ const Dashboard = () => {
     return dashboardConfig.widgets[widgetKey as keyof typeof dashboardConfig.widgets] === true;
   };
 
-  // Usar dados otimizados ou fallback para dados simulados
-  const stats = optimizedDashboard?.stats || { total_clients: 0, total_sales: 0, total_revenue: 0, total_commission: 0 };
-  const recentSales = optimizedDashboard?.recent_sales || [];
-  const recentClients = optimizedDashboard?.recent_clients || [];
-  const pendingTasks = optimizedDashboard?.pending_tasks || [];
-  const goals_data = optimizedDashboard?.goals || [];
-  const commission_summary = optimizedDashboard?.commission_summary || { pending_commissions: 0 };
+  // Usar dados reais dos filtros ou fallback
+  const stats = dashboardData?.stats || { total_clients: 0, total_sales: 0, total_revenue: 0, total_commission: 0 };
+  const recentSales = dashboardData?.recent_sales || [];
+  const recentClients = dashboardData?.recent_clients || [];
+  const pendingTasks = dashboardData?.pending_tasks || [];
+  const goals_data = dashboardData?.goals || [];
+  const commission_summary = dashboardData?.commission_summary || { pending_commissions: 0 };
 
   const vendasMensais = [
     { month: 'Jul', vendas: 35000, meta: 40000 },
@@ -157,6 +167,17 @@ const Dashboard = () => {
             )}
           </p>
         </div>
+      </div>
+
+      {/* Filtros do Dashboard */}
+      <div className="mb-6">
+        <DashboardFilters
+          filters={filters}
+          onFiltersChange={updateFilters}
+          onReset={resetFilters}
+          pagination={pagination}
+          isLoading={dashboardLoading}
+        />
       </div>
 
       {/* Métricas Principais */}
