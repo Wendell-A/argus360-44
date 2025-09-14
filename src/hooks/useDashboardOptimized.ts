@@ -256,6 +256,12 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
           throw new Error('Nenhum dado retornado');
         }
 
+        // Buscar dados dos vendedores e produtos
+        const [topProducts, vendorsPerformance] = await Promise.all([
+          calculateTopProducts(activeTenant.tenant_id),
+          calculateVendorsPerformance(activeTenant.tenant_id)
+        ]);
+
         // Simular filtros no frontend por enquanto (será otimizado no backend)
         let filteredData = {
           stats: (result.stats_data as any) || {
@@ -275,10 +281,9 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
             paid_commissions: 0,
             overdue_commissions: 0
           },
-          // Calcular top products baseado nas vendas reais
-          top_products: await calculateTopProducts(activeTenant.tenant_id),
-          // Calcular performance dos vendedores baseado nas vendas reais
-          vendors_performance: await calculateVendorsPerformance(activeTenant.tenant_id),
+          // Usar dados reais dos vendedores e produtos
+          top_products: topProducts,
+          vendors_performance: vendorsPerformance,
           office_performance: [
             { office_id: '1', office_name: 'Matriz Mauá', total_sales: 12, total_revenue: 1800000, active_vendors: 5 },
             { office_id: '2', office_name: 'Paulista', total_sales: 8, total_revenue: 1200000, active_vendors: 3 },
