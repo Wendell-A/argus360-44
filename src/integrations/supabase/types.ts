@@ -1471,6 +1471,77 @@ export type Database = {
           },
         ]
       }
+      super_admin_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          super_admin_id: string | null
+          token_hash: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          super_admin_id?: string | null
+          token_hash: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          super_admin_id?: string | null
+          token_hash?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "super_admin_sessions_super_admin_id_fkey"
+            columns: ["super_admin_id"]
+            isOneToOne: false
+            referencedRelation: "super_admins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      super_admins: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean | null
+          last_login: string | null
+          password_hash: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          password_hash: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          password_hash?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       support_ticket_comments: {
         Row: {
           attachments: Json | null
@@ -1693,6 +1764,123 @@ export type Database = {
           },
           {
             foreignKeyName: "teams_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          due_date: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          status: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          created_by?: string | null
+          due_date: string
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          due_date?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "super_admins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_pricing: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          discount_percentage: number | null
+          id: string
+          is_active: boolean | null
+          monthly_price: number
+          plan_type: string
+          setup_fee: number | null
+          tenant_id: string | null
+          updated_at: string | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_price: number
+          plan_type: string
+          setup_fee?: number | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_price?: number
+          plan_type?: string
+          setup_fee?: number | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_pricing_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "super_admins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_pricing_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1975,6 +2163,10 @@ export type Database = {
         }
         Returns: Json
       }
+      authenticate_super_admin: {
+        Args: { p_email: string; p_password: string }
+        Returns: Json
+      }
       calculate_commission: {
         Args: { p_commission_rate: number; p_sale_value: number }
         Returns: number
@@ -2192,6 +2384,10 @@ export type Database = {
         Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
+      get_tenant_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_user_context_offices: {
         Args: { tenant_uuid: string; user_uuid: string }
         Returns: string[]
@@ -2264,6 +2460,10 @@ export type Database = {
         Returns: Json
       }
       validate_public_invitation_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      validate_super_admin_session: {
         Args: { p_token: string }
         Returns: Json
       }

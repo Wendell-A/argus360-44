@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { AdminAuthProvider } from '@/contexts/AdminAuthContext';
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -37,17 +38,34 @@ import { ProtectedLayout } from '@/components/layout/ProtectedLayout';
 import AceitarConvite from '@/pages/AceitarConvite';
 import RegistrarComToken from '@/pages/RegistrarComToken';
 
+// Admin imports
+import AdminLogin from '@/pages/admin/AdminLogin';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminLayout from '@/components/layout/AdminLayout';
+
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Landing />} />
+      <AdminAuthProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <Toaster />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin/*" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  {/* Placeholder routes for future admin pages */}
+                  <Route path="tenants" element={<div className="p-6"><h1 className="text-2xl font-bold">Gestão de Tenants</h1><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
+                  <Route path="payments" element={<div className="p-6"><h1 className="text-2xl font-bold">Gestão de Pagamentos</h1><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
+                  <Route path="monitor" element={<div className="p-6"><h1 className="text-2xl font-bold">Monitor do Sistema</h1><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
+                  <Route path="settings" element={<div className="p-6"><h1 className="text-2xl font-bold">Configurações Admin</h1><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
+                </Route>
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
               <Route path="/aceitar-convite/:token" element={<AceitarConvite />} />
@@ -83,6 +101,7 @@ function App() {
           </BrowserRouter>
         </ThemeProvider>
       </AuthProvider>
+      </AdminAuthProvider>
     </QueryClientProvider>
   );
 }
