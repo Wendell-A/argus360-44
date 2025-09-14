@@ -65,7 +65,7 @@ export default function RegistrarComToken() {
 
       if (error) {
         console.error('❌ Erro RPC ao validar token:', error);
-        setError('Erro ao validar o link de convite.');
+        setError((error as any)?.message || 'Erro ao validar o link de convite.');
         return;
       }
 
