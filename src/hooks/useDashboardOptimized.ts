@@ -67,6 +67,86 @@ const calculateTopProducts = async (tenantId: string) => {
   }
 };
 
+// Função para calcular performance dos vendedores baseado nas vendas reais
+const calculateVendorsPerformance = async (tenantId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('sales')
+      .select(`
+        sale_value,
+        commission_amount,
+        seller_id,
+        offices (
+          name
+        )
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'approved');
+
+    if (error) {
+      console.error('Erro ao buscar vendas:', error);
+      return [];
+    }
+
+    // Buscar dados dos vendedores
+    const sellerIds = [...new Set(data?.map(sale => sale.seller_id).filter(Boolean))];
+    
+    const { data: sellersData, error: sellersError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', sellerIds);
+
+    if (sellersError) {
+      console.error('Erro ao buscar perfis dos vendedores:', sellersError);
+      return [];
+    }
+
+    // Criar mapa de vendedores
+    const sellersMap = new Map(sellersData?.map(seller => [seller.id, seller]) || []);
+
+    // Agrupar vendas por vendedor
+    const vendorSummary: Record<string, {
+      vendor_id: string;
+      vendor_name: string;
+      total_sales: number;
+      total_commission: number;
+      goals_achieved: number;
+      office_name: string;
+    }> = {};
+
+    data?.forEach(sale => {
+      const vendorId = sale.seller_id || 'unknown';
+      const seller = sellersMap.get(vendorId);
+      const vendorName = seller?.full_name || 'Vendedor não informado';
+      const commissionAmount = Number(sale.commission_amount) || 0;
+      const officeName = sale.offices?.name || 'Escritório não informado';
+      
+      if (!vendorSummary[vendorId]) {
+        vendorSummary[vendorId] = {
+          vendor_id: vendorId,
+          vendor_name: vendorName,
+          total_sales: 0,
+          total_commission: 0,
+          goals_achieved: 0,
+          office_name: officeName
+        };
+      }
+      
+      vendorSummary[vendorId].total_sales += 1;
+      vendorSummary[vendorId].total_commission += commissionAmount;
+    });
+
+    // Converter para array e ordenar por número de vendas
+    return Object.values(vendorSummary)
+      .sort((a, b) => b.total_sales - a.total_sales)
+      .slice(0, 5); // Top 5 vendedores
+      
+  } catch (error) {
+    console.error('Erro ao calcular performance dos vendedores:', error);
+    return [];
+  }
+};
+
 interface DashboardFilters {
   dateRange?: {
     start: string;
@@ -197,11 +277,8 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
           },
           // Calcular top products baseado nas vendas reais
           top_products: await calculateTopProducts(activeTenant.tenant_id),
-          vendors_performance: [
-            { vendor_id: '1', vendor_name: 'João Silva', total_sales: 8, total_commission: 24000, goals_achieved: 2, office_name: 'Matriz' },
-            { vendor_id: '2', vendor_name: 'Maria Santos', total_sales: 6, total_commission: 18000, goals_achieved: 1, office_name: 'Filial' },
-            { vendor_id: '3', vendor_name: 'Pedro Costa', total_sales: 4, total_commission: 12000, goals_achieved: 1, office_name: 'Matriz' },
-          ],
+          // Calcular performance dos vendedores baseado nas vendas reais
+          vendors_performance: await calculateVendorsPerformance(activeTenant.tenant_id),
           office_performance: [
             { office_id: '1', office_name: 'Matriz Mauá', total_sales: 12, total_revenue: 1800000, active_vendors: 5 },
             { office_id: '2', office_name: 'Paulista', total_sales: 8, total_revenue: 1200000, active_vendors: 3 },
