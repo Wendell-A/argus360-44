@@ -57,27 +57,36 @@ export default function RegistrarComToken() {
   const validateToken = async (tokenValue: string) => {
     try {
       setLoading(true);
+      console.log('🔍 Validando token:', tokenValue);
+      
       const { data, error } = await supabase.rpc('validate_public_invitation_token', {
         p_token: tokenValue
       });
 
       if (error) {
-        console.error('Erro ao validar token:', error);
+        console.error('❌ Erro RPC ao validar token:', error);
         setError('Erro ao validar o link de convite.');
         return;
       }
 
+      console.log('📊 Dados retornados pela RPC:', data);
+      
       const validationResult = data as unknown as { valid: boolean; error?: string; link_data?: LinkData };
       
+      console.log('🔎 Resultado da validação:', validationResult);
+      
       if (!validationResult?.valid) {
+        console.warn('⚠️ Validação falhou:', validationResult?.error);
         setError(validationResult?.error || 'Link de convite inválido ou expirado.');
         return;
       }
 
+      console.log('✅ Token validado com sucesso!', validationResult.link_data);
       setLinkData(validationResult.link_data!);
       setError('');
     } catch (error) {
-      console.error('Erro ao validar token:', error);
+      console.error('💥 Erro exception ao validar token:', error);
+      console.error('💥 Stack trace:', (error as Error).stack);
       setError('Erro ao validar o link de convite.');
     } finally {
       setLoading(false);
