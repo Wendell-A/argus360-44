@@ -215,14 +215,14 @@ export default function AuditoriaSeguranca() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Select
-                    value={filters.resource_type}
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, resource_type: value }))}
+                    value={filters.resource_type || 'all'}
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, resource_type: value === 'all' ? '' : value }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Tipo de Recurso" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="clients">Clientes</SelectItem>
                       <SelectItem value="sales">Vendas</SelectItem>
                       <SelectItem value="users">Usuários</SelectItem>
@@ -231,14 +231,14 @@ export default function AuditoriaSeguranca() {
                   </Select>
 
                   <Select
-                    value={filters.action_filter}
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, action_filter: value }))}
+                    value={filters.action_filter || 'all'}
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, action_filter: value === 'all' ? '' : value }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Ação" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas</SelectItem>
+                      <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="CREATE">Criar</SelectItem>
                       <SelectItem value="UPDATE">Atualizar</SelectItem>
                       <SelectItem value="DELETE">Excluir</SelectItem>
