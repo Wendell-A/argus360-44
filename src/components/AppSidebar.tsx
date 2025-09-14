@@ -4,24 +4,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUserMenuConfig } from '@/hooks/useUserMenuConfig';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { 
-  Home, 
-  Users, 
-  ShoppingCart, 
-  UserCheck, 
-  DollarSign, 
-  BarChart3, 
-  Building2, 
-  Settings, 
-  Shield, 
-  FileText, 
-  Target, 
-  UsersIcon, 
-  Building, 
+import {
+  Home,
+  Users,
+  ShoppingCart,
+  UserCheck,
+  DollarSign,
+  BarChart3,
+  Building2,
+  Settings,
+  Shield,
+  FileText,
+  Target,
+  UsersIcon,
+  Building,
   LogOut,
   Calculator,
   Briefcase,
-  Car
+  Car,
+  MessageSquare
 } from 'lucide-react';
 import {
   Sidebar,
@@ -74,14 +75,14 @@ export default function AppSidebar() {
         { name: 'Vendas', path: '/vendas', icon: ShoppingCart, enabled: true },
         { name: 'Vendedores', path: '/vendedores', icon: UsersIcon, enabled: menuConfig?.modules?.sellers || false },
         { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
-        { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },
+        { name: 'Metas', path: '/metas', icon: Target, enabled: true },
         { name: 'Simulação Consórcio', path: '/simulacao-consorcio', icon: Calculator, enabled: true },
+        { name: 'Suporte', path: '/suporte', icon: MessageSquare, enabled: true },
       ]
     },
     {
       group: 'Gestão',
       items: [
-        { name: 'Metas', path: '/metas', icon: Target, enabled: true },
         { name: 'Relatórios', path: '/relatorios', icon: BarChart3, enabled: menuConfig?.modules?.reports || false },
         { name: 'Escritórios', path: '/escritorios', icon: Building, enabled: menuConfig?.modules?.offices || false },
         { name: 'Departamentos', path: '/departamentos', icon: Building2, enabled: menuConfig?.modules?.departments || false },
