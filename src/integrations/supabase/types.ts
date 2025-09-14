@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1471,6 +1471,130 @@ export type Database = {
           },
         ]
       }
+      support_ticket_comments: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          ticket_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          ticket_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          ticket_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_support_comments_ticket"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_support_comments_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: Database["public"]["Enums"]["support_ticket_category"]
+          closed_at: string | null
+          created_at: string
+          description: string
+          id: string
+          priority: Database["public"]["Enums"]["support_ticket_priority"]
+          resolution: string | null
+          resolved_at: string | null
+          settings: Json | null
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          tenant_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["support_ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          resolution?: string | null
+          resolved_at?: string | null
+          settings?: Json | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          tenant_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["support_ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          resolution?: string | null
+          resolved_at?: string | null
+          settings?: Json | null
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_support_tickets_assigned"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_support_tickets_tenant"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_support_tickets_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           active: boolean | null
@@ -1826,33 +1950,33 @@ export type Database = {
       accept_invitation: {
         Args: {
           invitation_token: string
-          user_id: string
           user_email: string
           user_full_name: string
+          user_id: string
         }
         Returns: Json
       }
       accept_public_invitation: {
         Args: {
-          p_token: string
-          p_user_id: string
           p_email: string
           p_full_name: string
+          p_token: string
+          p_user_id: string
         }
         Returns: Json
       }
       add_user_to_tenant: {
         Args: {
-          user_id: string
+          target_tenant_id: string
           user_email: string
           user_full_name: string
-          target_tenant_id: string
+          user_id: string
           user_role?: Database["public"]["Enums"]["user_role"]
         }
         Returns: Json
       }
       calculate_commission: {
-        Args: { p_sale_value: number; p_commission_rate: number }
+        Args: { p_commission_rate: number; p_sale_value: number }
         Returns: number
       }
       can_access_user_data: {
@@ -1865,21 +1989,21 @@ export type Database = {
       }
       can_user_perform_action: {
         Args: {
-          user_uuid: string
-          tenant_uuid: string
           action_type: string
-          resource_type: string
           resource_id?: string
+          resource_type: string
+          tenant_uuid: string
+          user_uuid: string
         }
         Returns: boolean
       }
       create_initial_user_setup: {
         Args: {
-          user_id: string
-          user_email: string
-          user_full_name: string
           tenant_name: string
           tenant_slug: string
+          user_email: string
+          user_full_name: string
+          user_id: string
         }
         Returns: Json
       }
@@ -1892,7 +2016,7 @@ export type Database = {
         Returns: string
       }
       get_audit_statistics: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
       get_authenticated_user_data: {
@@ -1901,187 +2025,187 @@ export type Database = {
       }
       get_contextual_audit_logs: {
         Args: {
-          user_uuid: string
-          tenant_uuid: string
-          p_limit?: number
-          p_offset?: number
-          p_resource_type?: string
           p_action_filter?: string
           p_date_from?: string
           p_date_to?: string
+          p_limit?: number
+          p_offset?: number
+          p_resource_type?: string
+          tenant_uuid: string
+          user_uuid: string
         }
         Returns: {
-          id: string
-          user_id: string
-          tenant_id: string
-          table_name: string
-          record_id: string
           action: string
-          old_values: Json
-          new_values: Json
-          ip_address: unknown
-          user_agent: string
-          created_at: string
-          user_role: string
           context_level: number
+          created_at: string
+          id: string
+          ip_address: unknown
+          new_values: Json
+          old_values: Json
+          record_id: string
+          table_name: string
+          tenant_id: string
+          user_agent: string
+          user_id: string
+          user_role: string
         }[]
       }
       get_contextual_clients: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: {
-          id: string
-          name: string
-          email: string
-          phone: string
-          document: string
-          type: string
-          status: string
-          office_id: string
-          responsible_user_id: string
-          classification: string
-          monthly_income: number
-          birth_date: string
-          occupation: string
-          secondary_phone: string
           address: Json
-          notes: string
-          source: string
-          settings: Json
+          birth_date: string
+          classification: string
           created_at: string
-          updated_at: string
+          document: string
+          email: string
+          id: string
+          monthly_income: number
+          name: string
+          notes: string
+          occupation: string
+          office_id: string
+          phone: string
+          responsible_user_id: string
+          secondary_phone: string
+          settings: Json
+          source: string
+          status: string
           tenant_id: string
+          type: string
+          updated_at: string
         }[]
       }
       get_contextual_commissions: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: {
-          id: string
-          sale_id: string
-          recipient_id: string
-          recipient_type: string
-          commission_type: string
-          base_amount: number
-          commission_rate: number
-          commission_amount: number
-          installment_number: number
-          total_installments: number
-          installment_amount: number
-          due_date: string
-          payment_date: string
           approval_date: string
-          status: string
+          base_amount: number
+          commission_amount: number
+          commission_rate: number
+          commission_type: string
+          created_at: string
+          due_date: string
+          id: string
+          installment_amount: number
+          installment_number: number
+          notes: string
+          parent_commission_id: string
+          payment_date: string
           payment_method: string
           payment_reference: string
-          notes: string
+          recipient_id: string
+          recipient_type: string
+          sale_id: string
           settings: Json
-          parent_commission_id: string
-          created_at: string
-          updated_at: string
+          status: string
           tenant_id: string
+          total_installments: number
+          updated_at: string
         }[]
       }
       get_contextual_dashboard_stats: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
       get_contextual_sales: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: {
-          id: string
-          client_id: string
-          seller_id: string
-          product_id: string
-          office_id: string
-          sale_value: number
-          commission_rate: number
-          commission_amount: number
-          monthly_payment: number
-          installments: number
-          down_payment: number
-          status: string
-          sale_date: string
           approval_date: string
-          completion_date: string
           cancellation_date: string
+          client_id: string
+          commission_amount: number
+          commission_rate: number
+          completion_date: string
           contract_number: string
-          notes: string
-          settings: Json
           created_at: string
-          updated_at: string
+          down_payment: number
+          id: string
+          installments: number
+          monthly_payment: number
+          notes: string
+          office_id: string
+          product_id: string
+          sale_date: string
+          sale_value: number
+          seller_id: string
+          settings: Json
+          status: string
           tenant_id: string
+          updated_at: string
         }[]
       }
       get_contextual_users: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: {
-          user_id: string
-          tenant_id: string
-          role: Database["public"]["Enums"]["user_role"]
-          office_id: string
-          department_id: string
-          team_id: string
-          profile_id: string
           active: boolean
           context_level: number
-          permissions: Json
+          created_at: string
+          department_id: string
           invited_at: string
           joined_at: string
-          created_at: string
+          office_id: string
+          permissions: Json
+          profile_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          team_id: string
+          tenant_id: string
           updated_at: string
+          user_id: string
         }[]
       }
       get_crm_complete_optimized: {
-        Args: { tenant_uuid: string; limit_param?: number }
+        Args: { limit_param?: number; tenant_uuid: string }
         Returns: {
-          client_id: string
           client_data: Json
+          client_id: string
           funnel_position: Json
-          recent_interactions: Json
           pending_tasks: Json
+          recent_interactions: Json
           sales_data: Json
         }[]
       }
       get_dashboard_complete_optimized: {
         Args: { tenant_uuid: string }
         Returns: {
-          stats_data: Json
-          recent_sales: Json
-          recent_clients: Json
-          pending_tasks: Json
-          goals_data: Json
           commission_summary: Json
+          goals_data: Json
+          pending_tasks: Json
+          recent_clients: Json
+          recent_sales: Json
+          stats_data: Json
         }[]
       }
       get_dashboard_stats_config: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
       get_query_performance_metrics: {
         Args: { tenant_uuid: string }
         Returns: {
+          measurement_time: string
           metric_name: string
           metric_value: number
-          measurement_time: string
         }[]
       }
       get_security_monitoring_data: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
       get_user_context_offices: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: string[]
       }
       get_user_full_context: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
       get_user_menu_config: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
       get_user_role_in_tenant: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_user_tenant_ids: {
@@ -2090,48 +2214,48 @@ export type Database = {
       }
       get_users_complete_optimized: {
         Args: {
-          tenant_uuid: string
           limit_param?: number
           offset_param?: number
+          tenant_uuid: string
         }
         Returns: {
-          user_id: string
-          user_data: Json
-          profile_data: Json
-          office_data: Json
           department_data: Json
-          position_data: Json
+          office_data: Json
           permissions_data: Json
+          position_data: Json
+          profile_data: Json
           stats_data: Json
+          user_data: Json
+          user_id: string
         }[]
       }
       is_tenant_owner: {
-        Args: { user_uuid: string; tenant_uuid: string }
+        Args: { tenant_uuid: string; user_uuid: string }
         Returns: boolean
       }
       log_contextual_audit_event: {
         Args: {
-          p_user_uuid: string
-          p_tenant_uuid: string
           p_action: string
-          p_resource_type: string
-          p_resource_id?: string
-          p_old_values?: Json
-          p_new_values?: Json
           p_additional_context?: Json
+          p_new_values?: Json
+          p_old_values?: Json
+          p_resource_id?: string
+          p_resource_type: string
+          p_tenant_uuid: string
+          p_user_uuid: string
         }
         Returns: string
       }
       process_invitation_on_auth: {
-        Args: { p_user_id: string; p_email: string }
+        Args: { p_email: string; p_user_id: string }
         Returns: Json
       }
       send_invitation_via_auth: {
         Args: {
-          p_tenant_id: string
           p_email: string
-          p_role?: Database["public"]["Enums"]["user_role"]
           p_redirect_to?: string
+          p_role?: Database["public"]["Enums"]["user_role"]
+          p_tenant_id: string
         }
         Returns: Json
       }
@@ -2147,6 +2271,21 @@ export type Database = {
     Enums: {
       office_type: "matriz" | "filial" | "representacao"
       subscription_plan: "starter" | "professional" | "enterprise"
+      support_ticket_category:
+        | "bug"
+        | "feature_request"
+        | "technical_support"
+        | "account"
+        | "billing"
+        | "training"
+        | "other"
+      support_ticket_priority: "low" | "normal" | "high" | "urgent"
+      support_ticket_status:
+        | "open"
+        | "in_progress"
+        | "pending_user"
+        | "resolved"
+        | "closed"
       tenant_status: "trial" | "active" | "suspended" | "cancelled"
       user_role: "owner" | "admin" | "manager" | "user" | "viewer"
     }
@@ -2278,6 +2417,23 @@ export const Constants = {
     Enums: {
       office_type: ["matriz", "filial", "representacao"],
       subscription_plan: ["starter", "professional", "enterprise"],
+      support_ticket_category: [
+        "bug",
+        "feature_request",
+        "technical_support",
+        "account",
+        "billing",
+        "training",
+        "other",
+      ],
+      support_ticket_priority: ["low", "normal", "high", "urgent"],
+      support_ticket_status: [
+        "open",
+        "in_progress",
+        "pending_user",
+        "resolved",
+        "closed",
+      ],
       tenant_status: ["trial", "active", "suspended", "cancelled"],
       user_role: ["owner", "admin", "manager", "user", "viewer"],
     },
