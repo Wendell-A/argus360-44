@@ -115,15 +115,10 @@ export default function Dashboard() {
     return Object.values(monthSales).slice(-6); // Últimos 6 meses
   }, [dashboardData]);
 
-  // Dados dos produtos (gráfico de rosca)
+  // Dados dos produtos (gráfico de rosca) - DADOS REAIS
   const productData = useMemo(() => {
-    if (!dashboardData?.top_products) {
-      return [
-        { name: "Consórcio Imóvel", value: 850000, sales: 35, color: "hsl(var(--primary))" },
-        { name: "Consórcio Auto", value: 680000, sales: 28, color: "#10b981" },
-        { name: "Consórcio Moto", value: 220000, sales: 22, color: "#f59e0b" },
-        { name: "Outros", value: 150000, sales: 15, color: "#ef4444" },
-      ];
+    if (!dashboardData?.top_products || dashboardData.top_products.length === 0) {
+      return []; // Retorna array vazio se não houver dados
     }
     
     const colors = ['hsl(var(--primary))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -445,39 +440,51 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={productData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={80}
-                  paddingAngle={5}
-                >
-                  {productData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value, name) => [formatCurrency(Number(value)), name]} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
-              {productData.map((product, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: product.color }}
-                    />
-                    <span className="text-muted-foreground">{product.name}</span>
-                  </div>
-                  <Badge variant="secondary">{product.sales} vendas</Badge>
+            {productData.length === 0 ? (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                <div className="text-center">
+                  <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum dado de produto disponível</p>
+                  <p className="text-sm">Dados aparecerão após a primeira venda aprovada</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={productData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={5}
+                    >
+                      {productData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [formatCurrency(Number(value)), name]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {productData.map((product, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: product.color }}
+                        />
+                        <span className="text-muted-foreground">{product.name}</span>
+                      </div>
+                      <Badge variant="secondary">{product.sales} vendas</Badge>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

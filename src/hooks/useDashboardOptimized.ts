@@ -10,6 +10,63 @@ import { useOptimizedBusinessQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Função para calcular top produtos baseado nas vendas reais
+const calculateTopProducts = async (tenantId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('sales')
+      .select(`
+        sale_value,
+        consortium_products (
+          name,
+          category
+        )
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'approved');
+
+    if (error) {
+      console.error('Erro ao buscar produtos:', error);
+      return [];
+    }
+
+    // Agrupar vendas por produto
+    const productSummary: Record<string, {
+      product_name: string;
+      total_revenue: number;
+      sales_count: number;
+      total_sales: number;
+    }> = {};
+
+    data?.forEach(sale => {
+      const productName = sale.consortium_products?.name || 'Produto não informado';
+      const saleValue = Number(sale.sale_value) || 0;
+      
+      if (!productSummary[productName]) {
+        productSummary[productName] = {
+          product_name: productName,
+          total_revenue: 0,
+          sales_count: 0,
+          total_sales: 0
+        };
+      }
+      
+      productSummary[productName].total_revenue += saleValue;
+      productSummary[productName].sales_count += 1;
+      productSummary[productName].total_sales += 1;
+    });
+
+    // Converter para array e ordenar por receita total
+    return Object.values(productSummary)
+      .sort((a, b) => b.total_revenue - a.total_revenue)
+      .slice(0, 5); // Top 5 produtos
+      
+  } catch (error) {
+    console.error('Erro ao calcular top produtos:', error);
+    return [];
+  }
+};
+
 interface DashboardFilters {
   dateRange?: {
     start: string;
@@ -138,13 +195,8 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
             paid_commissions: 0,
             overdue_commissions: 0
           },
-          // Dados simulados que serão implementados
-          top_products: [
-            { product_name: 'Consórcio Imóvel 200', total_sales: 15, total_revenue: 2500000, sales_count: 15 },
-            { product_name: 'Consórcio Auto 80', total_sales: 12, total_revenue: 960000, sales_count: 12 },
-            { product_name: 'Consórcio Moto 25', total_sales: 8, total_revenue: 200000, sales_count: 8 },
-            { product_name: 'Consórcio Imóvel 150', total_sales: 6, total_revenue: 900000, sales_count: 6 },
-          ],
+          // Calcular top products baseado nas vendas reais
+          top_products: await calculateTopProducts(activeTenant.tenant_id),
           vendors_performance: [
             { vendor_id: '1', vendor_name: 'João Silva', total_sales: 8, total_commission: 24000, goals_achieved: 2, office_name: 'Matriz' },
             { vendor_id: '2', vendor_name: 'Maria Santos', total_sales: 6, total_commission: 18000, goals_achieved: 1, office_name: 'Filial' },
