@@ -71,7 +71,7 @@ export default function Convites() {
 
   const copyPublicLink = async (publicLink: any) => {
     try {
-      const link = `${window.location.origin}/registrar/${publicLink.token}`;
+      const link = `${window.location.origin}/registrar-com-token/${publicLink.token}`;
       await navigator.clipboard.writeText(link);
       setCopiedPublicLinks(prev => new Set(prev).add(publicLink.id));
       toast.success('Link copiado! Compartilhe com seus funcionários.');
@@ -442,11 +442,11 @@ export default function Convites() {
                                     </Button>
                                   )}
                                   
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => window.open(`/registrar/${publicLink.token}`, '_blank')}
-                                  >
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => window.open(`/registrar-com-token/${publicLink.token}`, '_blank')}
+                                   >
                                     <ExternalLink className="h-3 w-3 mr-1" />
                                     Testar
                                   </Button>
