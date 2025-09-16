@@ -29,7 +29,8 @@ const SuperAdmins = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    full_name: ''
+    full_name: '',
+    pin: ''
   });
 
   useEffect(() => {
@@ -56,33 +57,37 @@ const SuperAdmins = () => {
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.email || !formData.password || !formData.full_name) {
-      toast.error('Preencha todos os campos');
+    if (!formData.email || !formData.password || !formData.full_name || !formData.pin) {
+      toast.error('Todos os campos são obrigatórios');
       return;
     }
 
     try {
-      // Usar função PostgreSQL para criar super admin
-      const { data, error } = await supabase.rpc('create_super_admin', {
-        p_email: formData.email,
-        p_password: formData.password,
-        p_full_name: formData.full_name
+      // Usar edge function para validar PIN e criar super admin
+      const { data, error } = await supabase.functions.invoke('create-super-admin', {
+        body: {
+          email: formData.email,
+          password: formData.password,
+          pin: formData.pin
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        toast.error('Erro ao criar administrador: ' + error.message);
+        return;
+      }
 
-      const result = data as any;
-      if (result?.success) {
+      if (data?.success) {
         toast.success('Super administrador criado com sucesso!');
         setIsCreateModalOpen(false);
-        setFormData({ email: '', password: '', full_name: '' });
+        setFormData({ email: '', password: '', full_name: '', pin: '' });
         fetchSuperAdmins();
       } else {
-        toast.error(result?.error || 'Erro ao criar super administrador');
+        toast.error(data?.error || 'Erro ao criar super administrador');
       }
     } catch (error: any) {
       console.error('Error creating super admin:', error);
-      toast.error(error.message || 'Erro ao criar super administrador');
+      toast.error('Erro ao conectar com o servidor');
     }
   };
 
@@ -184,6 +189,18 @@ const SuperAdmins = () => {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="pin">PIN Secreto</Label>
+                <Input
+                  id="pin"
+                  type="password"
+                  value={formData.pin}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pin: e.target.value }))}
+                  placeholder="Digite o PIN secreto"
+                  required
+                />
               </div>
               
               <div className="flex justify-end space-x-2">
