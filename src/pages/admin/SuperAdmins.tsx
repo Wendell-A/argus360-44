@@ -62,7 +62,7 @@ const SuperAdmins = () => {
     }
 
     try {
-      // Usar crypt do PostgreSQL para hash da senha
+      // Usar função PostgreSQL para criar super admin
       const { data, error } = await supabase.rpc('create_super_admin', {
         p_email: formData.email,
         p_password: formData.password,
@@ -71,10 +71,15 @@ const SuperAdmins = () => {
 
       if (error) throw error;
 
-      toast.success('Super administrador criado com sucesso!');
-      setIsCreateModalOpen(false);
-      setFormData({ email: '', password: '', full_name: '' });
-      fetchSuperAdmins();
+      const result = data as any;
+      if (result?.success) {
+        toast.success('Super administrador criado com sucesso!');
+        setIsCreateModalOpen(false);
+        setFormData({ email: '', password: '', full_name: '' });
+        fetchSuperAdmins();
+      } else {
+        toast.error(result?.error || 'Erro ao criar super administrador');
+      }
     } catch (error: any) {
       console.error('Error creating super admin:', error);
       toast.error(error.message || 'Erro ao criar super administrador');

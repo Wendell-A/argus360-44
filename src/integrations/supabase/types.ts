@@ -2199,6 +2199,10 @@ export type Database = {
         }
         Returns: Json
       }
+      create_super_admin: {
+        Args: { p_email: string; p_full_name: string; p_password: string }
+        Returns: Json
+      }
       generate_invitation_token: {
         Args: Record<PropertyKey, never>
         Returns: string

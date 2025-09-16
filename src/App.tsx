@@ -41,6 +41,7 @@ import RegistrarComToken from '@/pages/RegistrarComToken';
 // Admin imports
 import AdminLogin from '@/pages/admin/AdminLogin';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
+import SuperAdmins from '@/pages/admin/SuperAdmins';
 import AdminLayout from '@/components/layout/AdminLayout';
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ function App() {
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/admin/*" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
+                  <Route path="super-admins" element={<SuperAdmins />} />
                   {/* Placeholder routes for future admin pages */}
                   <Route path="tenants" element={<div className="p-6"><h1 className="text-2xl font-bold">Gestão de Tenants</h1><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
                   <Route path="payments" element={<div className="p-6"><h1 className="text-2xl font-bold">Gestão de Pagamentos</h1><p className="text-muted-foreground">Em desenvolvimento...</p></div>} />
