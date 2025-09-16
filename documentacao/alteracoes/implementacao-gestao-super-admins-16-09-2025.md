@@ -67,8 +67,23 @@ Implementado sistema completo para gestão de super administradores no portal ad
 - Implementar 2FA opcional
 - Adicionar filtros e paginação na listagem
 
+## Atualização Crítica - Correção das Funções SQL
+**Data:** 16/09/2025 15:35
+
+### Problema Resolvido:
+- **Erro**: "function crypt(character varying, character varying) does not exist"
+- **Causa**: Funções SQL não tinham acesso ao schema `extensions` onde ficam as funções `crypt()` e `gen_salt()`
+- **Solução**: Adicionado `SET search_path TO 'public, extensions'` nas funções:
+  - `authenticate_super_admin()`
+  - `validate_super_admin_session()`
+  - `create_super_admin()`
+
+### Status:
+✅ **RESOLVIDO** - Sistema de autenticação super admin agora funciona corretamente
+
 ## Notas Técnicas
 - Todas as senhas são hasheadas com bcrypt via PostgreSQL
 - RLS aplicado conforme padrão de segurança
 - Componentes reutilizam design system existente
 - Integração completa com contexto AdminAuth
+- **Extensão pgcrypto** instalada e configurada corretamente
