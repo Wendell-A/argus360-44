@@ -37,6 +37,11 @@ const AdminLayout = () => {
       icon: CreditCard,
     },
     {
+      name: 'Super Admins',
+      href: '/admin/super-admins',
+      icon: Shield,
+    },
+    {
       name: 'Monitor Sistema',
       href: '/admin/monitor',
       icon: Monitor,
