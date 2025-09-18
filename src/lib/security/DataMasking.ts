@@ -60,13 +60,13 @@ export function maskObjectSensitiveData<T extends Record<string, any>>(
     
     if (!showSensitive) {
       if (/cpf/i.test(key)) {
-        masked[key as keyof T] = maskSensitiveData.cpf(String(value));
+        (masked as any)[key] = maskSensitiveData.cpf(String(value));
       } else if (/cnpj/i.test(key)) {
-        masked[key as keyof T] = maskSensitiveData.cnpj(String(value));
+        (masked as any)[key] = maskSensitiveData.cnpj(String(value));
       } else if (/phone|telefone/i.test(key)) {
-        masked[key as keyof T] = maskSensitiveData.phone(String(value));
+        (masked as any)[key] = maskSensitiveData.phone(String(value));
       } else if (/email/i.test(key)) {
-        masked[key as keyof T] = maskSensitiveData.email(String(value));
+        (masked as any)[key] = maskSensitiveData.email(String(value));
       }
     }
   }
