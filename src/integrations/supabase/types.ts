@@ -1424,6 +1424,48 @@ export type Database = {
           },
         ]
       }
+      sensitive_data_access_log: {
+        Row: {
+          access_type: string
+          created_at: string | null
+          field_name: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          record_id: string | null
+          table_name: string
+          tenant_id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          access_type: string
+          created_at?: string | null
+          field_name: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          record_id?: string | null
+          table_name: string
+          tenant_id: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          access_type?: string
+          created_at?: string | null
+          field_name?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          record_id?: string | null
+          table_name?: string
+          tenant_id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       simulation_settings: {
         Row: {
           created_at: string
@@ -2445,6 +2487,15 @@ export type Database = {
           p_user_uuid: string
         }
         Returns: string
+      }
+      log_sensitive_access: {
+        Args: {
+          p_access_type?: string
+          p_field_name: string
+          p_record_id: string
+          p_table_name: string
+        }
+        Returns: undefined
       }
       process_invitation_on_auth: {
         Args: { p_email: string; p_user_id: string }
