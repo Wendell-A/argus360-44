@@ -19,29 +19,12 @@ interface CachedUserData {
   active: boolean;
   office_id?: string;
   department_id?: string;
-  profile: {
-    full_name?: string;
-    phone?: string;
-    avatar_url?: string;
-    position?: string;
-  };
-  office: {
-    name?: string;
-    type?: string;
-  };
-  department: {
-    name?: string;
-  };
-  position: {
-    name?: string;
-  };
-  permissions: Record<string, any>;
-  stats: {
-    total_sales: number;
-    total_commission: number;
-    last_activity?: string;
-    active_goals: number;
-  };
+  profile: any;
+  office: any;
+  department: any;
+  position: any;
+  permissions: any;
+  stats: any;
 }
 
 interface UsersListResponse {
@@ -127,7 +110,11 @@ export const useCachedUsers = (
           // Transformar dados para estrutura esperada
           const users: CachedUserData[] = (data || []).map((row: any) => ({
             id: row.user_id,
-            ...row.user_data,
+            email: (row.user_data as any)?.email || '',
+            role: (row.user_data as any)?.role || 'user',
+            active: (row.user_data as any)?.active || true,
+            office_id: (row.user_data as any)?.office_id,
+            department_id: (row.user_data as any)?.department_id,
             profile: row.profile_data || {},
             office: row.office_data || {},
             department: row.department_data || {},
@@ -149,8 +136,9 @@ export const useCachedUsers = (
           return response;
         },
         'user-management' // Cache strategy
-      ).then(data => ({
-        ...data,
+      ).then((data: any) => ({
+        users: data.users || [],
+        total_count: data.total_count || 0,
         cache_info: {
           cached_at: new Date().toISOString(),
           cache_strategy: 'user-management',
@@ -219,7 +207,11 @@ export const useCachedUser = (
 
           const user: CachedUserData = {
             id: row.user_id,
-            ...row.user_data,
+            email: (row.user_data as any)?.email || '',
+            role: (row.user_data as any)?.role || 'user',
+            active: (row.user_data as any)?.active || true,
+            office_id: (row.user_data as any)?.office_id,
+            department_id: (row.user_data as any)?.department_id,
             profile: row.profile_data || {},
             office: row.office_data || {},
             department: row.department_data || {},
@@ -335,7 +327,11 @@ export const useWarmUsersCache = () => {
 
           return (data || []).map((row: any) => ({
             id: row.user_id,
-            ...row.user_data,
+            email: (row.user_data as any)?.email || '',
+            role: (row.user_data as any)?.role || 'user',
+            active: (row.user_data as any)?.active || true,
+            office_id: (row.user_data as any)?.office_id,
+            department_id: (row.user_data as any)?.department_id,
             profile: row.profile_data || {},
             office: row.office_data || {},
             department: row.department_data || {},

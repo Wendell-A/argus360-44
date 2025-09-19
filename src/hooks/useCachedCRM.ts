@@ -14,50 +14,11 @@ import { useMemo } from 'react';
 
 interface CachedCRMClient {
   client_id: string;
-  client_data: {
-    name: string;
-    email?: string;
-    phone?: string;
-    status: string;
-    classification: string;
-    created_at: string;
-    responsible_user_id?: string;
-    office_id?: string;
-    type: string;
-    document: string;
-  };
-  funnel_position: {
-    stage_id?: string;
-    stage_name?: string;
-    stage_color?: string;
-    probability?: number;
-    expected_value?: number;
-    entered_at?: string;
-  };
-  recent_interactions: Array<{
-    id: string;
-    interaction_type: string;
-    title: string;
-    description?: string;
-    status: string;
-    created_at: string;
-    seller_name?: string;
-  }>;
-  pending_tasks: Array<{
-    id: string;
-    title: string;
-    description?: string;
-    status: string;
-    priority: string;
-    due_date: string;
-  }>;
-  sales_data: Array<{
-    id: string;
-    sale_value: number;
-    status: string;
-    sale_date: string;
-    commission_amount?: number;
-  }>;
+  client_data: any;
+  funnel_position: any;
+  recent_interactions: any[];
+  pending_tasks: any[];
+  sales_data: any[];
 }
 
 interface CRMListResponse {
@@ -115,14 +76,14 @@ export const useCachedCRM = (
           // Transformar dados para estrutura esperada
           const clients: CachedCRMClient[] = (data || []).map((row: any) => ({
             client_id: row.client_id,
-            client_data: (row.client_data as any) || {},
-            funnel_position: (row.funnel_position as any) || {},
-            recent_interactions: (row.recent_interactions as any) || [],
-            pending_tasks: (row.pending_tasks as any) || [],
-            sales_data: (row.sales_data as any) || []
+            client_data: row.client_data || {},
+            funnel_position: row.funnel_position || {},
+            recent_interactions: row.recent_interactions || [],
+            pending_tasks: row.pending_tasks || [],
+            sales_data: row.sales_data || []
           }));
 
-          const response: Omit<CRMListResponse, 'cache_info'> = {
+          const response = {
             clients,
             total_count: clients.length
           };
@@ -131,7 +92,7 @@ export const useCachedCRM = (
           return response;
         },
         'crm-data' // Cache strategy
-      ).then(data => ({
+      ).then((data: any) => ({
         ...data,
         cache_info: {
           cached_at: new Date().toISOString(),
@@ -203,9 +164,9 @@ export const useCachedCRMClient = (
             client_id: clientRow.client_id,
             client_data: clientRow.client_data || {},
             funnel_position: clientRow.funnel_position || {},
-            recent_interactions: clientRow.recent_interactions || [],
-            pending_tasks: clientRow.pending_tasks || [],
-            sales_data: clientRow.sales_data || []
+            recent_interactions: Array.isArray(clientRow.recent_interactions) ? clientRow.recent_interactions : [],
+            pending_tasks: Array.isArray(clientRow.pending_tasks) ? clientRow.pending_tasks : [],
+            sales_data: Array.isArray(clientRow.sales_data) ? clientRow.sales_data : []
           };
 
           console.log(`✅ CRM client ${clientId} data fetched from database`);

@@ -113,7 +113,7 @@ export const useCacheHealth = (
         return {
           overall_status: 'critical',
           redis_connection: false,
-        response_time: responseTime,
+          response_time: responseTime,
           memory_available: false,
           error_rate: 100,
           last_check: new Date().toISOString(),
@@ -149,7 +149,7 @@ export const useCacheHealth = (
       return {
         overall_status: status,
         redis_connection: health.redis_available,
-        responseTime,
+        response_time: responseTime,
         memory_available: true, // Assumir verdadeiro por enquanto
         error_rate: health.healthy ? 0 : 100,
         last_check: health.timestamp,
