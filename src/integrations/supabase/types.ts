@@ -1560,6 +1560,8 @@ export type Database = {
           is_active: boolean | null
           last_login: string | null
           password_hash: string
+          session_expires_at: string | null
+          session_token: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1570,6 +1572,8 @@ export type Database = {
           is_active?: boolean | null
           last_login?: string | null
           password_hash: string
+          session_expires_at?: string | null
+          session_token?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1580,6 +1584,8 @@ export type Database = {
           is_active?: boolean | null
           last_login?: string | null
           password_hash?: string
+          session_expires_at?: string | null
+          session_token?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -2253,6 +2259,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_super_admin_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_audit_statistics: {
         Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
@@ -2519,7 +2529,7 @@ export type Database = {
         Returns: Json
       }
       validate_super_admin_session: {
-        Args: { p_token: string }
+        Args: { p_token: string } | { p_token: string }
         Returns: Json
       }
     }
