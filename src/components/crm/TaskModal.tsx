@@ -61,8 +61,13 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('=== INICIANDO CRIAÇÃO DE TAREFA ===');
+    console.log('Cliente fornecido:', client);
+    console.log('Dados do formulário:', formData);
+    
     // Validar se cliente foi fornecido (não pode ser string vazia)
     if (!client || !client.id || client.id.trim() === '') {
+      console.error('Erro: Cliente inválido ou não fornecido');
       toast({
         title: "Erro",
         description: "Cliente deve ser selecionado para criar tarefa.",
@@ -72,6 +77,7 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     }
 
     if (!formData.title.trim()) {
+      console.error('Erro: Título não fornecido');
       toast({
         title: "Erro",
         description: "Título é obrigatório.",
@@ -81,6 +87,7 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     }
 
     if (!formData.due_date) {
+      console.error('Erro: Data não fornecida');
       toast({
         title: "Erro",
         description: "Data é obrigatória.",
@@ -89,9 +96,19 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
       return;
     }
 
-    // Validar se a data não é anterior a hoje
-    const today = new Date().toISOString().split('T')[0];
-    if (formData.due_date < today) {
+    // Validar se a data não é anterior a hoje - usando UTC para evitar problemas de timezone
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(formData.due_date + 'T00:00:00');
+    
+    console.log('Validação de data:', {
+      today: today.toISOString(),
+      dueDate: dueDate.toISOString(),
+      dueDateString: formData.due_date
+    });
+
+    if (dueDate < today) {
+      console.error('Erro: Data anterior a hoje');
       toast({
         title: "Erro",
         description: "A data da tarefa não pode ser anterior a hoje.",
@@ -101,21 +118,28 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     }
 
     try {
-      console.log('Creating task with client:', client);
+      console.log('=== CRIANDO INTERAÇÃO ===');
       
-      // Criar uma interação com status pending que representa a tarefa
-      await createInteractionAsync({
+      // Criar ISO string consistente para scheduled_at
+      const scheduledAtISO = new Date(formData.due_date + 'T09:00:00.000Z').toISOString();
+      
+      const interactionData = {
         client_id: client.id,
         interaction_type: formData.task_type,
         title: formData.title,
-        description: formData.description,
+        description: formData.description || '',
         priority: formData.priority,
         status: 'pending',
         next_action: `${taskTypeOptions.find(opt => opt.value === formData.task_type)?.label}: ${formData.title}`,
         next_action_date: formData.due_date,
-        scheduled_at: new Date(formData.due_date).toISOString(),
-      });
+        scheduled_at: scheduledAtISO,
+      };
+      
+      console.log('Dados para criação:', interactionData);
+      
+      await createInteractionAsync(interactionData);
 
+      console.log('=== TAREFA CRIADA COM SUCESSO ===');
       toast({
         title: "Sucesso",
         description: "Tarefa criada com sucesso.",
@@ -124,10 +148,25 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
       onClose();
       resetForm();
     } catch (error) {
-      console.error('Error creating task:', error);
+      console.error('=== ERRO AO CRIAR TAREFA ===');
+      console.error('Detalhes do erro:', error);
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      let errorMessage = "Não foi possível criar a tarefa.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('violates check constraint')) {
+          errorMessage = "Erro de validação nos dados da tarefa.";
+        } else if (error.message.includes('violates row-level security')) {
+          errorMessage = "Erro de permissão. Verifique se você tem acesso a este cliente.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Erro ao criar tarefa",
-        description: error instanceof Error ? error.message : "Não foi possível criar a tarefa.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -236,7 +275,7 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
                 {taskTypeOptions.find(opt => opt.value === formData.task_type)?.label}: {formData.title}
               </p>
               <p className="text-xs text-blue-600">
-                Vencimento: {new Date(formData.due_date).toLocaleDateString('pt-BR')}
+                Vencimento: {new Date(formData.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
               </p>
             </div>
           )}
