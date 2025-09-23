@@ -1376,10 +1376,11 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          is_default_rate: boolean | null
           max_sale_value: number | null
           min_sale_value: number | null
           product_id: string
-          seller_id: string
+          seller_id: string | null
           tenant_id: string
           updated_at: string | null
         }
@@ -1388,10 +1389,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_default_rate?: boolean | null
           max_sale_value?: number | null
           min_sale_value?: number | null
           product_id: string
-          seller_id: string
+          seller_id?: string | null
           tenant_id: string
           updated_at?: string | null
         }
@@ -1400,10 +1402,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_default_rate?: boolean | null
           max_sale_value?: number | null
           min_sale_value?: number | null
           product_id?: string
-          seller_id?: string
+          seller_id?: string | null
           tenant_id?: string
           updated_at?: string | null
         }

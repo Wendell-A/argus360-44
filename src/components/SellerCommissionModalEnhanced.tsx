@@ -135,8 +135,10 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
 
     if (validationErrors.length > 0) {
       return;
@@ -149,6 +151,7 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
       min_sale_value: formData.min_sale_value ? parseFloat(formData.min_sale_value) : undefined,
       max_sale_value: formData.max_sale_value ? parseFloat(formData.max_sale_value) : undefined,
       is_active: formData.is_active,
+      is_default_rate: false, // Sempre false para comissões específicas de vendedor
     };
 
     try {
@@ -462,7 +465,7 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
           </h3>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => e.preventDefault()}>
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}

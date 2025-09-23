@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, Users, TrendingUp, Search, Filter, AlertTriangle, Eye, BarChart3 } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, TrendingUp, Search, Filter, AlertTriangle, Eye, BarChart3, Package } from 'lucide-react';
 import { useSellerCommissionsEnhanced, useUpdateSellerCommissionEnhanced } from '@/hooks/useSellerCommissionsEnhanced';
 import { useDeleteSellerCommission } from '@/hooks/useSellerCommissions';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useConsortiumProducts } from '@/hooks/useConsortiumProducts';
 import { SellerCommissionModalEnhanced } from './SellerCommissionModalEnhanced';
+import { ProductDefaultCommissionModal } from './ProductDefaultCommissionModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { formatCurrency } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -27,6 +28,7 @@ interface CommissionFilters {
 export const SellerCommissionsTableEnhanced: React.FC = () => {
   const [filters, setFilters] = useState<CommissionFilters>({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [defaultModalOpen, setDefaultModalOpen] = useState(false);
   const [selectedCommission, setSelectedCommission] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<{
     isOpen: boolean;
@@ -196,6 +198,13 @@ export const SellerCommissionsTableEnhanced: React.FC = () => {
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
                 </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setDefaultModalOpen(true)}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Comissões Padrão
+                </Button>
                 <Button onClick={handleCreateCommission}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Comissão
@@ -321,14 +330,30 @@ export const SellerCommissionsTableEnhanced: React.FC = () => {
                       <TableRow key={commission.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{commission.seller_name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {commission.seller_email}
-                            </p>
-                            {commission.office_name && (
-                              <p className="text-xs text-muted-foreground">
-                                {commission.office_name}
-                              </p>
+                            {commission.seller_id ? (
+                              // Comissão específica de vendedor
+                              <>
+                                <p className="font-medium">{commission.seller_name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {commission.seller_email}
+                                </p>
+                                {commission.office_name && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {commission.office_name}
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              // Comissão padrão do produto
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4 text-blue-600" />
+                                  <span className="font-medium text-blue-700">Taxa Padrão</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Aplicável a todos os vendedores
+                                </p>
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -470,6 +495,12 @@ export const SellerCommissionsTableEnhanced: React.FC = () => {
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           commission={selectedCommission}
+          onSave={handleModalSave}
+        />
+
+        <ProductDefaultCommissionModal
+          isOpen={defaultModalOpen}
+          onClose={() => setDefaultModalOpen(false)}
           onSave={handleModalSave}
         />
 

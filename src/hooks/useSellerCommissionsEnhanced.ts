@@ -6,12 +6,13 @@ import { useAuth } from '@/contexts/AuthContext';
 interface EnhancedSellerCommission {
   id: string;
   tenant_id: string;
-  seller_id: string;
+  seller_id: string | null;
   product_id: string;
   commission_rate: number;
   min_sale_value?: number;
   max_sale_value?: number;
   is_active: boolean;
+  is_default_rate?: boolean;
   created_at: string;
   updated_at: string;
   // Informações enriquecidas
@@ -25,12 +26,13 @@ interface EnhancedSellerCommission {
 }
 
 interface CreateSellerCommissionData {
-  seller_id: string;
+  seller_id?: string | null;
   product_id: string;
   commission_rate: number;
   min_sale_value?: number;
   max_sale_value?: number;
   is_active?: boolean;
+  is_default_rate?: boolean;
 }
 
 interface CommissionFilters {
@@ -92,8 +94,8 @@ export const useSellerCommissionsEnhanced = (filters?: CommissionFilters) => {
         
         return {
           ...commission,
-          seller_name: seller?.full_name || 'Nome não encontrado',
-          seller_email: seller?.email || 'Email não encontrado',
+          seller_name: commission.seller_id ? (seller?.full_name || 'Nome não encontrado') : 'Comissão Padrão',
+          seller_email: commission.seller_id ? (seller?.email || 'Email não encontrado') : 'Taxa padrão do produto',
           product_name: product?.name || 'Produto não encontrado',
           product_category: product?.category || 'Categoria não definida',
           potential_impact: 0,
