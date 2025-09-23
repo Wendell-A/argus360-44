@@ -221,7 +221,7 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
         {/* Actions */}
         <div className="flex items-center justify-between pt-2 border-t">
           <div className="text-xs text-gray-500">
-            {format(taskDate, 'dd/MM', { locale: ptBR })}
+            {format(taskDate, 'dd/MM', { locale: ptBR })} - {format(taskDate, 'HH:mm', { locale: ptBR })}
           </div>
           
           <div className="flex items-center gap-1">
