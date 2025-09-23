@@ -149,8 +149,8 @@ export default function RegistrarComToken() {
       const { data: acceptData, error: acceptError } = await supabase.rpc('accept_public_invitation', {
         p_token: token,
         p_user_id: authData.user.id,
-        p_email: formData.email,
-        p_full_name: formData.fullName
+        p_user_email: formData.email,
+        p_user_full_name: formData.fullName
       });
 
       if (acceptError) {
