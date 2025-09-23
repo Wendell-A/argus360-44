@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
+import { PermissionPresets } from '@/components/PermissionPresets';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +27,8 @@ import {
   Plus,
   Trash2,
   CheckCircle,
-  Search
+  Search,
+  Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -421,12 +423,23 @@ export default function Permissoes() {
             </CardContent>
           </Card>
 
+          {/* Presets de Permissões */}
+          <PermissionPresets
+            selectedRole={selectedRole}
+            allPermissions={allPermissions}
+            onApplyPreset={(permissionIds) => setSelectedPermissions(permissionIds)}
+            isLoading={loadingRolePerms || updateRolePermissions.isPending}
+          />
+
           {/* Seletor de Função para Configurar */}
           <Card>
             <CardHeader>
-              <CardTitle>Configurar Permissões por Função</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                Configurar Permissões por Função
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Selecione uma função para configurar suas permissões específicas
+                Selecione uma função para configurar suas permissões específicas ou use os presets acima
               </p>
             </CardHeader>
             <CardContent>
@@ -445,6 +458,7 @@ export default function Permissoes() {
               <Button 
                 onClick={handleSaveRolePermissions}
                 disabled={updateRolePermissions.isPending || loadingRolePerms}
+                className="w-full sm:w-auto"
               >
                 {updateRolePermissions.isPending ? 'Salvando...' : 'Salvar Permissões'}
               </Button>
@@ -505,43 +519,49 @@ export default function Permissoes() {
                           
                           <div className="space-y-2">
                             <p className="text-sm font-medium">Ações Disponíveis:</p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                              {Object.entries(permission.actions).map(([actionKey, actionDesc]) => {
+                            <div className="grid grid-cols-1 gap-3">
+                              {Object.entries(permission.actions).map(([actionKey, actionDescription]) => {
                                 const ActionIcon = actionIcons[actionKey as keyof typeof actionIcons] || Eye;
-                                const permissionData = allPermissions.find(p => 
+                                
+                                // Encontrar a permissão correspondente no banco com as novas nomenclaturas
+                                const dbPermission = allPermissions.find(p => 
                                   p.module === moduleKey && 
-                                  p.resource === permKey && 
+                                  p.resource === permKey &&
                                   p.actions.includes(actionKey)
                                 );
                                 
+                                const isChecked = dbPermission ? selectedPermissions.includes(dbPermission.id) : false;
+                                const isLoading = loadingRolePerms || updateRolePermissions.isPending;
+                                
                                 return (
-                                  <div key={actionKey} className="flex items-center space-x-2">
-                                    <Switch
-                                      id={`${moduleKey}-${permKey}-${actionKey}`}
-                                      checked={permissionData ? selectedPermissions.includes(permissionData.id) : false}
-                                      onCheckedChange={() => permissionData && handlePermissionToggle(permissionData.id)}
-                                      disabled={loadingRolePerms}
-                                    />
-                                    <div className="flex items-center gap-1">
-                                      <ActionIcon className="h-3 w-3" />
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <label 
-                                            htmlFor={`${moduleKey}-${permKey}-${actionKey}`}
-                                            className="text-xs cursor-pointer"
-                                          >
-                                            {actionKey}
-                                          </label>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p className="text-xs">{String(actionDesc)}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
+                                  <div key={actionKey} className="flex items-center justify-between p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors">
+                                    <div className="flex items-center gap-3">
+                                      <div className="p-1.5 rounded-md bg-muted">
+                                        <ActionIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </div>
+                                      <div>
+                                        <span className="text-sm font-medium capitalize">{actionKey}</span>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                          {String(actionDescription)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {!dbPermission && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          Em breve
+                                        </Badge>
+                                      )}
+                                      <Switch
+                                        checked={isChecked}
+                                        onCheckedChange={() => dbPermission && handlePermissionToggle(dbPermission.id)}
+                                        disabled={!dbPermission || isLoading}
+                                      />
                                     </div>
                                   </div>
                                 );
                               })}
-                            </div>
+                             </div>
                           </div>
                         </div>
                       ))}

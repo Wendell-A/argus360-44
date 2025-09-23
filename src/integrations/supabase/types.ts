@@ -2237,6 +2237,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_permission_migration: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          migrated_role_permissions: number
+          new_permissions_count: number
+          old_permissions_count: number
+        }[]
+      }
       create_initial_user_setup: {
         Args: {
           tenant_name: string

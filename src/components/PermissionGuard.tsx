@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PermissionCheck {
   module: string;
@@ -26,11 +27,14 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   roles = [],
 }) => {
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+  const { activeTenant } = useAuth();
 
-  // Se roles forem especificadas, verificar se o usuário tem alguma delas
-  if (roles.length > 0) {
-    // Este é um check simplificado, você pode implementar useAuth para pegar a role atual
-    // Por agora, vamos usar as permissões mesmo
+  // Verificar roles se especificadas
+  if (roles.length > 0 && activeTenant?.user_role) {
+    const hasRole = roles.includes(activeTenant.user_role);
+    if (!hasRole) {
+      return <>{fallback}</>;
+    }
   }
 
   let hasAccess = false;
