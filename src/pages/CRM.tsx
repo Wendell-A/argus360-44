@@ -9,6 +9,7 @@ import { ClientInteractionHistory } from '@/components/crm/ClientInteractionHist
 import { SalesFunnelBoard } from '@/components/crm/SalesFunnelBoard';
 import { UpcomingTasks } from '@/components/crm/UpcomingTasks';
 import { TaskKanban } from '@/components/crm/TaskKanban';
+import { BirthdayClients } from '@/components/crm/BirthdayClients';
 import { useSalesFunnelStages, useClientFunnelPositions } from '@/hooks/useSalesFunnel';
 import { useClientInteractions } from '@/hooks/useClientInteractions';
 
@@ -101,6 +102,7 @@ export default function CRM() {
         <TabsList>
           <TabsTrigger value="funnel">Funil de Vendas</TabsTrigger>
           <TabsTrigger value="tasks">Próximas Tarefas</TabsTrigger>
+          <TabsTrigger value="birthdays">Aniversariantes</TabsTrigger>
           <TabsTrigger value="history">Histórico do Cliente</TabsTrigger>
         </TabsList>
 
@@ -110,6 +112,10 @@ export default function CRM() {
 
         <TabsContent value="tasks" className="space-y-4">
           <TaskKanban />
+        </TabsContent>
+
+        <TabsContent value="birthdays" className="space-y-4">
+          <BirthdayClients />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
