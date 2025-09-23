@@ -127,8 +127,9 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     try {
       console.log('=== CRIANDO INTERAÇÃO ===');
       
-      // Criar ISO string consistente para scheduled_at
-      const scheduledAtISO = new Date(formData.due_date + 'T09:00:00.000Z').toISOString();
+      // Criar ISO string consistente para scheduled_at - usando horário local para evitar problemas de timezone
+      const localDate = new Date(formData.due_date + 'T12:00:00');
+      const scheduledAtISO = localDate.toISOString();
       
       const interactionData = {
         client_id: clientId,

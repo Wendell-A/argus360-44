@@ -29,16 +29,26 @@ interface TaskKanbanProps {
 }
 
 const getDateLabel = (date: Date) => {
-  if (isToday(date)) return 'Hoje';
-  if (isTomorrow(date)) return 'Amanhã';
-  if (isAfter(new Date(), date)) return 'Atrasado';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const taskDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  
+  if (taskDate.getTime() === today.getTime()) return 'Hoje';
+  if (taskDate.getTime() === tomorrow.getTime()) return 'Amanhã';
+  if (taskDate < today) return 'Atrasado';
   return format(date, 'dd/MM/yyyy', { locale: ptBR });
 };
 
 const getDateColor = (date: Date) => {
-  if (isAfter(new Date(), date)) return 'bg-red-100 text-red-800';
-  if (isToday(date)) return 'bg-orange-100 text-orange-800';
-  if (isTomorrow(date)) return 'bg-yellow-100 text-yellow-800';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const taskDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  
+  if (taskDate < today) return 'bg-red-100 text-red-800';
+  if (taskDate.getTime() === today.getTime()) return 'bg-orange-100 text-orange-800';
+  if (taskDate.getTime() === tomorrow.getTime()) return 'bg-yellow-100 text-yellow-800';
   return 'bg-blue-100 text-blue-800';
 };
 
@@ -62,12 +72,12 @@ const getStatusConfig = (status: string) => {
         headerColor: 'text-yellow-800',
         count: 0
       };
-    case 'scheduled':
+    case 'today':
       return {
-        title: 'Agendadas',
-        icon: Calendar,
-        color: 'bg-blue-50 border-blue-200',
-        headerColor: 'text-blue-800',
+        title: 'Execução Hoje',
+        icon: Play,
+        color: 'bg-orange-50 border-orange-200',
+        headerColor: 'text-orange-800',
         count: 0
       };
     case 'completed':
@@ -118,19 +128,32 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
     );
   }, [interactions]);
 
-  // Agrupar tarefas por status
+  // Agrupar tarefas por status e data
   const tasksByStatus = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
     const grouped = {
       pending: [] as any[],
-      scheduled: [] as any[],
+      today: [] as any[],
       completed: [] as any[],
       cancelled: [] as any[]
     };
 
     tasks.forEach(task => {
-      const status = task.status as keyof typeof grouped;
-      if (grouped[status]) {
-        grouped[status].push(task);
+      const taskDate = new Date(task.next_action_date || task.scheduled_at!);
+      const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+      
+      if (task.status === 'completed') {
+        grouped.completed.push(task);
+      } else if (task.status === 'cancelled') {
+        grouped.cancelled.push(task);
+      } else if (taskDateOnly.getTime() === today.getTime()) {
+        // Tarefas com vencimento hoje vão para "Execução Hoje"
+        grouped.today.push(task);
+      } else {
+        // Outras tarefas pendentes ou agendadas para outros dias
+        grouped.pending.push(task);
       }
     });
 
@@ -182,7 +205,10 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
 
   const renderTaskCard = (task: any) => {
     const taskDate = new Date(task.next_action_date || task.scheduled_at!);
-    const isOverdue = isAfter(new Date(), taskDate) && task.status !== 'completed';
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const taskDateOnly = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+    const isOverdue = taskDateOnly < today && task.status !== 'completed';
     const taskTitle = task.next_action || task.title;
     const taskClient = clients.find(c => c.id === task.client_id);
 
@@ -246,11 +272,12 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
               </Button>
             )}
             
-            {task.status === 'scheduled' && (
+            {/* Para tarefas na coluna "Execução Hoje", também permitir concluir */}
+            {tasksByStatus.today.includes(task) && task.status !== 'completed' && (
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
+                className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
                 onClick={() => handleStatusChange(task.id, 'completed')}
                 disabled={isUpdating}
               >
@@ -337,7 +364,7 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
         {/* Kanban Board */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {renderColumn('pending')}
-          {renderColumn('scheduled')}
+          {renderColumn('today')}
           {renderColumn('completed')}
           {renderColumn('cancelled')}
         </div>
