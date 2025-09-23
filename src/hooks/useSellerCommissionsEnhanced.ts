@@ -165,15 +165,31 @@ export const useUpdateSellerCommissionEnhanced = () => {
 
 export const useCommissionValidation = () => {
   return {
-    validateCommission: async () => []
+    validateCommission: async (formData: CreateSellerCommissionData, existingId?: string): Promise<string[]> => {
+      const errors: string[] = [];
+      
+      // Basic validation
+      if (formData.commission_rate <= 0 || formData.commission_rate > 100) {
+        errors.push('Taxa de comissão deve estar entre 0.01% e 100%');
+      }
+      
+      if (formData.min_sale_value && formData.max_sale_value) {
+        if (formData.min_sale_value >= formData.max_sale_value) {
+          errors.push('Valor mínimo deve ser menor que o valor máximo');
+        }
+      }
+      
+      return errors;
+    }
   };
 };
 
 export const useCommissionImpactSimulator = () => {
   return {
-    simulateImpact: async () => ({
-      estimatedMonthlyImpact: 0,
-      basedOnSales: 0
+    simulateImpact: async (sellerId: string, productId: string, commissionRate: number) => ({
+      estimatedMonthlyImpact: commissionRate * 1000, // Mock calculation
+      basedOnSales: 10, // Mock value
+      difference: 0
     })
   };
 };
