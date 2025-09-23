@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, User } from 'lucide-react';
 import { useCreateClientInteraction } from '@/hooks/useClientInteractions';
+import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
 
 interface TaskModalProps {
@@ -38,6 +38,7 @@ const priorityOptions = [
 
 export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
   const [formData, setFormData] = useState({
+    client_id: '',
     task_type: 'call' as const,
     title: '',
     description: '',
@@ -46,10 +47,12 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
   });
 
   const { createInteractionAsync, isCreating } = useCreateClientInteraction();
+  const { clients } = useClients();
   const { toast } = useToast();
 
   const resetForm = () => {
     setFormData({
+      client_id: client?.id || '',
       task_type: 'call',
       title: '',
       description: '',
@@ -62,11 +65,15 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     e.preventDefault();
     
     console.log('=== INICIANDO CRIAÇÃO DE TAREFA ===');
-    console.log('Cliente fornecido:', client);
+    console.log('Cliente fornecido via prop:', client);
+    console.log('Cliente no formulário:', formData.client_id);
     console.log('Dados do formulário:', formData);
     
-    // Validar se cliente foi fornecido (não pode ser string vazia)
-    if (!client || !client.id || client.id.trim() === '') {
+    // Determinar o cliente a ser usado (prop ou selecionado no form)
+    const clientId = client?.id || formData.client_id;
+    
+    // Validar se cliente foi fornecido
+    if (!clientId || clientId.trim() === '') {
       console.error('Erro: Cliente inválido ou não fornecido');
       toast({
         title: "Erro",
@@ -124,7 +131,7 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
       const scheduledAtISO = new Date(formData.due_date + 'T09:00:00.000Z').toISOString();
       
       const interactionData = {
-        client_id: client.id,
+        client_id: clientId,
         interaction_type: formData.task_type,
         title: formData.title,
         description: formData.description || '',
@@ -172,12 +179,12 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     }
   };
 
-  // Reset form when modal closes
+  // Reset form when modal opens/closes
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, client]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -186,11 +193,47 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
             Nova Tarefa
-            {client && <span className="text-sm text-gray-500">- {client.name}</span>}
+            {(client || formData.client_id) && (
+              <span className="text-sm text-muted-foreground">
+                - {client?.name || clients.find(c => c.id === formData.client_id)?.name}
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Seletor de Cliente (apenas se não houver cliente pré-selecionado) */}
+          {!client && (
+            <div>
+              <Label htmlFor="client_id">Cliente *</Label>
+              <Select
+                value={formData.client_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente">
+                    {formData.client_id && (
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {clients.find(c => c.id === formData.client_id)?.name}
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="z-50">
+                  {clients.map(clientOption => (
+                    <SelectItem key={clientOption.id} value={clientOption.id}>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {clientOption.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="task_type">Tipo de Tarefa</Label>
@@ -201,7 +244,7 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50">
                   {taskTypeOptions.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -220,7 +263,7 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50">
                   {priorityOptions.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}

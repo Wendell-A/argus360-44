@@ -347,7 +347,7 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
-        client={clientId ? clients.find(c => c.id === clientId) || null : null}
+        client={null}
       />
 
       <TaskEditModal
