@@ -185,11 +185,141 @@ export const useCommissionValidation = () => {
 };
 
 export const useCommissionImpactSimulator = () => {
+  const { activeTenant } = useAuth();
+  
   return {
-    simulateImpact: async (sellerId: string, productId: string, commissionRate: number) => ({
-      estimatedMonthlyImpact: commissionRate * 1000, // Mock calculation
-      basedOnSales: 10, // Mock value
-      difference: 0
-    })
+    simulateImpact: async (sellerId: string, productId: string, commissionRate: number) => {
+      try {
+        // Buscar histórico de vendas do vendedor nos últimos 6 meses
+        const { data: salesHistory } = await supabase
+          .from('sales')
+          .select('sale_value, commission_amount, sale_date')
+          .eq('tenant_id', activeTenant?.tenant_id)
+          .eq('seller_id', sellerId)
+          .eq('product_id', productId)
+          .gte('sale_date', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString())
+          .eq('status', 'approved');
+
+        const totalSales = salesHistory?.length || 0;
+        const avgMonthlyCommission = salesHistory?.length ? 
+          salesHistory.reduce((sum, sale) => sum + (sale.commission_amount || 0), 0) / 6 : 0;
+        
+        // Calcular impacto estimado baseado no histórico
+        const avgSaleValue = salesHistory?.length ?
+          salesHistory.reduce((sum, sale) => sum + sale.sale_value, 0) / salesHistory.length : 50000;
+        
+        const estimatedMonthlySales = Math.max(totalSales / 6, 1);
+        const newCommissionAmount = (avgSaleValue * estimatedMonthlySales * (commissionRate / 100));
+        
+        return {
+          estimatedMonthlyImpact: newCommissionAmount,
+          basedOnSales: totalSales,
+          difference: newCommissionAmount - avgMonthlyCommission,
+          avgSaleValue,
+          avgMonthlySales: estimatedMonthlySales
+        };
+      } catch (error) {
+        console.error('Error simulating impact:', error);
+        return {
+          estimatedMonthlyImpact: commissionRate * 1000,
+          basedOnSales: 0,
+          difference: 0,
+          avgSaleValue: 50000,
+          avgMonthlySales: 1
+        };
+      }
+    }
   };
+};
+
+export const useCommissionDashboardMetrics = () => {
+  const { activeTenant } = useAuth();
+  
+  return useQuery({
+    queryKey: ['commission-dashboard-metrics', activeTenant?.tenant_id],
+    queryFn: async () => {
+      if (!activeTenant?.tenant_id) return null;
+
+      // Buscar configurações de comissões
+      const { data: commissions } = await supabase
+        .from('seller_commissions')
+        .select('*')
+        .eq('tenant_id', activeTenant.tenant_id);
+
+      // Buscar vendas dos últimos 30 dias para calcular impacto
+      const { data: recentSales } = await supabase
+        .from('sales')
+        .select('seller_id, commission_amount, sale_date')
+        .eq('tenant_id', activeTenant.tenant_id)
+        .gte('sale_date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .eq('status', 'approved');
+
+      // Buscar perfis dos vendedores únicos
+      const sellerIds = [...new Set(commissions?.map(c => c.seller_id) || [])];
+      const { data: profiles } = sellerIds.length > 0 ? await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', sellerIds) : { data: [] };
+
+      const activeCommissions = commissions?.filter(c => c.is_active) || [];
+      const totalCommissions = commissions?.length || 0;
+      const avgCommissionRate = activeCommissions.length > 0
+        ? activeCommissions.reduce((sum, c) => sum + c.commission_rate, 0) / activeCommissions.length
+        : 0;
+
+      // Calcular top performers
+      const sellerPerformance = new Map();
+      recentSales?.forEach(sale => {
+        if (!sellerPerformance.has(sale.seller_id)) {
+          sellerPerformance.set(sale.seller_id, { totalCommissions: 0, salesCount: 0 });
+        }
+        const current = sellerPerformance.get(sale.seller_id);
+        current.totalCommissions += sale.commission_amount || 0;
+        current.salesCount += 1;
+      });
+
+      const topPerformers = Array.from(sellerPerformance.entries())
+        .map(([sellerId, data]) => {
+          const seller = profiles?.find(p => p.id === sellerId);
+          return {
+            id: sellerId,
+            name: seller?.full_name || seller?.email || 'Vendedor',
+            totalCommissions: data.totalCommissions,
+            averageRate: data.salesCount > 0 ? data.totalCommissions / data.salesCount : 0
+          };
+        })
+        .sort((a, b) => b.totalCommissions - a.totalCommissions)
+        .slice(0, 5);
+
+      // Mock de atividades recentes (em implementação real, viria de audit log)
+      const recentActivity = [
+        {
+          id: '1',
+          type: 'created' as const,
+          description: 'Nova configuração criada para João Silva',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: '2',
+          type: 'updated' as const,
+          description: 'Taxa alterada para Maria Santos',
+          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+
+      return {
+        totalCommissions,
+        totalValue: recentSales?.reduce((sum, s) => sum + (s.commission_amount || 0), 0) || 0,
+        averageRate: avgCommissionRate,
+        monthlyGrowth: 12.5, // Mock - calcular baseado em dados históricos
+        activeConfigurations: activeCommissions.length,
+        conflictsCount: 0, // Implementar detecção de conflitos
+        potentialImpact: activeCommissions.reduce((sum, c) => sum + (c.commission_rate * 1000), 0),
+        topPerformers,
+        recentActivity
+      };
+    },
+    enabled: !!activeTenant?.tenant_id,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
 };
