@@ -8,6 +8,7 @@ import { usePublicInvitations } from '@/hooks/usePublicInvitations';
 import { useOffices } from '@/hooks/useOffices';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useTeams } from '@/hooks/useTeams';
+import { toast } from 'sonner';
 
 interface PublicLinkModalProps {
   open: boolean;
@@ -39,13 +40,30 @@ export function PublicLinkModal({ open, onOpenChange }: PublicLinkModalProps) {
     e.preventDefault();
     
     try {
+      // Validações de entrada
+      const maxUses = formData.max_uses ? parseInt(formData.max_uses, 10) : undefined;
+      if (formData.max_uses && (isNaN(maxUses) || maxUses <= 0)) {
+        toast.error('Limite de usos deve ser um número inteiro positivo.');
+        return;
+      }
+
+      let expiresAtISO: string | undefined = undefined;
+      if (formData.expires_at) {
+        const date = new Date(formData.expires_at);
+        if (isNaN(date.getTime())) {
+          toast.error('Data de expiração inválida.');
+          return;
+        }
+        expiresAtISO = date.toISOString();
+      }
+
       await createPublicLink.mutateAsync({
         role: formData.role,
         office_id: formData.office_id === 'none' ? undefined : formData.office_id,
         department_id: formData.department_id === 'none' ? undefined : formData.department_id,
         team_id: formData.team_id === 'none' ? undefined : formData.team_id,
-        max_uses: formData.max_uses ? parseInt(formData.max_uses) : undefined,
-        expires_at: formData.expires_at || undefined,
+        max_uses: maxUses,
+        expires_at: expiresAtISO,
       });
       
       // Reset form
@@ -120,6 +138,23 @@ export function PublicLinkModal({ open, onOpenChange }: PublicLinkModalProps) {
                 {departments.map((department) => (
                   <SelectItem key={department.id} value={department.id}>
                     {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="team_id">Equipe (Opcional)</Label>
+            <Select value={formData.team_id} onValueChange={(value) => handleChange('team_id', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a equipe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma equipe específica</SelectItem>
+                {teams.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    {team.name}
                   </SelectItem>
                 ))}
               </SelectContent>
