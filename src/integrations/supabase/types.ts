@@ -2424,6 +2424,10 @@ export type Database = {
           sales_data: Json
         }[]
       }
+      get_current_super_admin_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_dashboard_complete_optimized: {
         Args: { tenant_uuid: string }
         Returns: {
@@ -2491,6 +2495,10 @@ export type Database = {
           user_data: Json
           user_id: string
         }[]
+      }
+      is_authenticated_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       is_tenant_owner: {
         Args: { tenant_uuid: string; user_uuid: string }
