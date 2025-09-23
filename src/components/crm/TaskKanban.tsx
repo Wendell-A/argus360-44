@@ -88,12 +88,12 @@ const getStatusConfig = (status: string) => {
         headerColor: 'text-green-800',
         count: 0
       };
-    case 'cancelled':
+    case 'overdue':
       return {
-        title: 'Canceladas',
-        icon: X,
-        color: 'bg-gray-50 border-gray-200',
-        headerColor: 'text-gray-800',
+        title: 'Atrasadas',
+        icon: AlertCircle,
+        color: 'bg-red-50 border-red-200',
+        headerColor: 'text-red-800',
         count: 0
       };
     default:
@@ -123,8 +123,7 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
       (interaction.status === 'pending' && interaction.scheduled_at) ||
       (interaction.next_action && interaction.next_action_date) ||
       interaction.status === 'scheduled' ||
-      interaction.status === 'completed' ||
-      interaction.status === 'cancelled'
+      interaction.status === 'completed'
     );
   }, [interactions]);
 
@@ -137,7 +136,7 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
       pending: [] as any[],
       today: [] as any[],
       completed: [] as any[],
-      cancelled: [] as any[]
+      overdue: [] as any[]
     };
 
     tasks.forEach(task => {
@@ -146,8 +145,9 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
       
       if (task.status === 'completed') {
         grouped.completed.push(task);
-      } else if (task.status === 'cancelled') {
-        grouped.cancelled.push(task);
+      } else if (taskDateOnly < today) {
+        // Tarefas com vencimento anterior a hoje e não concluídas vão para "Atrasadas"
+        grouped.overdue.push(task);
       } else if (taskDateOnly.getTime() === today.getTime()) {
         // Tarefas com vencimento hoje vão para "Execução Hoje"
         grouped.today.push(task);
@@ -272,8 +272,8 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
               </Button>
             )}
             
-            {/* Para tarefas na coluna "Execução Hoje", também permitir concluir */}
-            {tasksByStatus.today.includes(task) && task.status !== 'completed' && (
+            {/* Para tarefas nas colunas "Execução Hoje" e "Atrasadas", também permitir concluir */}
+            {(tasksByStatus.today.includes(task) || tasksByStatus.overdue.includes(task)) && task.status !== 'completed' && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -366,7 +366,7 @@ export function TaskKanban({ clientId }: TaskKanbanProps) {
           {renderColumn('pending')}
           {renderColumn('today')}
           {renderColumn('completed')}
-          {renderColumn('cancelled')}
+          {renderColumn('overdue')}
         </div>
       </div>
 
