@@ -2222,6 +2222,10 @@ export type Database = {
         Args: { p_commission_rate: number; p_sale_value: number }
         Returns: number
       }
+      can_access_profile_in_tenant: {
+        Args: { profile_user_id: string }
+        Returns: boolean
+      }
       can_access_user_data: {
         Args: {
           accessing_user_id: string
@@ -2469,6 +2473,10 @@ export type Database = {
       }
       get_user_menu_config: {
         Args: { tenant_uuid: string; user_uuid: string }
+        Returns: Json
+      }
+      get_user_profile_safe: {
+        Args: { user_uuid: string }
         Returns: Json
       }
       get_user_role_in_tenant: {
