@@ -10,7 +10,7 @@ import { useCommissions, useApproveCommission, usePayCommission } from '@/hooks/
 import { formatCurrency } from '@/lib/utils';
 import { CommissionScheduleModal } from '@/components/CommissionScheduleModal';
 import { CommissionBreakdown } from '@/components/CommissionBreakdown';
-import { SellerCommissionsTable } from '@/components/SellerCommissionsTable';
+import { SellerCommissionsTableEnhanced } from '@/components/SellerCommissionsTableEnhanced';
 import { CommissionFilterBar } from '@/components/CommissionFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { CommissionFilters } from '@/types/filterTypes';
@@ -382,7 +382,7 @@ const Comissoes = () => {
               tabType="seller-config"
               isLoading={isLoading}
             />
-            <SellerCommissionsTable />
+            <SellerCommissionsTableEnhanced />
           </div>
         </TabsContent>
       </Tabs>
