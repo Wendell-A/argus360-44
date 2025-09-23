@@ -31,7 +31,7 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { useClients, useDeleteClient } from "@/hooks/useClients";
+import { useClientsMasked, useDeleteClient } from "@/hooks/useClientsMasked";
 import { ClientModal } from "@/components/ClientModal";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFunnelStages } from "@/hooks/useSalesFunnel";
@@ -44,7 +44,7 @@ export default function Clientes() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   
-  const { clients, isLoading } = useClients();
+  const { clients, isLoading } = useClientsMasked();
   const { deleteClientAsync, isDeleting } = useDeleteClient();
   const { toast } = useToast();
   const { updatePositionAsync } = useUpdateClientFunnelPosition();
@@ -346,6 +346,9 @@ export default function Clientes() {
                             )}
                             {client.phone && (
                               <p className="text-sm text-gray-600">{client.phone}</p>
+                            )}
+                            {client.data_access_level === 'masked' && (
+                              <p className="text-xs text-orange-600 italic">Dados mascarados</p>
                             )}
                           </div>
                         </TableCell>
