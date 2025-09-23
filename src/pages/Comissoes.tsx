@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, XCircle, Clock, DollarSign, TrendingUp, Users, Calendar, Settings } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, DollarSign, TrendingUp, Users, Calendar, Settings, Download } from 'lucide-react';
 import { useCommissions, useApproveCommission, usePayCommission } from '@/hooks/useCommissions';
 import { formatCurrency } from '@/lib/utils';
 import { CommissionScheduleModal } from '@/components/CommissionScheduleModal';
@@ -14,6 +14,7 @@ import { SellerCommissionsTableEnhanced } from '@/components/SellerCommissionsTa
 import { CommissionFilterBar } from '@/components/CommissionFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { CommissionFilters } from '@/types/filterTypes';
+import * as XLSX from 'xlsx';
 
 const Comissoes = () => {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -93,12 +94,16 @@ const Comissoes = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  // Função de filtro para comissões
+  // Função de filtro para comissões (corrigida)
   const filterCommissions = (commissionsList: any[], filters: CommissionFilters) => {
     return commissionsList.filter(commission => {
-      // Filtro por vendedor
-      if (filters.vendedor && commission.sales?.seller_id !== filters.vendedor) {
-        return false;
+      // Filtro por vendedor (usando seller_id ou recipient_id)
+      if (filters.vendedor) {
+        const matchesSeller = commission.sales?.seller_id === filters.vendedor;
+        const matchesRecipient = commission.recipient_id === filters.vendedor;
+        if (!matchesSeller && !matchesRecipient) {
+          return false;
+        }
       }
 
       // Filtro por escritório
@@ -106,15 +111,15 @@ const Comissoes = () => {
         return false;
       }
 
-      // Filtro por mês
+      // Filtro por mês (usar due_date ao invés de created_at para ser mais relevante)
       if (filters.mes) {
-        const commissionMonth = new Date(commission.created_at).getMonth() + 1;
+        const commissionMonth = new Date(commission.due_date).getMonth() + 1;
         if (commissionMonth.toString() !== filters.mes) return false;
       }
 
-      // Filtro por ano
+      // Filtro por ano (usar due_date)
       if (filters.ano) {
-        const commissionYear = new Date(commission.created_at).getFullYear();
+        const commissionYear = new Date(commission.due_date).getFullYear();
         if (commissionYear.toString() !== filters.ano) return false;
       }
 
@@ -134,6 +139,55 @@ const Comissoes = () => {
     }));
   };
 
+  // Função para exportar para Excel
+  const exportToExcel = (data: any[], filename: string) => {
+    const exportData = data.map(commission => ({
+      'Contrato/Venda': commission.sales?.contract_number || `#${commission.sale_id.slice(0, 8)}`,
+      'Cliente': commission.sales?.clients?.name || 'N/A',
+      'Produto': commission.sales?.consortium_products?.name || 'N/A',
+      'Vendedor': commission.seller_profile?.full_name || commission.recipient_profile?.full_name || 'N/A',
+      'Escritório': commission.sales?.offices?.name || 'N/A',
+      'Valor Base': commission.base_amount,
+      'Taxa (%)': commission.commission_rate,
+      'Valor Comissão': commission.commission_amount,
+      'Tipo': commission.commission_type === 'office' ? 'Escritório' : 'Vendedor',
+      'Status': commission.status === 'pending' ? 'Pendente' : 
+                commission.status === 'approved' ? 'Aprovada' : 
+                commission.status === 'paid' ? 'Paga' : 'Cancelada',
+      'Data Vencimento': formatDate(commission.due_date),
+      'Data Aprovação': commission.approval_date ? formatDate(commission.approval_date) : '-',
+      'Data Pagamento': commission.payment_date ? formatDate(commission.payment_date) : '-',
+      'Método Pagamento': commission.payment_method || '-',
+      'Referência': commission.payment_reference || '-'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Comissões');
+    
+    // Ajustar largura das colunas
+    const colWidths = [
+      { wch: 15 }, // Contrato/Venda
+      { wch: 25 }, // Cliente
+      { wch: 20 }, // Produto
+      { wch: 25 }, // Vendedor
+      { wch: 20 }, // Escritório
+      { wch: 12 }, // Valor Base
+      { wch: 8 },  // Taxa
+      { wch: 12 }, // Valor Comissão
+      { wch: 12 }, // Tipo
+      { wch: 10 }, // Status
+      { wch: 12 }, // Data Vencimento
+      { wch: 12 }, // Data Aprovação
+      { wch: 12 }, // Data Pagamento
+      { wch: 15 }, // Método Pagamento
+      { wch: 15 }  // Referência
+    ];
+    ws['!cols'] = colWidths;
+
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+  };
+
   const renderCommissionsTable = (commissionsList: any[], tableType: string) => {
     const currentFilters = tabFilters[tableType] || {};
     const filteredCommissions = filterCommissions(commissionsList, currentFilters);
@@ -141,14 +195,32 @@ const Comissoes = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>
-            {tableType === 'pending' && 'Comissões Pendentes'}
-            {tableType === 'approved' && 'Comissões Aprovadas'}
-            {tableType === 'paid' && 'Comissões Pagas'}
-          </CardTitle>
-          <CardDescription>
-            {filteredCommissions.length} comissão{filteredCommissions.length !== 1 ? 'ões' : ''}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>
+                {tableType === 'pending' && 'Comissões Pendentes'}
+                {tableType === 'approved' && 'Comissões Aprovadas'}
+                {tableType === 'paid' && 'Comissões Pagas'}
+              </CardTitle>
+              <CardDescription>
+                {filteredCommissions.length} comissão{filteredCommissions.length !== 1 ? 'ões' : ''}
+              </CardDescription>
+            </div>
+            {filteredCommissions.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportToExcel(
+                  filteredCommissions,
+                  `comissoes-${tableType === 'pending' ? 'pendentes' : 
+                               tableType === 'approved' ? 'aprovadas' : 'pagas'}-${new Date().toISOString().split('T')[0]}`
+                )}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Excel
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Filtros específicos da aba */}
@@ -161,34 +233,54 @@ const Comissoes = () => {
 
           {filteredCommissions.length > 0 ? (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Venda</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Valor Base</TableHead>
-                  <TableHead>Taxa</TableHead>
-                  <TableHead>Comissão</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Venda</TableHead>
+                   <TableHead>Cliente</TableHead>
+                   <TableHead>Vendedor</TableHead>
+                   <TableHead>Escritório</TableHead>
+                   <TableHead>Valor Base</TableHead>
+                   <TableHead>Taxa</TableHead>
+                   <TableHead>Comissão</TableHead>
+                   <TableHead>Tipo</TableHead>
+                   <TableHead>Vencimento</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Ações</TableHead>
+                 </TableRow>
+               </TableHeader>
               <TableBody>
                 {filteredCommissions.map((commission) => (
                   <TableRow key={commission.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">#Venda-{commission.sale_id.slice(0, 8)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {commission.sales?.clients?.name || 'N/A'}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {commission.sales?.clients?.name || 'N/A'}
-                    </TableCell>
-                    <TableCell>{formatCurrency(commission.base_amount)}</TableCell>
+                     <TableCell>
+                       <div>
+                         <p className="font-medium">
+                           {commission.sales?.contract_number || `#${commission.sale_id.slice(0, 8)}`}
+                         </p>
+                         <p className="text-sm text-muted-foreground">
+                           {commission.sales?.consortium_products?.name || 'Produto não encontrado'}
+                         </p>
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       {commission.sales?.clients?.name || 'N/A'}
+                     </TableCell>
+                     <TableCell>
+                       <div>
+                         <p className="font-medium">
+                           {commission.seller_profile?.full_name || 
+                            commission.recipient_profile?.full_name || 
+                            'Vendedor não encontrado'}
+                         </p>
+                         <p className="text-xs text-muted-foreground">
+                           {commission.seller_profile?.email || 
+                            commission.recipient_profile?.email || ''}
+                         </p>
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       {commission.sales?.offices?.name || 'Escritório não encontrado'}
+                     </TableCell>
+                     <TableCell>{formatCurrency(commission.base_amount)}</TableCell>
                     <TableCell>{commission.commission_rate}%</TableCell>
                     <TableCell className="font-semibold">
                       {formatCurrency(commission.commission_amount)}

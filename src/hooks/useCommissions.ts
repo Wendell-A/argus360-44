@@ -29,10 +29,21 @@ export const useCommissions = () => {
             sale_value,
             client_id,
             seller_id,
+            office_id,
+            product_id,
             sale_date,
+            contract_number,
             clients (
               name,
-              document
+              document,
+              email
+            ),
+            consortium_products (
+              name,
+              category
+            ),
+            offices (
+              name
             )
           )
         `)
@@ -40,7 +51,29 @@ export const useCommissions = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      // Buscar informações dos vendedores
+      const sellerIds = data?.map(c => c.sales?.seller_id).filter(Boolean) || [];
+      const recipientIds = data?.map(c => c.recipient_id).filter(Boolean) || [];
+      const allUserIds = [...new Set([...sellerIds, ...recipientIds])];
+
+      let sellersData = [];
+      if (allUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', allUserIds);
+        sellersData = profiles || [];
+      }
+
+      // Enriquecer dados com informações dos vendedores
+      const enrichedData = data?.map(commission => ({
+        ...commission,
+        seller_profile: sellersData.find(p => p.id === commission.sales?.seller_id),
+        recipient_profile: sellersData.find(p => p.id === commission.recipient_id)
+      }));
+
+      return enrichedData || [];
     },
     enabled: !!activeTenant?.tenant_id,
   });
