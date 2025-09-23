@@ -216,12 +216,12 @@ export const CommissionImpactSimulator: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Vendedor (Opcional)</Label>
-                  <Select value={selectedSeller} onValueChange={setSelectedSeller}>
+                  <Select value={selectedSeller || 'generic'} onValueChange={(value) => setSelectedSeller(value === 'generic' ? '' : value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar vendedor" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Genérico</SelectItem>
+                      <SelectItem value="generic">Genérico</SelectItem>
                       {vendedores?.map((vendedor) => (
                         <SelectItem key={vendedor.id} value={vendedor.id}>
                           {vendedor.full_name || vendedor.email}
@@ -233,12 +233,12 @@ export const CommissionImpactSimulator: React.FC = () => {
 
                 <div>
                   <Label>Produto (Opcional)</Label>
-                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                  <Select value={selectedProduct || 'generic'} onValueChange={(value) => setSelectedProduct(value === 'generic' ? '' : value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar produto" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Genérico</SelectItem>
+                      <SelectItem value="generic">Genérico</SelectItem>
                       {products?.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
                           {product.name}
