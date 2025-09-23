@@ -121,7 +121,7 @@ export default function Dashboard() {
       return []; // Retorna array vazio se não houver dados
     }
     
-    const colors = ['hsl(var(--primary))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', '#ef4444', '#8b5cf6'];
     
     return dashboardData.top_products.map((product, index) => ({
       name: product.product_name,
@@ -135,14 +135,14 @@ export default function Dashboard() {
   const vendorsData = useMemo(() => {
     if (!dashboardData?.vendors_performance) {
       return [
-        { name: "João Silva", value: 35, color: "hsl(var(--primary))" },
-        { name: "Maria Santos", value: 28, color: "#10b981" },
-        { name: "Pedro Costa", value: 22, color: "#f59e0b" },
+        { name: "João Silva", value: 35, color: "hsl(var(--chart-1))" },
+        { name: "Maria Santos", value: 28, color: "hsl(var(--chart-2))" },
+        { name: "Pedro Costa", value: 22, color: "hsl(var(--chart-3))" },
         { name: "Ana Oliveira", value: 15, color: "#ef4444" },
       ];
     }
     
-    const colors = ['hsl(var(--primary))', '#10b981', '#f59e0b', '#ef4444'];
+    const colors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', '#ef4444'];
     
     return dashboardData.vendors_performance.map((vendor, index) => ({
       name: vendor.vendor_name,
@@ -394,7 +394,7 @@ export default function Dashboard() {
                 <Tooltip />
                 <Bar 
                   dataKey="vendas" 
-                  fill="hsl(var(--primary))" 
+                  fill="hsl(var(--chart-1))" 
                   radius={[4, 4, 0, 0]} 
                 />
               </BarChart>
@@ -420,9 +420,9 @@ export default function Dashboard() {
                 <Line
                   type="monotone"
                   dataKey="comissoes"
-                  stroke="hsl(var(--primary))"
+                  stroke="hsl(var(--chart-1))"
                   strokeWidth={3}
-                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                  dot={{ fill: "hsl(var(--chart-1))", strokeWidth: 2, r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
