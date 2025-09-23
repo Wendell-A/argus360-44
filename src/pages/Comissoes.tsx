@@ -374,7 +374,16 @@ const Comissoes = () => {
         </TabsContent>
 
         <TabsContent value="seller-config">
-          <SellerCommissionsTableEnhanced />
+          <div className="space-y-6">
+            {/* Filtros específicos para configuração de vendedores */}
+            <CommissionFilterBar
+              filters={tabFilters['seller-config'] || {}}
+              onFiltersChange={(filters) => updateTabFilters('seller-config', filters)}
+              tabType="seller-config"
+              isLoading={isLoading}
+            />
+            <SellerCommissionsTableEnhanced />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Edit, Trash2, Users, TrendingUp, Search, Filter, AlertTriangle, Eye, BarChart3 } from 'lucide-react';
-import { CommissionDashboardEnhanced } from './CommissionDashboardEnhanced';
-import { useSellerCommissionsEnhanced, useUpdateSellerCommissionEnhanced, useCommissionDashboardMetrics } from '@/hooks/useSellerCommissionsEnhanced';
+import { useSellerCommissionsEnhanced, useUpdateSellerCommissionEnhanced } from '@/hooks/useSellerCommissionsEnhanced';
 import { useDeleteSellerCommission } from '@/hooks/useSellerCommissions';
 import { useVendedores } from '@/hooks/useVendedores';
 import { useConsortiumProducts } from '@/hooks/useConsortiumProducts';
@@ -36,7 +35,6 @@ export const SellerCommissionsTableEnhanced: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: commissions, isLoading, refetch } = useSellerCommissionsEnhanced(filters);
-  const { data: dashboardMetrics, isLoading: metricsLoading } = useCommissionDashboardMetrics();
   const { vendedores } = useVendedores();
   const { products } = useConsortiumProducts();
   const updateMutation = useUpdateSellerCommissionEnhanced();
@@ -113,16 +111,6 @@ export const SellerCommissionsTableEnhanced: React.FC = () => {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Dashboard Enhanced */}
-        {dashboardMetrics && (
-          <CommissionDashboardEnhanced 
-            metrics={dashboardMetrics}
-            onRefresh={refetch}
-            onCreateNew={handleCreateCommission}
-            isLoading={isLoading || metricsLoading}
-          />
-        )}
-
         {/* Cards de Resumo Aprimorados */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
