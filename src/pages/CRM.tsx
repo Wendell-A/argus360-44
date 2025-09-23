@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Target, Calendar, TrendingUp } from 'lucide-react';
-import { SalesFunnelBoard } from '@/components/crm/SalesFunnelBoard';
 import { ClientInteractionHistory } from '@/components/crm/ClientInteractionHistory';
+import { SalesFunnelBoard } from '@/components/crm/SalesFunnelBoard';
 import { UpcomingTasks } from '@/components/crm/UpcomingTasks';
+import { TaskKanban } from '@/components/crm/TaskKanban';
 import { useSalesFunnelStages, useClientFunnelPositions } from '@/hooks/useSalesFunnel';
 import { useClientInteractions } from '@/hooks/useClientInteractions';
 
@@ -108,34 +109,7 @@ export default function CRM() {
         </TabsContent>
 
         <TabsContent value="tasks" className="space-y-4">
-          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-            <UpcomingTasks />
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Resumo de Tarefas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Tarefas ativas:</span>
-                    <Badge variant="secondary">{activeTasks}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Interações hoje:</span>
-                    <Badge variant="secondary">
-                      {interactions.filter(i => 
-                        new Date(i.created_at).toDateString() === new Date().toDateString()
-                      ).length}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Clientes ativos:</span>
-                    <Badge variant="secondary">{totalClients}</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <TaskKanban />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">

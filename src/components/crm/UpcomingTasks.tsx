@@ -52,20 +52,6 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
       return dateA - dateB;
     });
 
-  // Debug logs
-  console.log('=== DEBUG UPCOMING TASKS ===');
-  console.log('Total interactions loaded:', interactions.length);
-  console.log('Interactions with pending status:', interactions.filter(i => i.status === 'pending').length);
-  console.log('Upcoming tasks filtered:', upcomingTasks.length);
-  console.log('Upcoming tasks:', upcomingTasks.map(t => ({
-    id: t.id,
-    title: t.title,
-    status: t.status,
-    scheduled_at: t.scheduled_at,
-    next_action: t.next_action,
-    next_action_date: t.next_action_date
-  })));
-
   const handleCompleteTask = async (taskId: string) => {
     try {
       await updateInteractionAsync({
