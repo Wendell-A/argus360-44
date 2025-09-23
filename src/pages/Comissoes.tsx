@@ -12,12 +12,14 @@ import { CommissionScheduleModal } from '@/components/CommissionScheduleModal';
 import { CommissionBreakdown } from '@/components/CommissionBreakdown';
 import { SellerCommissionsTableEnhanced } from '@/components/SellerCommissionsTableEnhanced';
 import { CommissionFilterBar } from '@/components/CommissionFilters';
+import { PaymentConfigModal } from '@/components/PaymentConfigModal';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { CommissionFilters } from '@/types/filterTypes';
 import * as XLSX from 'xlsx';
 
 const Comissoes = () => {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedCommission, setSelectedCommission] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>('overview');
   
@@ -62,9 +64,24 @@ const Comissoes = () => {
     }
   };
 
-  const handlePay = async (commissionId: string, paymentMethod: string, paymentReference?: string) => {
+  const handlePaymentClick = (commission: any) => {
+    setSelectedCommission(commission);
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentConfirm = async (paymentData: {
+    paymentDate: string;
+    paymentMethod: string;
+    paymentReference?: string;
+  }) => {
+    if (!selectedCommission) return;
+
     try {
-      await payCommissionAsync({ commissionId, paymentMethod, paymentReference });
+      await payCommissionAsync({
+        commissionId: selectedCommission.id,
+        paymentMethod: paymentData.paymentMethod,
+        paymentReference: paymentData.paymentReference,
+      });
       refetch();
     } catch (error) {
       console.error('Error paying commission:', error);
@@ -323,10 +340,10 @@ const Comissoes = () => {
                         {commission.status === 'approved' && (
                           <Button
                             size="sm"
-                            onClick={() => handlePay(commission.id, 'pix')}
+                            onClick={() => handlePaymentClick(commission)}
                           >
                             <DollarSign className="w-4 h-4 mr-1" />
-                            Pagar
+                            {commission.commission_type === 'office' ? 'Receber' : 'Pagar'}
                           </Button>
                         )}
                       </div>
@@ -494,6 +511,16 @@ const Comissoes = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <PaymentConfigModal
+        open={paymentModalOpen}
+        onClose={() => {
+          setPaymentModalOpen(false);
+          setSelectedCommission(null);
+        }}
+        onConfirm={handlePaymentConfirm}
+        commission={selectedCommission}
+      />
     </div>
   );
 };
