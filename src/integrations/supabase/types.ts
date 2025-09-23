@@ -2559,6 +2559,10 @@ export type Database = {
         Args: { p_token: string } | { p_token: string }
         Returns: Json
       }
+      validate_tenant_isolation: {
+        Args: { record_tenant_id: string; table_name: string; user_id?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       office_type: "matriz" | "filial" | "representacao"
