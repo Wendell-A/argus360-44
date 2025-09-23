@@ -97,11 +97,10 @@ const Comissoes = () => {
   // Função de filtro para comissões (corrigida)
   const filterCommissions = (commissionsList: any[], filters: CommissionFilters) => {
     return commissionsList.filter(commission => {
-      // Filtro por vendedor (usando seller_id ou recipient_id)
+      // Filtro por vendedor (corrigido - usando recipient_id que é quem recebe a comissão)
       if (filters.vendedor) {
-        const matchesSeller = commission.sales?.seller_id === filters.vendedor;
         const matchesRecipient = commission.recipient_id === filters.vendedor;
-        if (!matchesSeller && !matchesRecipient) {
+        if (!matchesRecipient) {
           return false;
         }
       }
@@ -125,6 +124,11 @@ const Comissoes = () => {
 
       // Filtro por status
       if (filters.status && commission.status !== filters.status) {
+        return false;
+      }
+
+      // Filtro por tipo de comissão
+      if (filters.tipoComissao && commission.commission_type !== filters.tipoComissao) {
         return false;
       }
 
@@ -239,13 +243,16 @@ const Comissoes = () => {
                    <TableHead>Cliente</TableHead>
                    <TableHead>Vendedor</TableHead>
                    <TableHead>Escritório</TableHead>
-                   <TableHead>Valor Base</TableHead>
-                   <TableHead>Taxa</TableHead>
-                   <TableHead>Comissão</TableHead>
-                   <TableHead>Tipo</TableHead>
-                   <TableHead>Vencimento</TableHead>
-                   <TableHead>Status</TableHead>
-                   <TableHead>Ações</TableHead>
+                    <TableHead>Valor Base</TableHead>
+                    <TableHead>Taxa</TableHead>
+                    <TableHead>Comissão</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Data Aprovação</TableHead>
+                    <TableHead>Data Pagamento</TableHead>
+                    <TableHead>Forma Pagamento</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Ações</TableHead>
                  </TableRow>
                </TableHeader>
               <TableBody>
@@ -290,9 +297,18 @@ const Comissoes = () => {
                         {commission.commission_type === 'office' ? 'Escritório' : 'Vendedor'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatDate(commission.due_date)}</TableCell>
-                    <TableCell>{getStatusBadge(commission.status)}</TableCell>
-                    <TableCell>
+                     <TableCell>{formatDate(commission.due_date)}</TableCell>
+                     <TableCell>
+                       {commission.approval_date ? formatDate(commission.approval_date) : '-'}
+                     </TableCell>
+                     <TableCell>
+                       {commission.payment_date ? formatDate(commission.payment_date) : '-'}
+                     </TableCell>
+                     <TableCell>
+                       {commission.payment_method || '-'}
+                     </TableCell>
+                     <TableCell>{getStatusBadge(commission.status)}</TableCell>
+                     <TableCell>
                       <div className="flex gap-2">
                         {commission.status === 'pending' && (
                           <Button

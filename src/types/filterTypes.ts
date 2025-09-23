@@ -44,4 +44,5 @@ export interface CommissionFilters extends BaseFilters {
   dataPagamento?: string;
   metodoPagamento?: string;
   produto?: string;
+  tipoComissao?: string;
 }

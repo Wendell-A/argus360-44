@@ -16,6 +16,7 @@ interface OverviewFilterConfig extends BaseFilterConfig {
   mes: boolean;
   ano: boolean;
   status: boolean;
+  tipoComissao: boolean;
 }
 
 interface PendingFilterConfig extends BaseFilterConfig {
@@ -24,6 +25,7 @@ interface PendingFilterConfig extends BaseFilterConfig {
   ano: boolean;
   vencimento: boolean;
   valor: boolean;
+  tipoComissao: boolean;
 }
 
 interface ApprovedFilterConfig extends BaseFilterConfig {
@@ -32,6 +34,7 @@ interface ApprovedFilterConfig extends BaseFilterConfig {
   ano: boolean;
   dataAprovacao: boolean;
   valor: boolean;
+  tipoComissao: boolean;
 }
 
 interface PaidFilterConfig extends BaseFilterConfig {
@@ -41,6 +44,7 @@ interface PaidFilterConfig extends BaseFilterConfig {
   dataPagamento: boolean;
   metodoPagamento: boolean;
   valor: boolean;
+  tipoComissao: boolean;
 }
 
 interface SellerConfigFilterConfig extends BaseFilterConfig {
@@ -123,7 +127,8 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           escritorio: true,
           mes: true,
           ano: true,
-          status: true
+          status: true,
+          tipoComissao: true
         } as OverviewFilterConfig;
       case 'pending':
         return {
@@ -132,7 +137,8 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           mes: true,
           ano: true,
           vencimento: true,
-          valor: true
+          valor: true,
+          tipoComissao: true
         } as PendingFilterConfig;
       case 'approved':
         return {
@@ -141,7 +147,8 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           mes: true,
           ano: true,
           dataAprovacao: true,
-          valor: true
+          valor: true,
+          tipoComissao: true
         } as ApprovedFilterConfig;
       case 'paid':
         return {
@@ -151,7 +158,8 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
           ano: true,
           dataPagamento: true,
           metodoPagamento: true,
-          valor: true
+          valor: true,
+          tipoComissao: true
         } as PaidFilterConfig;
       case 'seller-config':
         return {
@@ -192,6 +200,8 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
         return value;
       case 'status':
         return statusOptions.find(s => s.value === value)?.label || value;
+      case 'tipoComissao':
+        return value === 'office' ? 'Escritório' : value === 'seller' ? 'Vendedor' : value;
       default:
         return value;
     }
@@ -299,6 +309,23 @@ export const CommissionFilterBar: React.FC<CommissionFilterBarProps> = ({
                   {option.label}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {hasProperty(config, 'tipoComissao') && (config as any).tipoComissao && (
+          <Select
+            value={filters.tipoComissao || 'all'}
+            onValueChange={(value) => updateFilter('tipoComissao', value)}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Tipo de Comissão" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="office">Escritório</SelectItem>
+              <SelectItem value="seller">Vendedor</SelectItem>
             </SelectContent>
           </Select>
         )}
