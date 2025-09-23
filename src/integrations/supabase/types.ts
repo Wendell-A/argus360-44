@@ -2192,15 +2192,6 @@ export type Database = {
         }
         Returns: Json
       }
-      accept_public_invitation: {
-        Args: {
-          p_email: string
-          p_full_name: string
-          p_token: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
       add_user_to_tenant: {
         Args: {
           target_tenant_id: string
