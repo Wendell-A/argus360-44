@@ -128,6 +128,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_automated_tasks_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_automated_tasks_template_id"
             columns: ["template_id"]
             isOneToOne: false
@@ -195,6 +202,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_funnel_position_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_secure"
             referencedColumns: ["id"]
           },
           {
@@ -270,6 +284,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_interactions_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_secure"
             referencedColumns: ["id"]
           },
         ]
@@ -1306,6 +1327,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_secure"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sales_office_id_fkey"
             columns: ["office_id"]
             isOneToOne: false
@@ -2183,7 +2211,93 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clients_secure: {
+        Row: {
+          address: Json | null
+          birth_date: string | null
+          classification: string | null
+          created_at: string | null
+          document: string | null
+          email: string | null
+          id: string | null
+          monthly_income: number | null
+          name: string | null
+          notes: string | null
+          occupation: string | null
+          office_id: string | null
+          phone: string | null
+          responsible_user_id: string | null
+          secondary_phone: string | null
+          settings: Json | null
+          source: string | null
+          status: string | null
+          tenant_id: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: never
+          birth_date?: never
+          classification?: string | null
+          created_at?: string | null
+          document?: never
+          email?: never
+          id?: string | null
+          monthly_income?: never
+          name?: string | null
+          notes?: never
+          occupation?: string | null
+          office_id?: string | null
+          phone?: never
+          responsible_user_id?: string | null
+          secondary_phone?: string | null
+          settings?: Json | null
+          source?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: never
+          birth_date?: never
+          classification?: string | null
+          created_at?: string | null
+          document?: never
+          email?: never
+          id?: string | null
+          monthly_income?: never
+          name?: string | null
+          notes?: never
+          occupation?: string | null
+          office_id?: string | null
+          phone?: never
+          responsible_user_id?: string | null
+          secondary_phone?: string | null
+          settings?: Json | null
+          source?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: {
@@ -2244,6 +2358,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_view_full_client_data: {
+        Args: { p_client_id: string; p_user_id?: string }
+        Returns: boolean
+      }
       check_permission_migration: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2284,6 +2402,10 @@ export type Database = {
       }
       get_authenticated_user_data: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_client_data_masked: {
+        Args: { p_client_id: string; p_tenant_id?: string; p_user_id?: string }
         Returns: Json
       }
       get_contextual_audit_logs: {
