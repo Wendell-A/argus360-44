@@ -14,11 +14,13 @@ import {
   Send, 
   CheckCircle2,
   Calendar,
-  Cake
+  Cake,
+  RefreshCw
 } from 'lucide-react';
 import { useBirthdayClients, useSendBirthdayMessage, BirthdayClient } from '@/hooks/useBirthdayClients';
 import { useMessageTemplates } from '@/hooks/useMessageTemplates';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { openWhatsApp } from '@/lib/whatsapp';
@@ -40,10 +42,11 @@ export function BirthdayClients() {
   const [selectedClient, setSelectedClient] = useState<BirthdayClient | null>(null);
   const [customMessage, setCustomMessage] = useState('');
 
-  const { data: birthdayClients = [], isLoading } = useBirthdayClients();
+  const { data: birthdayClients = [], isLoading, refetch, isFetching } = useBirthdayClients();
   const { templates } = useMessageTemplates();
   const { mutateAsync: sendBirthdayMessage, isPending: isSending } = useSendBirthdayMessage();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Encontrar template de felicitações de aniversário
   const birthdayTemplate = templates.find(t => t.name === 'Felicitações de Aniversário');
@@ -102,6 +105,27 @@ export function BirthdayClients() {
     openWhatsApp(client.phone, customMessage || 'Olá!');
   };
 
+  const handleRefresh = async () => {
+    toast({
+      title: "Atualizando...",
+      description: "Buscando aniversariantes mais recentes.",
+    });
+    
+    try {
+      await refetch();
+      toast({
+        title: "Atualizado!",
+        description: "Lista de aniversariantes atualizada com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar a lista.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -124,9 +148,20 @@ export function BirthdayClients() {
               <Gift className="w-5 h-5 text-pink-600" />
               <span className="text-pink-800">Aniversariantes da Semana</span>
             </div>
-            <Badge variant="secondary" className="bg-pink-100 text-pink-800">
-              {birthdayClients.length}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleRefresh}
+                disabled={isFetching}
+                className="h-6 px-2 text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
+              </Button>
+              <Badge variant="secondary" className="bg-pink-100 text-pink-800">
+                {birthdayClients.length}
+              </Badge>
+            </div>
           </CardTitle>
         </CardHeader>
 
@@ -135,8 +170,11 @@ export function BirthdayClients() {
             <div className="text-center py-6">
               <Cake className="w-12 h-12 text-pink-300 mx-auto mb-3" />
               <p className="text-sm text-pink-600 mb-2">Nenhum aniversariante esta semana</p>
-              <p className="text-xs text-pink-500">
+              <p className="text-xs text-pink-500 mb-4">
                 Clientes com data de nascimento cadastrada aparecerão aqui automaticamente.
+              </p>
+              <p className="text-xs text-pink-400">
+                Atualiza automaticamente a cada 5 minutos ou clique no botão de atualizar acima.
               </p>
             </div>
           ) : (

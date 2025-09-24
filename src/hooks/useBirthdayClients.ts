@@ -23,6 +23,8 @@ export function useBirthdayClients() {
         throw new Error('No tenant selected');
       }
 
+      console.log('🔍 Buscando clientes aniversariantes para tenant:', activeTenant.tenant_id);
+
       // Buscar clientes com data de nascimento nos próximos 7 dias
       const { data: clients, error } = await supabase
         .from('clients')
@@ -35,13 +37,14 @@ export function useBirthdayClients() {
         `)
         .eq('tenant_id', activeTenant.tenant_id)
         .not('birth_date', 'is', null)
-        .gte('birth_date', new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]) // Para filtrar no SQL
         .order('birth_date', { ascending: true });
 
       if (error) {
-        console.error('Error fetching birthday clients:', error);
+        console.error('❌ Error fetching birthday clients:', error);
         throw error;
       }
+
+      console.log('📊 Total de clientes com data de nascimento encontrados:', clients?.length || 0);
 
       // Filtrar clientes com aniversário na semana atual (próximos 7 dias)
       const today = new Date();
@@ -65,6 +68,8 @@ export function useBirthdayClients() {
 
         // Incluir apenas se o aniversário estiver nos próximos 7 dias
         if (daysDiff >= 0 && daysDiff <= 7) {
+          console.log(`🎂 Cliente ${client.name} faz aniversário em ${daysDiff} dias`);
+          
           // Verificar se já foi enviada mensagem de aniversário hoje
           const { data: interactions } = await supabase
             .from('client_interactions')
@@ -89,9 +94,14 @@ export function useBirthdayClients() {
         }
       }
 
+      console.log('🎉 Total de aniversariantes nos próximos 7 dias:', birthdayClients.length);
       return birthdayClients.sort((a, b) => a.days_until_birthday - b.days_until_birthday);
     },
     enabled: !!activeTenant?.tenant_id,
+    staleTime: 2 * 60 * 1000, // 2 minutos - dados ficam fresh por 2 min
+    gcTime: 5 * 60 * 1000, // 5 minutos - dados ficam em cache por 5 min
+    refetchOnWindowFocus: true, // Atualiza quando a aba ganha foco
+    refetchInterval: 5 * 60 * 1000, // Atualiza automaticamente a cada 5 minutos
   });
 }
 
