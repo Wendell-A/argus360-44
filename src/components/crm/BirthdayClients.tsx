@@ -21,7 +21,7 @@ import { useMessageTemplates } from '@/hooks/useMessageTemplates';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { generateWhatsAppLink } from '@/lib/whatsapp';
+import { openWhatsApp } from '@/lib/whatsapp';
 
 const getDaysLabel = (days: number) => {
   if (days === 0) return 'Hoje! 🎉';
@@ -98,9 +98,8 @@ export function BirthdayClients() {
     }
   };
 
-  const openWhatsApp = (client: BirthdayClient) => {
-    const whatsappUrl = generateWhatsAppLink(client.phone, customMessage || 'Olá!');
-    window.open(whatsappUrl, '_blank');
+  const openWhatsAppClient = (client: BirthdayClient) => {
+    openWhatsApp(client.phone, customMessage || 'Olá!');
   };
 
   if (isLoading) {
@@ -288,7 +287,7 @@ export function BirthdayClients() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => selectedClient && openWhatsApp(selectedClient)}
+                  onClick={() => selectedClient && openWhatsAppClient(selectedClient)}
                   className="gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />

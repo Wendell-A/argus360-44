@@ -88,11 +88,20 @@ export function parseMessageTemplate(
 }
 
 /**
- * Abre o WhatsApp em uma nova aba
+ * Abre o WhatsApp em uma nova aba com segurança
  */
 export function openWhatsApp(phone: string, message: string): void {
   const link = generateWhatsAppLink(phone, message);
-  window.open(link, '_blank');
+  const win = window.open(link, '_blank', 'noopener,noreferrer');
+  if (!win) {
+    const a = document.createElement('a');
+    a.href = link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
 }
 
 /**
