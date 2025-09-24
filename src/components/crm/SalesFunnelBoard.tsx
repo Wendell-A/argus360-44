@@ -286,19 +286,15 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                         
                         {/* Botões de ação otimizados */}
                         <div className="grid grid-cols-5 gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleWhatsAppClick(client);
-                            }}
-                            disabled={!client.phone}
-                            className="h-8 p-0 hover:bg-green-50 hover:text-green-600 hover:border-green-300 dark:hover:bg-green-900/30"
-                            title="WhatsApp"
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </Button>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             disabled
+                             className="h-8 p-0 cursor-not-allowed opacity-50"
+                             title="WhatsApp (Temporariamente desabilitado)"
+                           >
+                             <MessageCircle className="w-4 h-4" />
+                           </Button>
                           <Button
                             size="sm"
                             variant="outline"

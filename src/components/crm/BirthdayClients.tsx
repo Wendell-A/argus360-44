@@ -287,11 +287,11 @@ export function BirthdayClients() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => selectedClient && openWhatsAppClient(selectedClient)}
-                  className="gap-2"
+                  disabled
+                  className="gap-2 cursor-not-allowed opacity-50"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Abrir WhatsApp
+                  Abrir WhatsApp (Temporariamente desabilitado)
                 </Button>
                 
                 <Button

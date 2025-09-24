@@ -358,12 +358,11 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
                           <Button
                             type="button"
                             size="sm"
-                            onClick={handleWhatsAppSend}
-                            disabled={!client.phone}
-                            className="flex items-center gap-2"
+                            disabled
+                            className="w-full cursor-not-allowed opacity-50"
                           >
-                            <Send className="w-4 h-4" />
-                            Enviar no WhatsApp
+                            <Send className="w-4 h-4 mr-2" />
+                            Enviar no WhatsApp (Temporariamente desabilitado)
                           </Button>
                           <Button
                             type="button"
