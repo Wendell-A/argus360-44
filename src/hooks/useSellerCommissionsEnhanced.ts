@@ -187,11 +187,80 @@ export const useCommissionValidation = () => {
 };
 
 export const useCommissionImpactSimulator = () => {
+  const { activeTenant } = useAuth();
+
   return {
-    simulateImpact: async (sellerId: string, productId: string, commissionRate: number) => ({
-      estimatedMonthlyImpact: commissionRate * 1000, // Mock calculation
-      basedOnSales: 10, // Mock value
-      difference: 0
-    })
+    simulateImpact: async (sellerId: string, productId: string, commissionRate: number) => {
+      try {
+        if (!activeTenant?.tenant_id) {
+          throw new Error("No active tenant");
+        }
+
+        // Buscar vendas históricas do vendedor nos últimos 3 meses
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+        const { data: recentSales, error } = await supabase
+          .from('sales')
+          .select('sale_value, commission_amount')
+          .eq('tenant_id', activeTenant.tenant_id)
+          .eq('seller_id', sellerId)
+          .eq('product_id', productId)
+          .gte('sale_date', threeMonthsAgo.toISOString().split('T')[0])
+          .eq('status', 'approved');
+
+        if (error) {
+          console.error('Error fetching sales for impact simulation:', error);
+          throw error;
+        }
+
+        const salesCount = recentSales?.length || 0;
+        const averageMonthlySales = salesCount / 3; // Média mensal nos últimos 3 meses
+        const averageSaleValue = salesCount > 0 
+          ? recentSales.reduce((sum, sale) => sum + (sale.sale_value || 0), 0) / salesCount
+          : 50000; // Valor padrão se não há histórico
+
+        // Simular 10 vendas com base no histórico ou valor médio
+        const simulatedSales = 10;
+        const simulatedSaleValue = averageSaleValue;
+        
+        // Calcular impacto estimado: 10 vendas × valor médio × taxa de comissão × comissão do escritório (assumindo 5%)
+        const officeCommissionRate = 5; // 5% padrão de comissão do escritório
+        const sellerCommissionAmount = (simulatedSales * simulatedSaleValue * (officeCommissionRate / 100) * (commissionRate / 100));
+
+        // Calcular diferença se já existe comissão configurada
+        const currentCommissionAmount = salesCount > 0 
+          ? recentSales.reduce((sum, sale) => sum + (sale.commission_amount || 0), 0) / salesCount * simulatedSales
+          : 0;
+
+        return {
+          estimatedMonthlyImpact: sellerCommissionAmount,
+          basedOnSales: Math.max(salesCount, simulatedSales), // Mostrar histórico real ou simulado
+          difference: sellerCommissionAmount - currentCommissionAmount,
+          averageSaleValue,
+          simulationDetails: {
+            historicalSalesCount: salesCount,
+            averageMonthlySales: Math.round(averageMonthlySales * 10) / 10,
+            simulatedCommissionRate: commissionRate,
+            officeCommissionRate
+          }
+        };
+      } catch (error) {
+        console.error('Error simulating commission impact:', error);
+        // Fallback para simulação básica em caso de erro
+        return {
+          estimatedMonthlyImpact: commissionRate * 1000,
+          basedOnSales: 10,
+          difference: 0,
+          averageSaleValue: 50000,
+          simulationDetails: {
+            historicalSalesCount: 0,
+            averageMonthlySales: 0,
+            simulatedCommissionRate: commissionRate,
+            officeCommissionRate: 5
+          }
+        };
+      }
+    }
   };
 };

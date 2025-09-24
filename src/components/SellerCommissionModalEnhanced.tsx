@@ -187,7 +187,7 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
             {vendedores?.map((vendedor) => (
               <SelectItem key={vendedor.id} value={vendedor.id}>
                 <div className="flex flex-col">
-                  <span className="font-medium">{vendedor.full_name || vendedor.email}</span>
+                  <span className="font-medium">{vendedor.full_name || vendedor.user?.full_name || vendedor.email}</span>
                   <span className="text-xs text-muted-foreground">{vendedor.office?.name || 'Sem escritório'}</span>
                 </div>
               </SelectItem>
@@ -196,7 +196,8 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
         </Select>
         {selectedSeller && (
           <div className="mt-2 p-2 bg-muted rounded-md text-sm">
-            <p><strong>Email:</strong> {selectedSeller.email}</p>
+            <p><strong>Nome:</strong> {selectedSeller.full_name || selectedSeller.user?.full_name || 'Nome não disponível'}</p>
+            <p><strong>Email:</strong> {selectedSeller.email || selectedSeller.user?.email || 'Email não disponível'}</p>
             <p><strong>Escritório:</strong> {selectedSeller.office?.name || 'Não definido'}</p>
             <p><strong>Vendas:</strong> {selectedSeller.sales_count || 0}</p>
             <p><strong>Comissão Total:</strong> {formatCurrency(selectedSeller.commission_total || 0)}</p>
@@ -323,7 +324,7 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
   );
 
   const renderStep3 = () => (
-    <div className="space-y-4">
+    <div className="space-y-4" id="commission-form">
       <div className="flex items-center space-x-2">
         <Switch
           id="is_active"
@@ -344,15 +345,23 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Impacto Mensal Estimado</p>
+                <p className="text-sm text-muted-foreground">Impacto com 10 Vendas</p>
                 <p className="text-lg font-semibold text-green-600">
                   {formatCurrency(impactData.estimatedMonthlyImpact)}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Comissão estimada para 10 vendas
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Baseado em</p>
+                <p className="text-sm text-muted-foreground">Valor Médio por Venda</p>
                 <p className="text-lg font-semibold">
-                  {impactData.basedOnSales} vendas
+                  {formatCurrency(impactData.averageSaleValue || 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {impactData.simulationDetails?.historicalSalesCount > 0 
+                    ? `Baseado em ${impactData.simulationDetails.historicalSalesCount} vendas`
+                    : 'Estimativa padrão'}
                 </p>
               </div>
             </div>
@@ -383,7 +392,7 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="font-medium">Vendedor:</p>
-              <p className="text-muted-foreground">{selectedSeller?.full_name}</p>
+              <p className="text-muted-foreground">{selectedSeller?.full_name || selectedSeller?.user?.full_name || 'Nome não disponível'}</p>
             </div>
             <div>
               <p className="font-medium">Produto:</p>
@@ -465,10 +474,14 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
           </h3>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <div>
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
+          {currentStep === 3 && (
+            <form onSubmit={handleSubmit}>
+              {renderStep3()}
+            </form>
+          )}
 
           <Separator className="my-4" />
 
@@ -493,6 +506,8 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
               ) : (
                 <Button
                   type="submit"
+                  form={currentStep === 3 ? 'commission-form' : undefined}
+                  onClick={currentStep === 3 ? undefined : handleSubmit}
                   disabled={isLoading || validationErrors.length > 0}
                 >
                   {isLoading ? 'Salvando...' : commission ? 'Atualizar' : 'Criar Comissão'}
@@ -500,7 +515,7 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
               )}
             </div>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
