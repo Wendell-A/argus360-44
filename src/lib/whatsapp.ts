@@ -8,6 +8,51 @@ export interface WhatsAppMessage {
   message: string;
 }
 
+// Tipos de modo de link WhatsApp
+export type WhatsAppLinkMode = 'auto' | 'wa' | 'web' | 'deep';
+
+/**
+ * Detecta se é dispositivo móvel
+ */
+export function isMobile(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent.toLowerCase();
+  return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+}
+
+/**
+ * Gera link wa.me (padrão universal)
+ */
+export function generateWaMeLink(phone: string, message: string): string {
+  const cleanPhone = cleanPhoneNumber(phone);
+  if (!cleanPhone) return '#';
+  
+  const encodedMessage = encodeURIComponent(message || '');
+  return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+}
+
+/**
+ * Gera link web.whatsapp.com (melhor para desktop, evita api.whatsapp.com)
+ */
+export function generateWebWhatsAppLink(phone: string, message: string): string {
+  const cleanPhone = cleanPhoneNumber(phone);
+  if (!cleanPhone) return '#';
+  
+  const encodedMessage = encodeURIComponent(message || '');
+  return `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`;
+}
+
+/**
+ * Gera deep link para app nativo
+ */
+export function generateDeepLink(phone: string, message: string): string {
+  const cleanPhone = cleanPhoneNumber(phone);
+  if (!cleanPhone) return '#';
+  
+  const encodedMessage = encodeURIComponent(message || '');
+  return `whatsapp://send?phone=${cleanPhone}&text=${encodedMessage}`;
+}
+
 /**
  * Limpa e formata número de telefone
  */
@@ -36,24 +81,42 @@ function cleanPhoneNumber(phone: string): string | null {
 }
 
 /**
- * Gera um link direto para o WhatsApp usando wa.me (simplificado)
+ * Gera um link direto para o WhatsApp com mensagem pré-definida
+ * Usa modo configurável para contornar bloqueios
  */
 export function generateWhatsAppLink(phone: string, message: string): string {
-  const cleanPhone = cleanPhoneNumber(phone);
-  if (!cleanPhone) return '#';
+  const mode = (import.meta.env.VITE_WHATSAPP_LINK_MODE as WhatsAppLinkMode) || 'auto';
   
-  // Encode message and replace %20 with + for better compatibility
-  let encodedMessage = encodeURIComponent(message || '');
-  encodedMessage = encodedMessage.replace(/%20/g, '+');
+  let link: string;
   
-  const link = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+  switch (mode) {
+    case 'wa':
+      link = generateWaMeLink(phone, message);
+      break;
+    case 'web':
+      link = generateWebWhatsAppLink(phone, message);
+      break;
+    case 'deep':
+      link = generateDeepLink(phone, message);
+      break;
+    case 'auto':
+    default:
+      // Modo automático: desktop usa web, mobile usa deep com fallback
+      if (isMobile()) {
+        link = generateDeepLink(phone, message);
+      } else {
+        link = generateWebWhatsAppLink(phone, message);
+      }
+      break;
+  }
   
   // Log para debug (apenas em desenvolvimento)
   if (import.meta.env.DEV) {
-    console.log('WhatsApp Link Generated (wa.me):', { 
+    console.log('WhatsApp Link Generated:', { 
       phone, 
-      cleanPhone,
       message: message.substring(0, 50) + (message.length > 50 ? '...' : ''), 
+      mode, 
+      isMobile: isMobile(),
       url: link 
     });
   }
@@ -102,11 +165,39 @@ export function parseMessageTemplate(
 }
 
 /**
- * Abre o WhatsApp usando wa.me (simplificado)
+ * Abre o WhatsApp com estratégia robusta anti-bloqueio
  */
 export function openWhatsApp(phone: string, message: string): void {
-  const link = generateWhatsAppLink(phone, message);
-  openLinkSafely(link);
+  const mode = (import.meta.env.VITE_WHATSAPP_LINK_MODE as WhatsAppLinkMode) || 'auto';
+  
+  if (mode === 'auto' && isMobile()) {
+    // Em mobile: tentar deep link primeiro, com fallback para wa.me
+    tryDeepLinkWithFallback(phone, message);
+  } else {
+    // Desktop ou modo específico: usar link direto
+    const link = generateWhatsAppLink(phone, message);
+    openLinkSafely(link);
+  }
+}
+
+/**
+ * Tenta abrir deep link em mobile com fallback automático
+ */
+function tryDeepLinkWithFallback(phone: string, message: string): void {
+  const deepLink = generateDeepLink(phone, message);
+  const fallbackLink = generateWaMeLink(phone, message);
+  
+  // Tenta abrir o deep link
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = deepLink;
+  document.body.appendChild(iframe);
+  
+  // Timeout para fallback se deep link não abrir
+  setTimeout(() => {
+    document.body.removeChild(iframe);
+    openLinkSafely(fallbackLink);
+  }, 800);
 }
 
 /**
