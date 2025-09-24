@@ -465,7 +465,7 @@ export const SellerCommissionModalEnhanced: React.FC<SellerCommissionModalEnhanc
           </h3>
         </div>
 
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={handleSubmit}>
           {currentStep === 1 && renderStep1()}
           {currentStep === 2 && renderStep2()}
           {currentStep === 3 && renderStep3()}
