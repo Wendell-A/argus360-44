@@ -285,16 +285,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
                         </div>
                         
                         {/* Botões de ação otimizados */}
-                        <div className="grid grid-cols-5 gap-1">
-                           <Button
-                             size="sm"
-                             variant="outline"
-                             disabled
-                             className="h-8 p-0 cursor-not-allowed opacity-50"
-                             title="WhatsApp (Temporariamente desabilitado)"
-                           >
-                             <MessageCircle className="w-4 h-4" />
-                           </Button>
+                        <div className="grid grid-cols-4 gap-1">
                           <Button
                             size="sm"
                             variant="outline"

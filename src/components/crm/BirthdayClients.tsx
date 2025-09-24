@@ -283,26 +283,14 @@ export function BirthdayClients() {
                 Cancelar
               </Button>
               
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled
-                  className="gap-2 cursor-not-allowed opacity-50"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Abrir WhatsApp (Temporariamente desabilitado)
-                </Button>
-                
-                <Button
-                  onClick={confirmSendMessage}
-                  disabled={isSending || !customMessage.trim()}
-                  className="gap-2"
-                >
-                  <Send className="w-4 h-4" />
-                  {isSending ? 'Registrando...' : 'Registrar Envio'}
-                </Button>
-              </div>
+              <Button
+                onClick={confirmSendMessage}
+                disabled={isSending || !customMessage.trim()}
+                className="gap-2"
+              >
+                <Send className="w-4 h-4" />
+                {isSending ? 'Registrando...' : 'Registrar Envio'}
+              </Button>
             </div>
           </div>
         </DialogContent>

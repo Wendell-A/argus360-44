@@ -357,15 +357,6 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
                         <div className="flex gap-2">
                           <Button
                             type="button"
-                            size="sm"
-                            disabled
-                            className="w-full cursor-not-allowed opacity-50"
-                          >
-                            <Send className="w-4 h-4 mr-2" />
-                            Enviar no WhatsApp (Temporariamente desabilitado)
-                          </Button>
-                          <Button
-                            type="button"
                             variant="outline"
                             size="sm"
                             onClick={handleCopyLink}
