@@ -75,6 +75,7 @@ export default function AppSidebar() {
         { name: 'Vendas', path: '/vendas', icon: ShoppingCart, enabled: true },
         { name: 'Vendedores', path: '/vendedores', icon: UsersIcon, enabled: menuConfig?.modules?.sellers || false },
         { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
+        { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },
         { name: 'Metas', path: '/metas', icon: Target, enabled: true },
         { name: 'Simulação Consórcio', path: '/simulacao-consorcio', icon: Calculator, enabled: true },
         { name: 'Suporte', path: '/suporte', icon: MessageSquare, enabled: true },
@@ -97,8 +98,6 @@ export default function AppSidebar() {
         { name: 'Convites', path: '/convites', icon: FileText, enabled: menuConfig?.modules?.invitations || false },
         { name: 'Permissões', path: '/permissoes', icon: Shield, enabled: menuConfig?.modules?.permissions || false },
         { name: 'Configurações', path: '/configuracoes', icon: Settings, enabled: menuConfig?.modules?.configurations || false },
-        { name: 'Auditoria', path: '/auditoria', icon: FileText, enabled: menuConfig?.modules?.audit || false },
-        { name: 'Auditoria Segurança', path: '/auditoria-seguranca', icon: Shield, enabled: menuConfig?.modules?.audit || false },
       ]
     }
   ];
