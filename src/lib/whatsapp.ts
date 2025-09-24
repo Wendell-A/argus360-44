@@ -10,10 +10,23 @@ export interface WhatsAppMessage {
 
 /**
  * Gera um link direto para o WhatsApp com mensagem pré-definida
+ * Usa formato wa.me/ que é o padrão oficial e evita bloqueios
  */
 export function generateWhatsAppLink(phone: string, message: string): string {
+  // Validar se o telefone não está vazio
+  if (!phone || !phone.trim()) {
+    console.warn('WhatsApp: Telefone inválido ou vazio');
+    return '#';
+  }
+
   // Remove toda formatação do telefone
   const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Validar se tem pelo menos 10 dígitos
+  if (cleanPhone.length < 10) {
+    console.warn('WhatsApp: Telefone muito curto:', cleanPhone);
+    return '#';
+  }
   
   // Adiciona código do país Brasil (55) se não existir
   let formattedPhone = cleanPhone;
@@ -22,9 +35,16 @@ export function generateWhatsAppLink(phone: string, message: string): string {
   }
   
   // Codifica a mensagem para URL
-  const encodedMessage = encodeURIComponent(message);
+  const encodedMessage = encodeURIComponent(message || '');
   
-  return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+  const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+  
+  // Log para debug (apenas em desenvolvimento)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('WhatsApp Link:', { phone, cleanPhone, formattedPhone, message, url: whatsappUrl });
+  }
+  
+  return whatsappUrl;
 }
 
 /**

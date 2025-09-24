@@ -21,6 +21,7 @@ import { useMessageTemplates } from '@/hooks/useMessageTemplates';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { generateWhatsAppLink } from '@/lib/whatsapp';
 
 const getDaysLabel = (days: number) => {
   if (days === 0) return 'Hoje! 🎉';
@@ -98,8 +99,7 @@ export function BirthdayClients() {
   };
 
   const openWhatsApp = (client: BirthdayClient) => {
-    const phone = client.phone.replace(/\D/g, ''); // Remover caracteres não numéricos
-    const whatsappUrl = `https://wa.me/55${phone}?text=${encodeURIComponent(customMessage || 'Olá!')}`;
+    const whatsappUrl = generateWhatsAppLink(client.phone, customMessage || 'Olá!');
     window.open(whatsappUrl, '_blank');
   };
 

@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { MessageCircle, Copy, Send, Calendar, Clock } from 'lucide-react';
 import { useCreateClientInteraction } from '@/hooks/useClientInteractions';
-import { useMessageTemplates, parseMessageTemplate } from '@/hooks/useMessageTemplates';
-import { generateWhatsAppLink, copyWhatsAppLink } from '@/lib/whatsapp';
+import { useMessageTemplates } from '@/hooks/useMessageTemplates';
+import { generateWhatsAppLink, copyWhatsAppLink, parseMessageTemplate } from '@/lib/whatsapp';
 import { useToast } from '@/hooks/use-toast';
 
 interface InteractionModalProps {
