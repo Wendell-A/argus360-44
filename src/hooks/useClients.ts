@@ -57,8 +57,11 @@ export function useCreateClient() {
       if (error) throw error;
       return data as Client;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Cliente criado com sucesso:', data.name, 'Data de nascimento:', data.birth_date);
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['birthday_clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client_interactions'] });
     },
   });
 
@@ -85,8 +88,11 @@ export function useUpdateClient() {
       if (error) throw error;
       return data as Client;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Cliente atualizado com sucesso:', data.name, 'Data de nascimento:', data.birth_date);
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['birthday_clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client_interactions'] });
     },
   });
 
@@ -111,7 +117,10 @@ export function useDeleteClient() {
       if (error) throw error;
     },
     onSuccess: () => {
+      console.log('✅ Cliente excluído com sucesso');
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['birthday_clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client_interactions'] });
     },
   });
 

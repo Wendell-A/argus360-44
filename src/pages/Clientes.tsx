@@ -35,6 +35,8 @@ import { useClientsMasked, useDeleteClient } from "@/hooks/useClientsMasked";
 import { ClientModal } from "@/components/ClientModal";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFunnelStages } from "@/hooks/useSalesFunnel";
+import { BirthdayClients } from "@/components/crm/BirthdayClients";
+import { Calendar } from "lucide-react";
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -299,6 +301,15 @@ export default function Clientes() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Birthday Clients Section */}
+        <div className="mb-6 lg:mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="h-5 w-5 text-purple-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Aniversariantes da Semana</h2>
+          </div>
+          <BirthdayClients />
+        </div>
 
         {/* Clients Table */}
         <Card>
