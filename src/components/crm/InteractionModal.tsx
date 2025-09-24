@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { MessageCircle, Copy, Send, Calendar, Clock } from 'lucide-react';
 import { useCreateClientInteraction } from '@/hooks/useClientInteractions';
 import { useMessageTemplates } from '@/hooks/useMessageTemplates';
-import { generateWhatsAppLink, copyWhatsAppLink, parseMessageTemplate } from '@/lib/whatsapp';
+import { openWhatsApp, copyWhatsAppLink, parseMessageTemplate } from '@/lib/whatsapp';
 import { useToast } from '@/hooks/use-toast';
 
 interface InteractionModalProps {
@@ -243,8 +243,7 @@ export function InteractionModal({ isOpen, onClose, client }: InteractionModalPr
   const handleWhatsAppSend = () => {
     if (!client?.phone || !parsedMessage) return;
     
-    const link = generateWhatsAppLink(client.phone, parsedMessage);
-    window.open(link, '_blank');
+    openWhatsApp(client.phone, parsedMessage);
   };
 
   const handleCopyLink = async () => {

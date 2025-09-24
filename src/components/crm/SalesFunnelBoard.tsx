@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Phone, MessageCircle, Mail, Plus, ChevronDown, Settings } from 'lucide-react';
 import { useSalesFunnelStages, useClientFunnelPositions, useUpdateClientFunnelPosition } from '@/hooks/useSalesFunnel';
-import { generateWhatsAppLink, formatPhoneNumber } from '@/lib/whatsapp';
+import { openWhatsApp, formatPhoneNumber } from '@/lib/whatsapp';
 import { InteractionModal } from './InteractionModal';
 import { ClientFunnelModal } from '../ClientFunnelModal';
 import { useToast } from '@/hooks/use-toast';
@@ -155,8 +155,7 @@ export function SalesFunnelBoard({ onClientSelect }: SalesFunnelBoardProps) {
   const handleWhatsAppClick = (client: ClientCard) => {
     if (client.phone) {
       const message = `Olá ${client.name}! Como posso ajudá-lo hoje?`;
-      const link = generateWhatsAppLink(client.phone, message);
-      window.open(link, '_blank');
+      openWhatsApp(client.phone, message);
     }
   };
 
