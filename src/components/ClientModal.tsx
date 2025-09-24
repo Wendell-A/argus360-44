@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +31,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { 
   useCreateClient, 
   useUpdateClient,
@@ -42,6 +51,7 @@ const clientSchema = z.object({
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().optional(),
   secondary_phone: z.string().optional(),
+  birth_date: z.date().optional(),
   status: z.enum(["prospect", "active", "inactive"]),
   classification: z.enum(["hot", "warm", "cold"]),
   monthly_income: z.number().min(0, "Renda não pode ser negativa").optional(),
@@ -81,6 +91,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
       email: "",
       phone: "",
       secondary_phone: "",
+      birth_date: undefined,
       status: "prospect",
       classification: "cold",
       monthly_income: 0,
@@ -108,6 +119,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         email: client.email || "",
         phone: client.phone || "",
         secondary_phone: client.secondary_phone || "",
+        birth_date: client.birth_date ? new Date(client.birth_date) : undefined,
         status: client.status as "prospect" | "active" | "inactive",
         classification: client.classification as "hot" | "warm" | "cold",
         monthly_income: client.monthly_income || 0,
@@ -131,6 +143,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         email: "",
         phone: "",
         secondary_phone: "",
+        birth_date: undefined,
         status: "prospect",
         classification: "cold",
         monthly_income: 0,
@@ -160,6 +173,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         email: data.email || null,
         phone: data.phone || null,
         secondary_phone: data.secondary_phone || null,
+        birth_date: data.birth_date ? data.birth_date.toISOString().split('T')[0] : null,
         status: data.status,
         classification: data.classification,
         monthly_income: data.monthly_income || null,
@@ -308,11 +322,55 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
                       <FormMessage />
                     </FormItem>
                   )}
-                />
-              </div>
-            </div>
+                 />
 
-            {/* Contato */}
+                 <FormField
+                   control={form.control}
+                   name="birth_date"
+                   render={({ field }) => (
+                     <FormItem>
+                       <FormLabel>Data de Aniversário</FormLabel>
+                       <Popover>
+                         <PopoverTrigger asChild>
+                           <FormControl>
+                             <Button
+                               variant="outline"
+                               className={cn(
+                                 "w-full pl-3 text-left font-normal",
+                                 !field.value && "text-muted-foreground"
+                               )}
+                               disabled={isReadOnly}
+                             >
+                               {field.value ? (
+                                 format(field.value, "dd/MM/yyyy")
+                               ) : (
+                                 <span>Selecione uma data</span>
+                               )}
+                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                             </Button>
+                           </FormControl>
+                         </PopoverTrigger>
+                         <PopoverContent className="w-auto p-0" align="start">
+                           <Calendar
+                             mode="single"
+                             selected={field.value}
+                             onSelect={field.onChange}
+                             disabled={(date) =>
+                               date > new Date() || date < new Date("1900-01-01")
+                             }
+                             initialFocus
+                             className={cn("p-3 pointer-events-auto")}
+                           />
+                         </PopoverContent>
+                       </Popover>
+                       <FormMessage />
+                     </FormItem>
+                   )}
+                 />
+               </div>
+             </div>
+
+             {/* Contato */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Contato</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
