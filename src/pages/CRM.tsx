@@ -10,6 +10,7 @@ import { SalesFunnelBoard } from '@/components/crm/SalesFunnelBoard';
 import { UpcomingTasks } from '@/components/crm/UpcomingTasks';
 import { TaskKanban } from '@/components/crm/TaskKanban';
 import { BirthdayClients } from '@/components/crm/BirthdayClients';
+import { WhatsAppDebugButton } from '@/components/dev/WhatsAppDebugButton'; // REMOVÍVEL
 import { useSalesFunnelStages, useClientFunnelPositions } from '@/hooks/useSalesFunnel';
 import { useClientInteractions } from '@/hooks/useClientInteractions';
 
@@ -96,6 +97,9 @@ export default function CRM() {
           </CardContent>
         </Card>
       </div>
+
+      {/* REMOVÍVEL - Debug WhatsApp */}
+      <WhatsAppDebugButton />
 
       {/* Conteúdo Principal */}
       <Tabs defaultValue="funnel" className="space-y-4">
