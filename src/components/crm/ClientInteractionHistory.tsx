@@ -120,14 +120,14 @@ export function ClientInteractionHistory({ clientId, onClientSelect }: ClientInt
         <div className="mb-4">
           <label className="text-sm font-medium block mb-2">Selecionar Cliente</label>
           <Select
-            value={clientId || ""}
-            onValueChange={(value) => onClientSelect?.(value || null)}
+            value={clientId || "none"}
+            onValueChange={(value) => onClientSelect?.(value === "none" ? null : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Escolha um cliente para ver o histórico..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum cliente selecionado</SelectItem>
+              <SelectItem value="none">Nenhum cliente selecionado</SelectItem>
               {clients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.name}
