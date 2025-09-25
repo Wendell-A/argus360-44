@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useOffices } from "@/hooks/useOffices";
 import { useVendedores } from "@/hooks/useVendedores";
 import { Goal, GoalInsert } from "@/hooks/useGoals";
+import { useGoalCommissionPreview } from "@/hooks/useGoalCommissionPreview";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calculator, TrendingUp, Target } from "lucide-react";
 
 interface GoalModalProps {
   open: boolean;
@@ -30,6 +33,12 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
 
   const { offices } = useOffices();
   const { vendedores } = useVendedores();
+  
+  // Hook para previsão de comissão
+  const { data: commissionPreview, isLoading: isLoadingPreview } = useGoalCommissionPreview(
+    formData.goal_type === 'individual' ? formData.user_id : undefined,
+    formData.target_amount || 0
+  );
 
   useEffect(() => {
     if (goal) {
@@ -191,16 +200,93 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              placeholder="Digite uma descrição para a meta..."
-              value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              rows={3}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                placeholder="Digite uma descrição para a meta..."
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {/* Previsão de Comissão para Metas Individuais */}
+            {formData.goal_type === 'individual' && formData.user_id && formData.target_amount > 0 && (
+              <Card className="bg-muted/50 border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Calculator className="h-4 w-4 text-primary" />
+                    Previsão de Comissão
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {isLoadingPreview ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                      <p className="text-xs text-muted-foreground mt-2">Calculando previsão...</p>
+                    </div>
+                  ) : commissionPreview ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Taxa de Comissão:</span>
+                          <span className="text-sm font-medium">
+                            {commissionPreview.hasSellerCommissions 
+                              ? `${commissionPreview.averageSellerCommission.toFixed(1)}% (Específica)`
+                              : `${commissionPreview.averageOfficeCommission.toFixed(1)}% (Padrão)`
+                            }
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Valor Médio Produto:</span>
+                          <span className="text-sm font-medium">
+                            R$ {commissionPreview.averageProductValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Target className="h-3 w-3" />
+                            Consórcios Necessários:
+                          </span>
+                          <span className="text-sm font-medium text-primary">
+                            {commissionPreview.consortiumsNeeded}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" />
+                            Comissão Estimada:
+                          </span>
+                          <span className="text-sm font-medium text-green-600">
+                            R$ {commissionPreview.estimatedSellerCommissionAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Dados insuficientes para calcular previsão
+                    </p>
+                  )}
+                  
+                  {commissionPreview && commissionPreview.totalProducts > 0 && (
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs text-muted-foreground">
+                        * Cálculo baseado em {commissionPreview.totalProducts} produtos ativos e 
+                        {commissionPreview.hasSellerCommissions 
+                          ? " comissões específicas do vendedor"
+                          : " comissões padrão do escritório"
+                        }
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
           <div className="flex gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
