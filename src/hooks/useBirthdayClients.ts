@@ -69,8 +69,11 @@ export function useBirthdayClients() {
       for (const client of clients || []) {
         if (!client.birth_date) continue;
 
-        const birthDate = new Date(client.birth_date);
-        const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        // Corrigir problema de fuso horário ao converter birth_date
+        // Em vez de usar new Date(client.birth_date), vamos parseear manualmente
+        const [year, month, day] = client.birth_date.split('-').map(Number);
+        const birthDate = new Date(year, month - 1, day); // mês é 0-indexado
+        const thisYearBirthday = new Date(today.getFullYear(), month - 1, day);
         
         // Se o aniversário deste ano já passou há mais de 3 dias, considerar o do próximo ano
         if (thisYearBirthday < threeDaysAgo) {
@@ -86,7 +89,17 @@ export function useBirthdayClients() {
           else if (daysDiff === 0) status = '(hoje)';
           else status = `(em ${daysDiff} dias)`;
           
-          console.log(`🎂 Cliente ${client.name} fez/fará aniversário ${status} (birth_date: ${client.birth_date}, próximo aniversário: ${thisYearBirthday.toISOString().split('T')[0]})`);
+          console.log(`🎂 Cliente ${client.name} fez/fará aniversário ${status} (birth_date: ${client.birth_date}, próximo aniversário: ${thisYearBirthday.getFullYear()}-${String(thisYearBirthday.getMonth() + 1).padStart(2, '0')}-${String(thisYearBirthday.getDate()).padStart(2, '0')})`);
+
+          console.log(`🔍 DEBUG Datas para ${client.name}:`, {
+            original_birth_date: client.birth_date,
+            parsed_year: year,
+            parsed_month: month,
+            parsed_day: day,
+            birthDate_day: birthDate.getDate(),
+            thisYearBirthday_day: thisYearBirthday.getDate(),
+            daysDiff: daysDiff
+          });
           
           // Verificar se já foi enviada mensagem de aniversário hoje
           const { data: interactions } = await supabase

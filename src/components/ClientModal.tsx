@@ -235,14 +235,18 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         phone: data.phone || null,
         secondary_phone: data.secondary_phone || null,
         birth_date: data.birth_date ? (() => {
-          // Import dinâmico para evitar problemas de bundling
           const { toLocalISOString } = require('@/lib/dateUtils');
           const localDate = toLocalISOString(data.birth_date);
-          console.log('🎂 Data de aniversário - conversão:', {
+          console.log('🎂 DEBUG: Data de aniversário - conversão detalhada:', {
             original: data.birth_date,
+            originalISO: data.birth_date.toISOString(),
             originalDay: data.birth_date.getDate(),
+            originalMonth: data.birth_date.getMonth() + 1,
+            originalYear: data.birth_date.getFullYear(),
             converted: localDate,
-            convertedDay: localDate.split('-')[2]
+            convertedDay: localDate.split('-')[2],
+            convertedMonth: localDate.split('-')[1],
+            convertedYear: localDate.split('-')[0]
           });
           return localDate;
         })() : null,

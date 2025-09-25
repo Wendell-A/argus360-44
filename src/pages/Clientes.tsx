@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFunnelStages } from "@/hooks/useSalesFunnel";
 import { BirthdayClients } from "@/components/crm/BirthdayClients";
 import { Calendar } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,6 +55,7 @@ export default function Clientes() {
   const { updatePositionAsync, isUpdating } = useUpdateClientFunnelPosition();
   const { stages } = useSalesFunnelStages();
   const { createDefaultStagesAsync, isCreating } = useCreateDefaultFunnelStages();
+  const { activeTenant } = useAuth();
 
   // Criar fases padrão se não existirem
   useEffect(() => {
@@ -138,6 +140,13 @@ export default function Clientes() {
   };
 
   const handleAddToFunnel = async (clientId: string, clientName: string) => {
+    console.log('🎯 DEBUG: Iniciando handleAddToFunnel para cliente:', { clientId, clientName });
+    console.log('🎯 DEBUG: Estados atuais:', { 
+      stagesLength: stages.length, 
+      isUpdating, 
+      isCreating,
+      activeTenant: activeTenant?.tenant_id
+    });
     console.log('🎯 Iniciando adição do cliente ao funil:', { clientId, clientName });
     
     try {
