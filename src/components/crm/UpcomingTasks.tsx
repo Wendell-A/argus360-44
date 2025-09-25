@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { TaskModal } from './TaskModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatDateBR } from '@/lib/dateUtils';
 
 interface UpcomingTasksProps {
   clientId?: string;
@@ -221,7 +222,7 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
                             {task.priority}
                           </Badge>
                           <span>
-                            {format(taskDate, 'dd/MM/yyyy', { locale: ptBR })}
+                            {formatDateBR(taskDate)}
                           </span>
                         </div>
                         <Button 

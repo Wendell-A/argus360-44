@@ -9,6 +9,7 @@ import { Calendar, Clock, User } from 'lucide-react';
 import { useCreateClientInteraction } from '@/hooks/useClientInteractions';
 import { useClients } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
+import { fromLocalISOString, toLocalISOString, formatDateBR } from '@/lib/dateUtils';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -103,18 +104,20 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
       return;
     }
 
-    // Validar se a data não é anterior a hoje - usando UTC para evitar problemas de timezone
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dueDate = new Date(formData.due_date + 'T00:00:00');
-    
-    console.log('Validação de data:', {
-      today: today.toISOString(),
-      dueDate: dueDate.toISOString(),
-      dueDateString: formData.due_date
-    });
+  // Validar se a data não é anterior a hoje - usando utilitários de data para evitar problemas de timezone
+  const { fromLocalISOString, toLocalISOString } = require('@/lib/dateUtils');
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDate = fromLocalISOString(formData.due_date);
+  
+  console.log('Validação de data:', {
+    today: toLocalISOString(today),
+    dueDate: toLocalISOString(dueDate),
+    dueDateString: formData.due_date
+  });
 
-    if (dueDate < today) {
+  if (dueDate < today) {
       console.error('Erro: Data anterior a hoje');
       toast({
         title: "Erro",
@@ -127,8 +130,9 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
     try {
       console.log('=== CRIANDO INTERAÇÃO ===');
       
-      // Criar ISO string consistente para scheduled_at - usando horário local para evitar problemas de timezone
-      const localDate = new Date(formData.due_date + 'T12:00:00');
+      // Criar ISO string consistente para scheduled_at - usando utilitários de data
+      const localDate = fromLocalISOString(formData.due_date);
+      localDate.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de timezone
       const scheduledAtISO = localDate.toISOString();
       
       const interactionData = {
@@ -319,7 +323,7 @@ export function TaskModal({ isOpen, onClose, client }: TaskModalProps) {
                 {taskTypeOptions.find(opt => opt.value === formData.task_type)?.label}: {formData.title}
               </p>
               <p className="text-xs text-blue-600">
-                Vencimento: {new Date(formData.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                Vencimento: {formatDateBR(fromLocalISOString(formData.due_date))}
               </p>
             </div>
           )}
