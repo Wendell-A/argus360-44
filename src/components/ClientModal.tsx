@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { toLocalISOString } from "@/lib/dateUtils";
 import {
   Dialog,
   DialogContent,
@@ -235,7 +236,6 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         phone: data.phone || null,
         secondary_phone: data.secondary_phone || null,
         birth_date: data.birth_date ? (() => {
-          const { toLocalISOString } = require('@/lib/dateUtils');
           const localDate = toLocalISOString(data.birth_date);
           console.log('🎂 DEBUG: Data de aniversário - conversão detalhada:', {
             original: data.birth_date,
