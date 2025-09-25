@@ -30,53 +30,91 @@ export function useCurrentUser() {
         throw new Error('User or tenant not found');
       }
 
-      // Buscar dados do usuário com informações do escritório
-      const { data: userData, error: userError } = await supabase
-        .from('office_users')
-        .select(`
-          role,
-          offices (
-            id,
-            name,
-            type
-          )
-        `)
+      // Buscar papel e escritório a partir de tenant_users (fonte de verdade)
+      const { data: tenantUser, error: tenantUserError } = await supabase
+        .from('tenant_users')
+        .select('role, office_id')
         .eq('user_id', user.id)
         .eq('tenant_id', activeTenant.tenant_id)
         .eq('active', true)
-        .single();
+        .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') {
-        console.error('Error fetching user data:', userError);
+      if (tenantUserError && tenantUserError.code !== 'PGRST116') {
+        console.error('Error fetching tenant_users:', tenantUserError);
       }
 
-      // Buscar departamento se o usuário tiver escritório
+      // Detalhes do escritório (quando existir)
+      let officeData: { id: string; name: string; type: string } | undefined;
+      if (tenantUser?.office_id) {
+        const { data: office, error: officeError } = await supabase
+          .from('offices')
+          .select('id, name, type')
+          .eq('id', tenantUser.office_id)
+          .maybeSingle();
+        if (!officeError && office) {
+          officeData = office;
+        }
+      }
+
+      // Fallback: caso não exista em tenant_users, procurar em office_users (legado)
+      let fallbackRole: string | undefined = undefined;
+      if (!tenantUser) {
+        const { data: officeUser, error: officeUserError } = await supabase
+          .from('office_users')
+          .select(`
+            role,
+            offices (
+              id,
+              name,
+              type
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('tenant_id', activeTenant.tenant_id)
+          .eq('active', true)
+          .maybeSingle();
+
+        if (officeUserError && officeUserError.code !== 'PGRST116') {
+          console.error('Error fetching office_users:', officeUserError);
+        }
+
+        if (officeUser) {
+          fallbackRole = officeUser.role;
+          if (officeUser.offices) {
+            officeData = {
+              id: (officeUser as any).offices.id,
+              name: (officeUser as any).offices.name,
+              type: (officeUser as any).offices.type
+            };
+          }
+        }
+      }
+
+      // Buscar departamento (opcional)
       let departmentData = null;
-      if (userData?.offices) {
+      if (officeData) {
         const { data: deptData, error: deptError } = await supabase
           .from('departments')
           .select('id, name')
           .eq('tenant_id', activeTenant.tenant_id)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (!deptError) {
           departmentData = deptData;
         }
       }
 
+      const resolvedRole = (tenantUser?.role || fallbackRole || 'user') as string;
+
       const currentUserData: CurrentUserData = {
         id: user.id,
         email: user.email || '',
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
         avatar_url: user.user_metadata?.avatar_url,
-        office: userData?.offices ? {
-          id: userData.offices.id,
-          name: userData.offices.name,
-          type: userData.offices.type
-        } : undefined,
+        office: officeData,
         department: departmentData || undefined,
-        role: userData?.role || 'user',
+        role: resolvedRole,
       };
 
       return currentUserData;

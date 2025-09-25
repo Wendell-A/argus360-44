@@ -325,7 +325,11 @@ export function SalesFunnelBoardSecure({ onClientSelect }: SalesFunnelBoardProps
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-green-600" />
           <span className="text-sm text-green-800 dark:text-green-200">
-            Visualização segura ativada - Mostrando apenas seus clientes
+            {userRole === 'owner' || userRole === 'admin'
+              ? 'Visualização global do tenant - Mostrando todos os clientes'
+              : userRole === 'manager'
+                ? 'Visualização de escritório - Mostrando clientes dos seus escritórios'
+                : 'Visualização segura ativada - Mostrando apenas seus clientes'}
           </span>
         </div>
       </div>
