@@ -71,15 +71,19 @@ export function SalesFunnelBoardSecure({ onClientSelect }: SalesFunnelBoardProps
     });
     
     // CORREÇÃO CRÍTICA: Owner e Admin podem acessar TODOS os clientes do tenant
+    // SEM QUALQUER RESTRIÇÃO DE ESCRITÓRIO OU RESPONSABILIDADE
     if (userRole === 'owner' || userRole === 'admin') {
-      console.log('✅ Acesso total liberado: Owner/Admin pode ver todos os clientes do tenant');
+      console.log('✅ ACESSO TOTAL LIBERADO: Owner/Admin bypass completo');
       console.log('🔍 Debug Owner/Admin access:', {
         userRole,
         userId: user.id,
         tenantId: activeTenant?.tenant_id,
-        clientId: client.id
+        clientId: client.id,
+        clientOffice: client.office_id,
+        clientResponsible: client.responsible_user_id,
+        bypassingAllRestrictions: true
       });
-      return true;
+      return true; // ACESSO TOTAL GARANTIDO
     }
     
     // Manager pode acessar clientes do seu escritório ou onde é responsável

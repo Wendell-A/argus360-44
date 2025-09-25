@@ -53,8 +53,8 @@ export default function Dashboard() {
     product: 'all'
   });
 
-  // Hooks de dados
-  const { data: dashboardData, isLoading: dashboardLoading, refetch } = useDashboardOptimized();
+  // Hooks de dados com filtros aplicados
+  const { data: dashboardData, isLoading: dashboardLoading, refetch } = useDashboardOptimized(filters);
   const { data: contextualData, isLoading: contextualLoading } = useContextualDashboard();
   const { commissions, isLoading: commissionsLoading } = useCommissions();
   const { goals, isLoading: goalsLoading } = useGoals();

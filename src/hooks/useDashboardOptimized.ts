@@ -204,13 +204,10 @@ const calculateVendorsPerformance = async (tenantId: string) => {
 };
 
 interface DashboardFilters {
-  dateRange?: {
-    start: string;
-    end: string;
-  };
+  dateRange?: 'today' | 'week' | 'month' | 'previous_month';
   office?: string;
   seller?: string;
-  client?: string;
+  product?: string;
   status?: string;
   limit?: number;
   offset?: number;
@@ -347,15 +344,59 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
           ]
         };
 
-        // Aplicar filtros de data se especificados
+        // Aplicar filtros se especificados
         if (filters.dateRange) {
-          const startDate = new Date(filters.dateRange.start);
-          const endDate = new Date(filters.dateRange.end);
+          const now = new Date();
+          let startDate: Date;
+          let endDate = new Date();
+          
+          switch (filters.dateRange) {
+            case 'today':
+              startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              break;
+            case 'week':
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case 'month':
+              startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+              break;
+            case 'previous_month':
+              startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+              endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+              break;
+            default:
+              startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          }
           
           filteredData.recent_sales = filteredData.recent_sales.filter((sale: any) => {
             const saleDate = new Date(sale.sale_date);
             return saleDate >= startDate && saleDate <= endDate;
           });
+        }
+
+        // Filtro por escritório
+        if (filters.office && filters.office !== 'all') {
+          filteredData.recent_sales = filteredData.recent_sales.filter((sale: any) => 
+            sale.office_id === filters.office
+          );
+        }
+
+        // Filtro por vendedor
+        if (filters.seller && filters.seller !== 'all') {
+          filteredData.recent_sales = filteredData.recent_sales.filter((sale: any) => 
+            sale.seller_id === filters.seller
+          );
+          
+          filteredData.vendors_performance = filteredData.vendors_performance.filter(vendor => 
+            vendor.vendor_id === filters.seller
+          );
+        }
+
+        // Filtro por produto
+        if (filters.product && filters.product !== 'all') {
+          filteredData.top_products = filteredData.top_products.filter(product => 
+            product.product_name === filters.product
+          );
         }
 
         return filteredData;

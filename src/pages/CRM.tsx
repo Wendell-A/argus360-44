@@ -15,6 +15,7 @@ import { useContextualInteractions } from '@/hooks/useContextualInteractions';
 
 export default function CRM() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedHistoryClientId, setSelectedHistoryClientId] = useState<string | null>(null);
   const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
   const { positions, isLoading: positionsLoading } = useClientFunnelPositions();
   const { data: interactions = [] } = useContextualInteractions();
@@ -119,21 +120,10 @@ export default function CRM() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          {selectedClientId ? (
-            <ClientInteractionHistory clientId={selectedClientId} />
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Histórico do Cliente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-gray-500">Selecione um cliente no funil de vendas para visualizar seu histórico de interações.</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <ClientInteractionHistory 
+            clientId={selectedHistoryClientId} 
+            onClientSelect={setSelectedHistoryClientId}
+          />
         </TabsContent>
       </Tabs>
     </div>

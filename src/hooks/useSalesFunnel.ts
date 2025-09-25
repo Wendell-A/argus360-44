@@ -40,7 +40,7 @@ export function useSalesFunnelStages() {
 }
 
 export function useClientFunnelPositions() {
-  const { activeTenant } = useAuth();
+  const { activeTenant, user } = useAuth();
 
   const query = useQuery({
     queryKey: ['client_funnel_positions', activeTenant?.tenant_id],
@@ -50,7 +50,10 @@ export function useClientFunnelPositions() {
       }
 
       console.log('🔍 Buscando posições do funil para tenant:', activeTenant.tenant_id);
+      console.log('🔍 Usuário atual:', user?.id);
       
+      // CORREÇÃO CRÍTICA: Para Owner/Admin, buscar TODOS os clientes do tenant
+      // independente de office_id ou responsible_user_id
       const { data, error } = await supabase
         .from('client_funnel_position')
         .select(`

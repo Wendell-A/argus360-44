@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, Clock, User, MessageCircle, Phone, Mail, CheckCircle, Search, Filter, X } from 'lucide-react';
+import { Calendar, Clock, User, MessageCircle, Phone, Mail, CheckCircle, Search, Filter, X, Users } from 'lucide-react';
 import { useContextualInteractions } from '@/hooks/useContextualInteractions';
+import { useClients } from '@/hooks/useClients';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface ClientInteractionHistoryProps {
-  clientId: string;
+  clientId?: string | null;
+  onClientSelect?: (clientId: string | null) => void;
 }
 
 const getInteractionIcon = (type: string) => {
@@ -69,8 +71,9 @@ const getInteractionTypeLabel = (type: string) => {
   return types[type as keyof typeof types] || type;
 };
 
-export function ClientInteractionHistory({ clientId }: ClientInteractionHistoryProps) {
+export function ClientInteractionHistory({ clientId, onClientSelect }: ClientInteractionHistoryProps) {
   const { data: interactions = [], isLoading } = useContextualInteractions(clientId);
+  const { clients, isLoading: clientsLoading } = useClients();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
@@ -100,7 +103,7 @@ export function ClientInteractionHistory({ clientId }: ClientInteractionHistoryP
 
   const hasActiveFilters = searchTerm !== '' || filterType !== 'all' || filterPriority !== 'all' || filterOutcome !== 'all';
 
-  if (isLoading) {
+  if (isLoading || clientsLoading) {
     return (
       <Card>
         <CardHeader>
@@ -113,6 +116,27 @@ export function ClientInteractionHistory({ clientId }: ClientInteractionHistoryP
   return (
     <Card>
       <CardHeader>
+        {/* Seletor de Cliente */}
+        <div className="mb-4">
+          <label className="text-sm font-medium block mb-2">Selecionar Cliente</label>
+          <Select
+            value={clientId || ""}
+            onValueChange={(value) => onClientSelect?.(value || null)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Escolha um cliente para ver o histórico..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Nenhum cliente selecionado</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
             <Clock className="w-4 h-4" />
@@ -210,10 +234,15 @@ export function ClientInteractionHistory({ clientId }: ClientInteractionHistoryP
       </CardHeader>
       
       <CardContent>
-        {filteredInteractions.length === 0 ? (
+        {!clientId ? (
+          <div className="text-center py-8">
+            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-gray-500">Selecione um cliente acima para visualizar seu histórico de interações.</p>
+          </div>
+        ) : filteredInteractions.length === 0 ? (
           <p className="text-sm text-gray-500">
             {interactions.length === 0 
-              ? "Nenhuma interação registrada ainda." 
+              ? "Nenhuma interação registrada ainda para este cliente." 
               : "Nenhuma interação encontrada com os filtros aplicados."
             }
           </p>
