@@ -156,6 +156,30 @@ export function DatePickerImproved({
   minDate,
   maxDate,
 }: DatePickerImprovedProps) {
+  
+  const handleDateChange = React.useCallback((date: Date | undefined) => {
+    console.log('📅 [DEBUG] DatePickerImproved - onChange chamado:', {
+      originalValue: value,
+      newValue: date,
+      newValueString: date ? date.toISOString() : 'undefined',
+      newValueFormatted: date ? date.toLocaleDateString('pt-BR') : 'undefined',
+      timestamp: new Date().toISOString()
+    });
+    
+    if (onChange) {
+      onChange(date);
+    }
+  }, [value, onChange]);
+
+  // Log quando o valor é atualizado externamente
+  React.useEffect(() => {
+    console.log('🔄 [DEBUG] DatePickerImproved - valor atualizado:', {
+      value: value,
+      valueString: value ? value.toISOString() : 'undefined',
+      valueFormatted: value ? value.toLocaleDateString('pt-BR') : 'undefined'
+    });
+  }, [value]);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -168,7 +192,12 @@ export function DatePickerImproved({
           disabled={disabled}
         >
           {value ? (
-            format(value, "dd/MM/yyyy", { locale: ptBR })
+            <span className="flex items-center gap-2">
+              {format(value, "dd/MM/yyyy", { locale: ptBR })}
+              <span className="text-xs text-muted-foreground">
+                ({Math.floor((new Date().getTime() - value.getTime()) / (1000 * 60 * 60 * 24 * 365))} anos)
+              </span>
+            </span>
           ) : (
             <span>{placeholder}</span>
           )}
@@ -176,10 +205,20 @@ export function DatePickerImproved({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
+        <div className="p-3 border-b text-sm text-muted-foreground">
+          {value ? (
+            <div className="space-y-1">
+              <div>Data selecionada: <span className="font-medium">{format(value, "dd/MM/yyyy", { locale: ptBR })}</span></div>
+              <div>Idade atual: <span className="font-medium">{Math.floor((new Date().getTime() - value.getTime()) / (1000 * 60 * 60 * 24 * 365))} anos</span></div>
+            </div>
+          ) : (
+            "Selecione uma data de nascimento"
+          )}
+        </div>
         <CalendarImproved
           mode="single"
           selected={value}
-          onSelect={onChange}
+          onSelect={handleDateChange}
           disabled={(date) => {
             if (minDate && date < minDate) return true;
             if (maxDate && date > maxDate) return true;
@@ -188,6 +227,11 @@ export function DatePickerImproved({
           initialFocus
           className="pointer-events-auto"
         />
+        {value && (
+          <div className="p-3 border-t bg-muted/30 text-xs text-muted-foreground">
+            Formato ISO: {value.toISOString().split('T')[0]}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

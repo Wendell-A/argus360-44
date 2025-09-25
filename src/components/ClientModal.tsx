@@ -104,7 +104,24 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
 
   useEffect(() => {
     if (client && isOpen) {
+      console.log('🔄 [DEBUG] Carregando dados do cliente no modal:', {
+        clientId: client.id,
+        clientName: client.name,
+        birthDateOriginal: client.birth_date,
+        birthDateType: typeof client.birth_date,
+        mode: mode
+      });
+
       const address = typeof client.address === 'object' && client.address ? client.address as any : {};
+      const birthDate = client.birth_date ? new Date(client.birth_date) : undefined;
+      
+      console.log('📅 [DEBUG] Processando birth_date:', {
+        originalValue: client.birth_date,
+        dateObject: birthDate,
+        dateString: birthDate ? birthDate.toISOString() : 'undefined',
+        formattedDisplay: birthDate ? birthDate.toLocaleDateString('pt-BR') : 'undefined'
+      });
+
       form.reset({
         name: client.name,
         type: client.type as "individual" | "company",
@@ -112,7 +129,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         email: client.email || "",
         phone: client.phone || "",
         secondary_phone: client.secondary_phone || "",
-        birth_date: client.birth_date ? new Date(client.birth_date) : undefined,
+        birth_date: birthDate,
         status: client.status as "prospect" | "active" | "inactive",
         classification: client.classification as "hot" | "warm" | "cold",
         monthly_income: client.monthly_income || 0,
@@ -128,7 +145,19 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
           zipcode: address.zipcode || "",
         },
       });
+
+      // Validação pós-carregamento
+      setTimeout(() => {
+        const formBirthDate = form.getValues('birth_date');
+        console.log('✅ [DEBUG] Validação após carregamento:', {
+          formValue: formBirthDate,
+          originalValue: client.birth_date,
+          match: formBirthDate?.toISOString().split('T')[0] === client.birth_date
+        });
+      }, 100);
+
     } else if (!client && isOpen) {
+      console.log('➕ [DEBUG] Abrindo modal para criar novo cliente');
       form.reset({
         name: "",
         type: "individual",
@@ -153,11 +182,30 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         },
       });
     }
-  }, [client, isOpen, form]);
+  }, [client, isOpen, form, mode]);
 
   const onSubmit = async (data: ClientFormData) => {
     setIsSubmitting(true);
+    
+    console.log('💾 [DEBUG] Iniciando processo de salvar cliente:', {
+      mode: mode,
+      clientId: client?.id,
+      formBirthDate: data.birth_date,
+      birthDateISOString: data.birth_date ? data.birth_date.toISOString() : 'undefined',
+      birthDateFormatted: data.birth_date ? data.birth_date.toLocaleDateString('pt-BR') : 'undefined',
+      birthDateToSave: data.birth_date ? data.birth_date.toISOString().split('T')[0] : null
+    });
+
     try {
+      // Validate birth_date before saving
+      if (data.birth_date) {
+        const today = new Date();
+        const minDate = new Date("1900-01-01");
+        if (data.birth_date > today || data.birth_date < minDate) {
+          throw new Error(`Data de aniversário inválida: ${data.birth_date.toLocaleDateString('pt-BR')}`);
+        }
+      }
+
       // Ensure all required fields are present and properly typed
       const submitData = {
         name: data.name,
@@ -175,24 +223,79 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         address: data.address || null,
       };
 
+      console.log('📤 [DEBUG] Dados que serão enviados ao servidor:', submitData);
+
+      let result;
       if (mode === "edit" && client) {
-        await updateClientAsync({ id: client.id, ...submitData });
-        toast({
-          title: "Cliente atualizado",
-          description: "O cliente foi atualizado com sucesso.",
-        });
+        result = await updateClientAsync({ id: client.id, ...submitData });
+        
+        // Validação cruzada pós-save para modo edição
+        if (result && data.birth_date) {
+          const savedBirthDate = result.birth_date;
+          const expectedBirthDate = data.birth_date.toISOString().split('T')[0];
+          
+          console.log('🔍 [DEBUG] Validação cruzada pós-save (edição):', {
+            expected: expectedBirthDate,
+            saved: savedBirthDate,
+            match: savedBirthDate === expectedBirthDate
+          });
+
+          if (savedBirthDate !== expectedBirthDate) {
+            console.error('❌ [ERRO] Data de aniversário não foi salva corretamente!');
+            toast({
+              title: "Atenção",
+              description: `Data de aniversário pode não ter sido salva corretamente. Esperado: ${data.birth_date.toLocaleDateString('pt-BR')}, Salvo: ${savedBirthDate}`,
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Cliente atualizado",
+              description: data.birth_date 
+                ? `Cliente atualizado! Aniversário: ${data.birth_date.toLocaleDateString('pt-BR')}`
+                : "O cliente foi atualizado com sucesso.",
+            });
+          }
+        } else {
+          toast({
+            title: "Cliente atualizado",
+            description: "O cliente foi atualizado com sucesso.",
+          });
+        }
       } else if (mode === "create") {
-        await createClientAsync(submitData);
-        toast({
-          title: "Cliente criado",
-          description: "O cliente foi criado com sucesso.",
-        });
+        result = await createClientAsync(submitData);
+        
+        // Validação cruzada pós-save para modo criação
+        if (result && data.birth_date) {
+          const savedBirthDate = result.birth_date;
+          const expectedBirthDate = data.birth_date.toISOString().split('T')[0];
+          
+          console.log('🔍 [DEBUG] Validação cruzada pós-save (criação):', {
+            expected: expectedBirthDate,
+            saved: savedBirthDate,
+            match: savedBirthDate === expectedBirthDate
+          });
+
+          toast({
+            title: "Cliente criado",
+            description: data.birth_date 
+              ? `Cliente criado! Aniversário: ${data.birth_date.toLocaleDateString('pt-BR')}`
+              : "O cliente foi criado com sucesso.",
+          });
+        } else {
+          toast({
+            title: "Cliente criado",
+            description: "O cliente foi criado com sucesso.",
+          });
+        }
       }
+
+      console.log('✅ [DEBUG] Cliente salvo com sucesso:', result);
       onClose();
     } catch (error) {
+      console.error('❌ [ERROR] Erro ao salvar cliente:', error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao salvar o cliente.",
+        description: `Ocorreu um erro ao salvar o cliente: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {
