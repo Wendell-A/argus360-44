@@ -229,27 +229,27 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
                   ) : commissionPreview ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Taxa de Comissão:</span>
-                          <span className="text-sm font-medium">
-                            {commissionPreview.hasSellerCommissions 
-                              ? `${commissionPreview.averageSellerCommission.toFixed(1)}% (Específica)`
-                              : `${commissionPreview.averageOfficeCommission.toFixed(1)}% (Padrão)`
-                            }
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Comissão Escritório:</span>
-                          <span className="text-sm font-medium">
-                            R$ {commissionPreview.officeCommissionAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Valor Médio Produto:</span>
-                          <span className="text-sm font-medium">
-                            R$ {commissionPreview.averageProductValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
+                         <div className="flex items-center justify-between">
+                           <span className="text-sm text-muted-foreground">Taxa de Comissão:</span>
+                           <span className="text-sm font-medium">
+                             {commissionPreview.hasSellerCommissions 
+                               ? `${(commissionPreview.averageSellerCommission || 0).toFixed(1)}% (Específica)`
+                               : `${(commissionPreview.averageOfficeCommission || 0).toFixed(1)}% (Padrão)`
+                             }
+                           </span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span className="text-sm text-muted-foreground">Comissão Escritório:</span>
+                           <span className="text-sm font-medium">
+                             R$ {(commissionPreview.officeCommissionAmount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                           </span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                           <span className="text-sm text-muted-foreground">Valor Médio Produto:</span>
+                           <span className="text-sm font-medium">
+                             R$ {(commissionPreview.averageProductValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                           </span>
+                         </div>
                       </div>
                       
                       <div className="space-y-2">
@@ -267,9 +267,9 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
                             <TrendingUp className="h-3 w-3" />
                             Comissão Estimada:
                           </span>
-                          <span className="text-sm font-medium text-green-600">
-                            R$ {commissionPreview.estimatedSellerCommissionAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
+                           <span className="text-sm font-medium text-green-600">
+                             R$ {(commissionPreview.estimatedSellerCommissionAmount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                           </span>
                         </div>
                       </div>
                     </div>
