@@ -446,7 +446,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip formatter={(value, name) => [formatCurrency(Number(value)), name === 'vendas' ? 'Vendas' : 'Meta']} />
+                <Tooltip formatter={(value, name) => [formatCurrency(Number(value)), name === 'vendas' ? 'Vendas Realizadas' : 'Meta Planejada']} />
                 <Bar 
                   dataKey="vendas" 
                   fill="hsl(var(--chart-1))" 

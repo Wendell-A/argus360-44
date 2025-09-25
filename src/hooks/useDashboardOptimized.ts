@@ -67,6 +67,57 @@ const calculateTopProducts = async (tenantId: string) => {
   }
 };
 
+// Função para buscar vendas recentes com comissões reais
+const calculateRecentSalesWithCommissions = async (tenantId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('sales')
+      .select(`
+        id,
+        sale_value,
+        commission_amount,
+        sale_date,
+        status,
+        client_id,
+        seller_id,
+        clients (
+          name
+        )
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('status', 'approved')
+      .order('sale_date', { ascending: false })
+      .limit(5);
+
+    if (error) {
+      console.error('Erro ao buscar vendas recentes:', error);
+      return [];
+    }
+
+    // Buscar nomes dos vendedores separadamente
+    const sellerIds = [...new Set(data?.map(sale => sale.seller_id).filter(Boolean))];
+    const { data: sellersData } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', sellerIds);
+
+    const sellersMap = new Map(sellersData?.map(s => [s.id, s.full_name]) || []);
+
+    return data?.map(sale => ({
+      id: sale.id,
+      client_name: sale.clients?.name || 'Cliente não encontrado',
+      seller_name: sellersMap.get(sale.seller_id) || 'Vendedor não encontrado',
+      sale_value: sale.sale_value,
+      commission_amount: sale.commission_amount || 0,
+      sale_date: sale.sale_date,
+      status: sale.status
+    })) || [];
+  } catch (error) {
+    console.error('Erro ao calcular vendas recentes:', error);
+    return [];
+  }
+};
+
 // Função para calcular performance dos vendedores baseado nas vendas reais
 const calculateVendorsPerformance = async (tenantId: string) => {
   try {
@@ -261,10 +312,11 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
           throw new Error('Nenhum dado retornado');
         }
 
-        // Buscar dados dos vendedores e produtos
-        const [topProducts, vendorsPerformance] = await Promise.all([
+        // Buscar dados dos vendedores, produtos e vendas recentes com comissões reais
+        const [topProducts, vendorsPerformance, recentSalesWithCommissions] = await Promise.all([
           calculateTopProducts(activeTenant.tenant_id),
-          calculateVendorsPerformance(activeTenant.tenant_id)
+          calculateVendorsPerformance(activeTenant.tenant_id),
+          calculateRecentSalesWithCommissions(activeTenant.tenant_id)
         ]);
 
         // Simular filtros no frontend por enquanto (será otimizado no backend)
@@ -277,7 +329,7 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
             active_goals: 0,
             pending_tasks: 0
           },
-          recent_sales: (result.recent_sales as any) || [],
+          recent_sales: recentSalesWithCommissions || [],
           recent_clients: (result.recent_clients as any) || [],
           pending_tasks: (result.pending_tasks as any) || [],
           goals: (result.goals_data as any) || [],
