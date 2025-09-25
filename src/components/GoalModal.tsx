@@ -239,6 +239,12 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Comissão Escritório:</span>
+                          <span className="text-sm font-medium">
+                            R$ {commissionPreview.officeCommissionAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Valor Médio Produto:</span>
                           <span className="text-sm font-medium">
                             R$ {commissionPreview.averageProductValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -276,10 +282,12 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
                   {commissionPreview && commissionPreview.totalProducts > 0 && (
                     <div className="pt-2 border-t border-border">
                       <p className="text-xs text-muted-foreground">
-                        * Cálculo baseado em {commissionPreview.totalProducts} produtos ativos e 
+                        * Cálculo em 2 fases: 1ª) Meta × Taxa Produto = Comissão Escritório; 
+                        2ª) Comissão Escritório × Taxa Vendedor = Comissão Final. 
+                        Baseado em {commissionPreview.totalProducts} produtos ativos
                         {commissionPreview.hasSellerCommissions 
-                          ? " comissões específicas do vendedor"
-                          : " comissões padrão do escritório"
+                          ? " e comissões específicas do vendedor"
+                          : " e comissões padrão do escritório"
                         }
                       </p>
                     </div>

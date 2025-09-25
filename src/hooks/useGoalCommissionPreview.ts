@@ -7,6 +7,7 @@ export interface CommissionPreview {
   averageOfficeCommission: number;
   averageProductValue: number;
   estimatedSellerCommissionAmount: number;
+  officeCommissionAmount: number;
   consortiumsNeeded: number;
   totalProducts: number;
   hasSellerCommissions: boolean;
@@ -24,6 +25,7 @@ export const useGoalCommissionPreview = (sellerId?: string, goalAmount?: number)
           averageOfficeCommission: 0,
           averageProductValue: 0,
           estimatedSellerCommissionAmount: 0,
+          officeCommissionAmount: 0,
           consortiumsNeeded: 0,
           totalProducts: 0,
           hasSellerCommissions: false,
@@ -53,16 +55,23 @@ export const useGoalCommissionPreview = (sellerId?: string, goalAmount?: number)
         const averageSellerCommission = sellerComms && sellerComms.length > 0 ? 3.5 : 0;
         const averageOfficeCommission = defaultComms && defaultComms.length > 0 ? 5.0 : 0;
 
-        const effectiveCommissionRate = sellerComms && sellerComms.length > 0 
-          ? averageSellerCommission 
-          : averageOfficeCommission;
-
         let estimatedSellerCommissionAmount = 0;
         let consortiumsNeeded = 0;
+        let officeCommissionAmount = 0;
 
-        if (averageProductValue > 0 && effectiveCommissionRate > 0) {
+        if (averageProductValue > 0 && goalAmount > 0) {
+          // Calcular quantos consórcios necessários
           consortiumsNeeded = Math.ceil(goalAmount / averageProductValue);
-          estimatedSellerCommissionAmount = goalAmount * (effectiveCommissionRate / 100);
+          
+          // Fase 1: Calcular comissão do escritório (meta x taxa média dos produtos)
+          if (averageOfficeCommission > 0) {
+            officeCommissionAmount = goalAmount * (averageOfficeCommission / 100);
+          }
+          
+          // Fase 2: Calcular comissão do vendedor (comissão do escritório x taxa do vendedor)
+          if (sellerComms && sellerComms.length > 0 && officeCommissionAmount > 0 && averageSellerCommission > 0) {
+            estimatedSellerCommissionAmount = officeCommissionAmount * (averageSellerCommission / 100);
+          }
         }
 
         return {
@@ -70,6 +79,7 @@ export const useGoalCommissionPreview = (sellerId?: string, goalAmount?: number)
           averageOfficeCommission,
           averageProductValue,
           estimatedSellerCommissionAmount,
+          officeCommissionAmount,
           consortiumsNeeded,
           totalProducts,
           hasSellerCommissions: sellerComms && sellerComms.length > 0,
@@ -81,6 +91,7 @@ export const useGoalCommissionPreview = (sellerId?: string, goalAmount?: number)
           averageOfficeCommission: 0,
           averageProductValue: 0,
           estimatedSellerCommissionAmount: 0,
+          officeCommissionAmount: 0,
           consortiumsNeeded: 0,
           totalProducts: 0,
           hasSellerCommissions: false,
