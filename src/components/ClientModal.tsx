@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
-import { toLocalISOString } from "@/lib/dateUtils";
+import { toLocalISOString, fromLocalISOString } from "@/lib/dateUtils";
 import {
   Dialog,
   DialogContent,
@@ -122,7 +122,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
       });
 
       const address = typeof client.address === 'object' && client.address ? client.address as any : {};
-      const birthDate = client.birth_date ? new Date(client.birth_date) : undefined;
+      const birthDate = client.birth_date ? fromLocalISOString(client.birth_date) : undefined;
       
       console.log('📅 [DEBUG] Processando birth_date:', {
         originalValue: client.birth_date,
@@ -162,7 +162,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         console.log('✅ [DEBUG] Validação após carregamento:', {
           formValue: formBirthDate,
           originalValue: client.birth_date,
-          match: formBirthDate?.toISOString().split('T')[0] === client.birth_date
+          match: (formBirthDate ? toLocalISOString(formBirthDate) : undefined) === client.birth_date
         });
       }, 100);
 
@@ -269,7 +269,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         // Validação cruzada pós-save para modo edição
         if (result && data.birth_date) {
           const savedBirthDate = result.birth_date;
-          const expectedBirthDate = data.birth_date.toISOString().split('T')[0];
+          const expectedBirthDate = toLocalISOString(data.birth_date);
           
           console.log('🔍 [DEBUG] Validação cruzada pós-save (edição):', {
             expected: expectedBirthDate,
@@ -304,7 +304,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         // Validação cruzada pós-save para modo criação
         if (result && data.birth_date) {
           const savedBirthDate = result.birth_date;
-          const expectedBirthDate = data.birth_date.toISOString().split('T')[0];
+          const expectedBirthDate = toLocalISOString(data.birth_date);
           
           console.log('🔍 [DEBUG] Validação cruzada pós-save (criação):', {
             expected: expectedBirthDate,

@@ -26,7 +26,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { openWhatsApp } from '@/lib/whatsapp';
-
+import { fromLocalISOString } from '@/lib/dateUtils';
 const getDaysLabel = (days: number) => {
   if (days === 0) return 'Hoje! 🎉';
   if (days === 1) return 'Amanhã';
@@ -261,7 +261,7 @@ export function BirthdayClients() {
                         </div>
                       )}
                       <div className="text-xs text-gray-500">
-                        Aniversário: {format(new Date(client.birth_date), 'dd/MM', { locale: ptBR })}
+                        Aniversário: {format(fromLocalISOString(client.birth_date), 'dd/MM', { locale: ptBR })}
                       </div>
                     </div>
 
@@ -338,7 +338,7 @@ export function BirthdayClients() {
                 )}
                 
                 <div className="text-xs text-gray-500 mt-1">
-                  Aniversário: {format(new Date(selectedClient.birth_date), 'dd/MM', { locale: ptBR })}
+                  Aniversário: {format(fromLocalISOString(selectedClient.birth_date), 'dd/MM', { locale: ptBR })}
                 </div>
               </div>
             )}

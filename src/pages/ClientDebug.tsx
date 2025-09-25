@@ -17,7 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Search, AlertTriangle, CheckCircle2, Calendar } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-
+import { fromLocalISOString } from '@/lib/dateUtils';
 interface ClientDebugData {
   id: string;
   name: string;
@@ -74,7 +74,7 @@ export function ClientDebug() {
       for (const client of clientsDebug) {
         if (!client.birth_date) continue;
 
-        const birthDate = new Date(client.birth_date);
+        const birthDate = fromLocalISOString(client.birth_date);
         const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
         
         if (thisYearBirthday < today) {
@@ -258,9 +258,9 @@ export function ClientDebug() {
                 {filteredBirthdays.map((analysis) => (
                   <TableRow key={analysis.id}>
                     <TableCell className="font-medium">{analysis.name}</TableCell>
-                    <TableCell>{new Date(analysis.birth_date).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{fromLocalISOString(analysis.birth_date).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>{analysis.age} anos</TableCell>
-                    <TableCell>{new Date(analysis.next_birthday).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{fromLocalISOString(analysis.next_birthday).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>
                       <Badge variant={analysis.days_until_birthday === 0 ? "default" : analysis.days_until_birthday <= 7 ? "secondary" : "outline"}>
                         {analysis.days_until_birthday === 0 ? "Hoje!" : `${analysis.days_until_birthday} dias`}
@@ -326,7 +326,7 @@ export function ClientDebug() {
                     <TableCell>
                       {client.birth_date ? (
                         <span className="text-green-600">
-                          {new Date(client.birth_date).toLocaleDateString('pt-BR')}
+                          {fromLocalISOString(client.birth_date).toLocaleDateString('pt-BR')}
                         </span>
                       ) : (
                         <span className="text-orange-600">Não informado</span>
