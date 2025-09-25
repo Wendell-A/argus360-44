@@ -76,6 +76,11 @@ const calculateVendorsPerformance = async (tenantId: string) => {
         sale_value,
         commission_amount,
         seller_id,
+        sale_date,
+        client_id,
+        clients (
+          name
+        ),
         offices (
           name
         )

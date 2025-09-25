@@ -121,13 +121,13 @@ export default function Dashboard() {
       };
     }
     
-    // Processar vendas por mês
+    // Processar vendas por mês (usar valor, não quantidade)
     if (dashboardData?.recent_sales) {
       dashboardData.recent_sales.forEach((sale: any) => {
         const date = new Date(sale.sale_date);
         const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         if (monthsMap[monthYear]) {
-          monthsMap[monthYear].vendas += 1;
+          monthsMap[monthYear].vendas += sale.sale_value || 0;
         }
       });
     }
@@ -445,8 +445,8 @@ export default function Dashboard() {
               <BarChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value, name) => [formatCurrency(Number(value)), name === 'vendas' ? 'Vendas' : 'Meta']} />
                 <Bar 
                   dataKey="vendas" 
                   fill="hsl(var(--chart-1))" 
@@ -478,7 +478,7 @@ export default function Dashboard() {
               <LineChart data={monthlyData}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="month" />
-                <YAxis />
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
                 <Tooltip formatter={(value) => [formatCurrency(Number(value)), "Comissões"]} />
                 <Line
                   type="monotone"
@@ -486,6 +486,8 @@ export default function Dashboard() {
                   stroke="hsl(var(--chart-1))"
                   strokeWidth={3}
                   dot={{ fill: "hsl(var(--chart-1))", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: "hsl(var(--chart-1))", strokeWidth: 2 }}
+                  name="Comissões"
                 />
               </LineChart>
             </ResponsiveContainer>

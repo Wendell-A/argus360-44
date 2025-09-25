@@ -66,12 +66,13 @@ export function SalesFunnelBoardSecure({ onClientSelect }: SalesFunnelBoardProps
       responsibleUserId: client.responsible_user_id,
       currentUserId: user.id,
       userRole,
-      userOffices: offices.length
+      userOffices: offices.length,
+      activeTenant: activeTenant?.tenant_id
     });
     
-    // Owner e Admin podem acessar todos os clientes do tenant
+    // CORREÇÃO CRÍTICA: Owner e Admin podem acessar TODOS os clientes do tenant
     if (userRole === 'owner' || userRole === 'admin') {
-      console.log('✅ Acesso liberado: Owner/Admin');
+      console.log('✅ Acesso total liberado: Owner/Admin pode ver todos os clientes');
       return true;
     }
     
