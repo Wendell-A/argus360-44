@@ -182,7 +182,7 @@ class RedisCache {
       return await response.json();
     } catch (error) {
       console.error('Redis STATS exception:', error);
-      return { error: error.message };
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 }
@@ -370,7 +370,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
         timestamp: new Date().toISOString()
       }),
       { 
