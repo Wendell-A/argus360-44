@@ -30,7 +30,8 @@ import {
   Clock,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  ArrowRightLeft
 } from "lucide-react";
 import { useClients, useCreateClient, useDeleteClient } from "@/hooks/useClients";
 import { ClientModal } from "@/components/ClientModal";
@@ -39,6 +40,7 @@ import { useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFu
 import { BirthdayClients } from "@/components/crm/BirthdayClients";
 import { Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { ClientTransferModal } from "@/components/ClientTransferModal";
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,6 +49,8 @@ export default function Clientes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
   const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [clientToTransfer, setClientToTransfer] = useState<any>(null);
   
   const { clients, isLoading, error: clientsError } = useClients();
   const { createClientAsync, isCreating: isCreatingClient, error: createError } = useCreateClient();
@@ -137,6 +141,16 @@ export default function Clientes() {
         });
       }
     }
+  };
+
+  const handleTransfer = (client: any) => {
+    setClientToTransfer(client);
+    setIsTransferModalOpen(true);
+  };
+
+  const handleCloseTransferModal = () => {
+    setClientToTransfer(null);
+    setIsTransferModalOpen(false);
   };
 
   const handleAddToFunnel = async (clientId: string, clientName: string) => {
@@ -442,6 +456,15 @@ export default function Clientes() {
                             >
                               <Edit className="w-3 h-3 mr-1" />
                               Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTransfer(client)}
+                              className="text-xs"
+                            >
+                              <ArrowRightLeft className="w-3 h-3 mr-1" />
+                              Repassar
                             </Button>
                             <Button
                               variant="outline"

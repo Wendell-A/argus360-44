@@ -40,6 +40,7 @@ import { useOffices } from "@/hooks/useOffices";
 import { useUserContext } from "@/hooks/useUserContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { ClientTransferHistory } from "@/components/ClientTransferHistory";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),

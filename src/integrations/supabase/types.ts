@@ -274,6 +274,48 @@ export type Database = {
           },
         ]
       }
+      client_transfers: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          from_user_id: string
+          id: string
+          notes: string | null
+          reason: string | null
+          status: string
+          tenant_id: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          from_user_id: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          status?: string
+          tenant_id: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          from_user_id?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          status?: string
+          tenant_id?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: Json | null
