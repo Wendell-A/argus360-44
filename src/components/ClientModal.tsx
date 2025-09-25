@@ -234,7 +234,18 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         email: data.email || null,
         phone: data.phone || null,
         secondary_phone: data.secondary_phone || null,
-        birth_date: data.birth_date ? data.birth_date.toISOString().split('T')[0] : null,
+        birth_date: data.birth_date ? (() => {
+          // Import dinâmico para evitar problemas de bundling
+          const { toLocalISOString } = require('@/lib/dateUtils');
+          const localDate = toLocalISOString(data.birth_date);
+          console.log('🎂 Data de aniversário - conversão:', {
+            original: data.birth_date,
+            originalDay: data.birth_date.getDate(),
+            converted: localDate,
+            convertedDay: localDate.split('-')[2]
+          });
+          return localDate;
+        })() : null,
         status: data.status,
         classification: data.classification,
         monthly_income: data.monthly_income || null,

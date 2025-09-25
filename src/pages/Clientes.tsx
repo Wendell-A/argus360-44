@@ -51,7 +51,7 @@ export default function Clientes() {
   const { createClientAsync, isCreating: isCreatingClient, error: createError } = useCreateClient();
   const { deleteClientAsync, isDeleting } = useDeleteClient();
   const { toast } = useToast();
-  const { updatePositionAsync } = useUpdateClientFunnelPosition();
+  const { updatePositionAsync, isUpdating } = useUpdateClientFunnelPosition();
   const { stages } = useSalesFunnelStages();
   const { createDefaultStagesAsync, isCreating } = useCreateDefaultFunnelStages();
 
@@ -138,26 +138,35 @@ export default function Clientes() {
   };
 
   const handleAddToFunnel = async (clientId: string, clientName: string) => {
+    console.log('🎯 Iniciando adição do cliente ao funil:', { clientId, clientName });
+    
     try {
       // Verificar se há fases disponíveis
+      console.log('📊 Fases disponíveis:', stages.length);
+      
       if (stages.length === 0) {
+        console.log('⚠️ Nenhuma fase encontrada, criando fases padrão...');
         toast({
-          title: "Fases do funil não encontradas",
-          description: "Criando fases padrão do funil de vendas...",
+          title: "Criando fases do funil",
+          description: "Configurando fases padrão do funil de vendas...",
         });
         await createDefaultStagesAsync();
+        console.log('✅ Fases padrão criadas com sucesso');
         return;
       }
 
       // Pegar a primeira fase (Lead)
       const firstStage = stages.find(stage => stage.order_index === 1) || stages[0];
+      console.log('🎪 Primeira fase selecionada:', firstStage);
       
       if (!firstStage) {
         throw new Error('Nenhuma fase encontrada no funil');
       }
 
+      console.log('🚀 Adicionando cliente ao funil...');
+      
       // Adicionar cliente na primeira fase do funil
-      await updatePositionAsync({
+      const result = await updatePositionAsync({
         clientId: clientId,
         stageId: firstStage.id,
         probability: 10,
@@ -165,15 +174,25 @@ export default function Clientes() {
         notes: `Cliente ${clientName} adicionado automaticamente ao funil em ${new Date().toLocaleDateString('pt-BR')}`,
       });
 
+      console.log('✅ Cliente adicionado ao funil com sucesso:', result);
+
       toast({
-        title: "Cliente adicionado ao funil",
+        title: "Cliente adicionado ao funil! 🎉",
         description: `${clientName} foi adicionado à fase "${firstStage.name}" do funil de vendas.`,
       });
     } catch (error: any) {
-      console.error('Erro ao adicionar cliente ao funil:', error);
+      console.error('❌ Erro ao adicionar cliente ao funil:', error);
+      console.error('❌ Detalhes do erro:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        stack: error?.stack
+      });
+      
       toast({
-        title: "Erro",
-        description: error?.message || "Não foi possível adicionar o cliente ao funil.",
+        title: "Erro ao adicionar ao CRM",
+        description: error?.message || "Não foi possível adicionar o cliente ao funil. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -419,11 +438,11 @@ export default function Clientes() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleAddToFunnel(client.id, client.name)}
-                              disabled={isCreatingClient}
+                              disabled={isUpdating || isCreating}
                               className="text-xs text-green-600 hover:text-green-700"
                             >
                               <Users className="w-3 h-3 mr-1" />
-                              {isCreatingClient ? 'Configurando...' : '+ CRM'}
+                              {(isUpdating || isCreating) ? 'Adicionando...' : '+ CRM'}
                             </Button>
                             <Button
                               variant="outline"

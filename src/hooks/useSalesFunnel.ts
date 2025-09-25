@@ -117,7 +117,8 @@ export function useUpdateClientFunnelPosition() {
         throw new Error('No tenant selected');
       }
 
-      console.log('Updating funnel position:', data);
+      console.log('🔄 Atualizando posição no funil:', data);
+      console.log('🏢 Tenant ativo:', activeTenant?.tenant_id);
 
       // Primeiro, marcar a posição atual como não atual e definir data de saída
       const { error: updateError } = await supabase
@@ -159,9 +160,22 @@ export function useUpdateClientFunnelPosition() {
       console.log('Position updated successfully:', result);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('✅ Posição no funil atualizada com sucesso:', result);
+      
+      // Invalidar queries para atualizar a interface
       queryClient.invalidateQueries({ queryKey: ['client_funnel_positions'] });
       queryClient.invalidateQueries({ queryKey: ['client_funnel_history'] });
+      queryClient.invalidateQueries({ queryKey: ['sales_funnel_stages'] });
+      
+      console.log('🔄 Queries invalidadas para atualização da interface');
+    },
+    onError: (error) => {
+      console.error('❌ Erro na mutação do funil:', error);
+      console.error('❌ Detalhes:', {
+        message: error?.message,
+        stack: error?.stack
+      });
     },
   });
 
