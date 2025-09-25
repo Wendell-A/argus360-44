@@ -34,6 +34,8 @@ import {
 import { useDashboardOptimized } from '@/hooks/useDashboardOptimized';
 import { useContextualDashboard } from '@/hooks/useContextualDashboard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCommissions } from '@/hooks/useCommissions';
+import { useGoals } from '@/hooks/useGoals';
 
 interface DashboardFilters {
   dateRange: 'today' | 'week' | 'month' | 'previous_month';
@@ -54,8 +56,10 @@ export default function Dashboard() {
   // Hooks de dados
   const { data: dashboardData, isLoading: dashboardLoading, refetch } = useDashboardOptimized();
   const { data: contextualData, isLoading: contextualLoading } = useContextualDashboard();
+  const { commissions, isLoading: commissionsLoading } = useCommissions();
+  const { goals, isLoading: goalsLoading } = useGoals();
 
-  const isLoading = dashboardLoading || contextualLoading;
+  const isLoading = dashboardLoading || contextualLoading || commissionsLoading || goalsLoading;
 
   // Dados com fallbacks
   const stats = useMemo(() => {
@@ -90,30 +94,81 @@ export default function Dashboard() {
 
   // Dados dos gráficos
   const monthlyData = useMemo(() => {
-    if (!dashboardData?.recent_sales) {
+    if (!dashboardData?.recent_sales && !commissions.length) {
       return [
-        { month: "Jan", vendas: 45, comissoes: 12000 },
-        { month: "Fev", vendas: 52, comissoes: 14500 },
-        { month: "Mar", vendas: 38, comissoes: 10200 },
-        { month: "Abr", vendas: 67, comissoes: 18900 },
-        { month: "Mai", vendas: 71, comissoes: 21500 },
-        { month: "Jun", vendas: 59, comissoes: 16800 },
+        { month: "Jan", vendas: 45, comissoes: 12000, meta: 50 },
+        { month: "Fev", vendas: 52, comissoes: 14500, meta: 50 },
+        { month: "Mar", vendas: 38, comissoes: 10200, meta: 50 },
+        { month: "Abr", vendas: 67, comissoes: 18900, meta: 60 },
+        { month: "Mai", vendas: 71, comissoes: 21500, meta: 60 },
+        { month: "Jun", vendas: 59, comissoes: 16800, meta: 60 },
       ];
     }
     
+    // Criar mapa de meses dos últimos 6 meses
+    const today = new Date();
+    const monthsMap = {};
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthKey = date.toLocaleDateString('pt-BR', { month: 'short' });
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthsMap[monthYear] = { 
+        month: monthKey, 
+        vendas: 0, 
+        comissoes: 0, 
+        meta: 0,
+        monthYear 
+      };
+    }
+    
     // Processar vendas por mês
-    const monthSales = dashboardData.recent_sales.reduce((acc: any, sale: any) => {
-      const month = new Date(sale.sale_date).toLocaleDateString('pt-BR', { month: 'short' });
-      if (!acc[month]) {
-        acc[month] = { month, vendas: 0, comissoes: 0 };
-      }
-      acc[month].vendas += 1;
-      acc[month].comissoes += sale.commission_amount || 0;
-      return acc;
-    }, {});
+    if (dashboardData?.recent_sales) {
+      dashboardData.recent_sales.forEach((sale: any) => {
+        const date = new Date(sale.sale_date);
+        const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (monthsMap[monthYear]) {
+          monthsMap[monthYear].vendas += 1;
+        }
+      });
+    }
+    
+    // Processar comissões reais por mês
+    if (commissions.length) {
+      commissions.forEach((commission: any) => {
+        if (commission.payment_date) {
+          const date = new Date(commission.payment_date);
+          const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          if (monthsMap[monthYear]) {
+            monthsMap[monthYear].comissoes += commission.commission_amount || 0;
+          }
+        }
+      });
+    }
+    
+    // Processar metas por mês
+    if (goals.length) {
+      goals.forEach((goal: any) => {
+        if (goal.goal_type === 'office' && goal.status === 'active') {
+          const startDate = new Date(goal.period_start);
+          const endDate = new Date(goal.period_end);
+          
+          // Distribuir meta pelos meses do período
+          const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                            (endDate.getMonth() - startDate.getMonth()) + 1;
+          const monthlyTarget = goal.target_amount / monthsDiff;
+          
+          for (let date = new Date(startDate); date <= endDate; date.setMonth(date.getMonth() + 1)) {
+            const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (monthsMap[monthYear]) {
+              monthsMap[monthYear].meta += monthlyTarget;
+            }
+          }
+        }
+      });
+    }
 
-    return Object.values(monthSales).slice(-6); // Últimos 6 meses
-  }, [dashboardData]);
+    return Object.values(monthsMap);
+  }, [dashboardData, commissions, goals]);
 
   // Dados dos produtos (gráfico de rosca) - DADOS REAIS
   const productData = useMemo(() => {
@@ -396,6 +451,14 @@ export default function Dashboard() {
                   dataKey="vendas" 
                   fill="hsl(var(--chart-1))" 
                   radius={[4, 4, 0, 0]} 
+                  name="Vendas"
+                />
+                <Bar 
+                  dataKey="meta" 
+                  fill="hsl(var(--chart-3))" 
+                  radius={[4, 4, 0, 0]} 
+                  name="Meta"
+                  opacity={0.7}
                 />
               </BarChart>
             </ResponsiveContainer>

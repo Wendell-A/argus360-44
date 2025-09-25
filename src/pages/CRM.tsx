@@ -11,13 +11,13 @@ import { UpcomingTasks } from '@/components/crm/UpcomingTasks';
 import { TaskKanban } from '@/components/crm/TaskKanban';
 import { BirthdayClients } from '@/components/crm/BirthdayClients';
 import { useSalesFunnelStages, useClientFunnelPositions } from '@/hooks/useSalesFunnel';
-import { useClientInteractions } from '@/hooks/useClientInteractions';
+import { useContextualInteractions } from '@/hooks/useContextualInteractions';
 
 export default function CRM() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
   const { positions, isLoading: positionsLoading } = useClientFunnelPositions();
-  const { interactions } = useClientInteractions();
+  const { data: interactions = [] } = useContextualInteractions();
 
   // Calcular métricas
   const totalClients = positions.length;
