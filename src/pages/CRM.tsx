@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Target, Calendar, TrendingUp } from 'lucide-react';
 import { ClientInteractionHistory } from '@/components/crm/ClientInteractionHistory';
-import { SalesFunnelBoard } from '@/components/crm/SalesFunnelBoard';
+import { SalesFunnelBoardSecure } from '@/components/crm/SalesFunnelBoardSecure';
 import { UpcomingTasks } from '@/components/crm/UpcomingTasks';
 import { TaskKanban } from '@/components/crm/TaskKanban';
 import { BirthdayClients } from '@/components/crm/BirthdayClients';
@@ -107,7 +107,7 @@ export default function CRM() {
         </TabsList>
 
         <TabsContent value="funnel" className="space-y-4">
-          <SalesFunnelBoard onClientSelect={setSelectedClientId} />
+          <SalesFunnelBoardSecure onClientSelect={setSelectedClientId} />
         </TabsContent>
 
         <TabsContent value="tasks" className="space-y-4">

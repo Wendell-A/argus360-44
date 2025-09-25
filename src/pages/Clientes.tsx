@@ -1,4 +1,5 @@
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { useClientsMasked, useDeleteClient } from "@/hooks/useClientsMasked";
+import { useClients, useCreateClient, useDeleteClient } from "@/hooks/useClients";
 import { ClientModal } from "@/components/ClientModal";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFunnelStages } from "@/hooks/useSalesFunnel";
@@ -46,7 +47,8 @@ export default function Clientes() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">("create");
   const [selectedClient, setSelectedClient] = useState<any>(null);
   
-  const { clients, isLoading } = useClientsMasked();
+  const { clients, isLoading, error: clientsError } = useClients();
+  const { createClientAsync, isCreating: isCreatingClient, error: createError } = useCreateClient();
   const { deleteClientAsync, isDeleting } = useDeleteClient();
   const { toast } = useToast();
   const { updatePositionAsync } = useUpdateClientFunnelPosition();
@@ -84,6 +86,26 @@ export default function Clientes() {
     setModalMode("create");
     setIsModalOpen(true);
   };
+
+  // Lidar com erros de clientes
+  React.useEffect(() => {
+    if (clientsError) {
+      console.error('❌ Erro ao carregar clientes:', clientsError);
+      toast({
+        title: "Erro ao carregar clientes",
+        description: "Não foi possível carregar a lista de clientes. Verifique suas permissões.",
+        variant: "destructive",
+      });
+    }
+    if (createError) {
+      console.error('❌ Erro ao criar cliente:', createError);
+      toast({
+        title: "Erro ao criar cliente",
+        description: createError.message || "Não foi possível criar o cliente. Verifique os dados e tente novamente.",
+        variant: "destructive",
+      });
+    }
+  }, [clientsError, createError, toast]);
 
   const handleView = (client: any) => {
     setSelectedClient(client);
@@ -358,9 +380,6 @@ export default function Clientes() {
                             {client.phone && (
                               <p className="text-sm text-gray-600">{client.phone}</p>
                             )}
-                            {client.data_access_level === 'masked' && (
-                              <p className="text-xs text-orange-600 italic">Dados mascarados</p>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -400,11 +419,11 @@ export default function Clientes() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleAddToFunnel(client.id, client.name)}
-                              disabled={isCreating}
+                              disabled={isCreatingClient}
                               className="text-xs text-green-600 hover:text-green-700"
                             >
                               <Users className="w-3 h-3 mr-1" />
-                              {isCreating ? 'Configurando...' : '+ CRM'}
+                              {isCreatingClient ? 'Configurando...' : '+ CRM'}
                             </Button>
                             <Button
                               variant="outline"
