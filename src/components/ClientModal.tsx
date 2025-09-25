@@ -35,6 +35,9 @@ import {
   useUpdateClient,
   Client 
 } from "@/hooks/useClients";
+import { useOffices } from "@/hooks/useOffices";
+import { useUserContext } from "@/hooks/useUserContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
 const clientSchema = z.object({
@@ -50,6 +53,7 @@ const clientSchema = z.object({
   monthly_income: z.number().min(0, "Renda não pode ser negativa").optional(),
   occupation: z.string().optional(),
   notes: z.string().optional(),
+  office_id: z.string().optional(),
   address: z.object({
     street: z.string().optional(),
     number: z.string().optional(),
@@ -73,6 +77,9 @@ interface ClientModalProps {
 export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps) {
   const { createClientAsync, isCreating } = useCreateClient();
   const { updateClientAsync, isUpdating } = useUpdateClient();
+  const { offices, isLoading: isLoadingOffices } = useOffices();
+  const { userContext } = useUserContext();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClientFormData>({
@@ -90,6 +97,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
       monthly_income: 0,
       occupation: "",
       notes: "",
+      office_id: "",
       address: {
         street: "",
         number: "",
@@ -135,6 +143,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         monthly_income: client.monthly_income || 0,
         occupation: client.occupation || "",
         notes: client.notes || "",
+        office_id: client.office_id || "",
         address: {
           street: address.street || "",
           number: address.number || "",
@@ -171,6 +180,7 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         monthly_income: 0,
         occupation: "",
         notes: "",
+        office_id: "",
         address: {
           street: "",
           number: "",
@@ -187,16 +197,26 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
   const onSubmit = async (data: ClientFormData) => {
     setIsSubmitting(true);
     
+    // Verificar se usuário tem acesso a algum escritório
+    const accessibleOffices = userContext?.accessible_offices || [];
+    const selectedOfficeId = data.office_id || (accessibleOffices.length === 1 ? accessibleOffices[0] : null);
+    
     console.log('💾 [DEBUG] Iniciando processo de salvar cliente:', {
       mode: mode,
       clientId: client?.id,
+      userId: user?.id,
+      selectedOfficeId,
+      accessibleOffices,
+      userRole: userContext?.role,
       formBirthDate: data.birth_date,
-      birthDateISOString: data.birth_date ? data.birth_date.toISOString() : 'undefined',
-      birthDateFormatted: data.birth_date ? data.birth_date.toLocaleDateString('pt-BR') : 'undefined',
       birthDateToSave: data.birth_date ? data.birth_date.toISOString().split('T')[0] : null
     });
 
     try {
+      // Validação de escritório para usuários não admin/owner
+      if (!userContext?.is_owner_or_admin && !selectedOfficeId) {
+        throw new Error("Você precisa selecionar um escritório válido para criar clientes.");
+      }
       // Validate birth_date before saving
       if (data.birth_date) {
         const today = new Date();
@@ -220,6 +240,8 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
         monthly_income: data.monthly_income || null,
         occupation: data.occupation || null,
         notes: data.notes || null,
+        office_id: selectedOfficeId,
+        responsible_user_id: user?.id,
         address: data.address || null,
       };
 
@@ -291,11 +313,31 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
 
       console.log('✅ [DEBUG] Cliente salvo com sucesso:', result);
       onClose();
-    } catch (error) {
-      console.error('❌ [ERROR] Erro ao salvar cliente:', error);
+    } catch (error: any) {
+      console.error('❌ [ERROR] Erro ao salvar cliente:', {
+        error,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
+      });
+
+      // Melhor tratamento de erros do Supabase
+      let errorMessage = "Erro desconhecido";
+      if (error?.message) {
+        errorMessage = error.message;
+        // Mapear mensagens específicas de RLS
+        if (error.message.includes("row-level security policy")) {
+          errorMessage = "Você não tem permissão para criar clientes neste escritório. Verifique se seu usuário está associado a um escritório válido.";
+        }
+        if (error.message.includes("violates check constraint")) {
+          errorMessage = "Dados inválidos fornecidos. Verifique os campos obrigatórios.";
+        }
+      }
+
       toast({
-        title: "Erro",
-        description: `Ocorreu um erro ao salvar o cliente: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        title: "Erro ao salvar cliente",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -439,6 +481,67 @@ export function ClientModal({ isOpen, onClose, client, mode }: ClientModalProps)
                        <FormMessage />
                      </FormItem>
                    )}
+                 />
+
+                 {/* Campo Escritório */}
+                 <FormField
+                   control={form.control}
+                   name="office_id"
+                   render={({ field }) => {
+                     const accessibleOffices = userContext?.accessible_offices || [];
+                     const filteredOffices = offices.filter(office => 
+                       userContext?.is_owner_or_admin || accessibleOffices.includes(office.id)
+                     );
+                     
+                     // Auto-selecionar se o usuário tiver apenas 1 escritório acessível
+                     const shouldAutoSelect = filteredOffices.length === 1 && !field.value && mode === "create";
+                     if (shouldAutoSelect) {
+                       field.onChange(filteredOffices[0].id);
+                     }
+                     
+                     // Se o usuário não tem acesso a nenhum escritório
+                     if (filteredOffices.length === 0 && !userContext?.is_owner_or_admin) {
+                       return (
+                         <FormItem>
+                           <FormLabel>Escritório</FormLabel>
+                           <div className="text-sm text-destructive">
+                             Sua conta não está associada a um escritório. Contate um administrador.
+                           </div>
+                         </FormItem>
+                       );
+                     }
+                     
+                     return (
+                       <FormItem>
+                         <FormLabel>Escritório {!userContext?.is_owner_or_admin && "*"}</FormLabel>
+                         <Select 
+                           onValueChange={field.onChange} 
+                           value={field.value} 
+                           disabled={isReadOnly || isLoadingOffices || filteredOffices.length === 1}
+                         >
+                           <FormControl>
+                             <SelectTrigger>
+                               <SelectValue placeholder={
+                                 isLoadingOffices 
+                                   ? "Carregando escritórios..." 
+                                   : filteredOffices.length === 1 
+                                     ? filteredOffices[0].name
+                                     : "Selecione um escritório"
+                               } />
+                             </SelectTrigger>
+                           </FormControl>
+                           <SelectContent>
+                             {filteredOffices.map((office) => (
+                               <SelectItem key={office.id} value={office.id}>
+                                 {office.name}
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+                         <FormMessage />
+                       </FormItem>
+                     );
+                   }}
                  />
                </div>
              </div>

@@ -48,13 +48,28 @@ export function useCreateClient() {
         throw new Error('No tenant selected');
       }
 
+      console.log('🔄 [DEBUG] Enviando dados para criar cliente:', {
+        client,
+        tenant_id: activeTenant.tenant_id
+      });
+
       const { data, error } = await supabase
         .from('clients')
         .insert({ ...client, tenant_id: activeTenant.tenant_id })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [ERROR] Erro do Supabase ao criar cliente:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      
       return data as Client;
     },
     onSuccess: (data) => {
