@@ -5,6 +5,9 @@ export interface ConsortiumCalculationParams {
   downPayment?: number;
   adminRate: number;
   inccRate?: number; // Taxa INCC anual
+  advanceFeeRate?: number; // Taxa Antecipada
+  reserveFundRate?: number; // Taxa Fundo de Reserva
+  embeddedBidRate?: number; // Taxa Lance Embutido (apenas informativo)
 }
 
 export interface ConsortiumCalculation {
@@ -18,6 +21,9 @@ export interface ConsortiumCalculation {
   monthlyAmortization: number;
   inccAdjustment: number;
   totalWithIncc: number;
+  advanceFeeAmount: number;
+  reserveFundAmount: number;
+  embeddedBidAmount: number;
 }
 
 export class ConsortiumCalculator {
@@ -27,7 +33,10 @@ export class ConsortiumCalculator {
       installments,
       downPayment = 0,
       adminRate,
-      inccRate = 0
+      inccRate = 0,
+      advanceFeeRate = 0,
+      reserveFundRate = 0,
+      embeddedBidRate = 0
     } = params;
 
     // Valor da carta de crédito (valor do bem menos entrada)
@@ -42,11 +51,16 @@ export class ConsortiumCalculator {
     const yearsInContract = installments / 12;
     const inccAdjustment = (averageBalance * (inccRate / 100)) * yearsInContract;
     
-    // Valor total com INCC
-    const totalWithIncc = creditLetter + totalAdminCost + inccAdjustment;
+    // Cálculo das taxas adicionais
+    const advanceFeeAmount = (creditLetter * advanceFeeRate) / 100;
+    const reserveFundAmount = (creditLetter * reserveFundRate) / 100;
+    const embeddedBidAmount = (creditLetter * embeddedBidRate) / 100; // Apenas informativo
     
-    // Parcela mensal: (carta de crédito + taxa administrativa + ajuste INCC) / número de parcelas
-    const monthlyPayment = totalWithIncc / installments;
+    // Valor total incluindo taxas que compõem o custo (NÃO incluir Lance Embutido no custo)
+    const totalWithFees = creditLetter + totalAdminCost + inccAdjustment + advanceFeeAmount + reserveFundAmount;
+    
+    // Parcela mensal: valor total com taxas / número de parcelas
+    const monthlyPayment = totalWithFees / installments;
     
     // Amortização mensal da carta de crédito (para referência)
     const monthlyAmortization = creditLetter / installments;
@@ -54,8 +68,8 @@ export class ConsortiumCalculator {
     // Taxa administrativa mensal (para compatibilidade)
     const adminFee = totalAdminCost / installments;
     
-    // Custo total = valor total com todos os ajustes
-    const totalCost = totalWithIncc;
+    // Custo total = valor total com todas as taxas (exceto Lance Embutido)
+    const totalCost = totalWithFees;
 
     return {
       creditValue: assetValue,
@@ -67,7 +81,10 @@ export class ConsortiumCalculator {
       installments,
       monthlyAmortization,
       inccAdjustment,
-      totalWithIncc
+      totalWithIncc: totalWithFees, // Renomeado para ser mais claro
+      advanceFeeAmount,
+      reserveFundAmount,
+      embeddedBidAmount
     };
   }
 }

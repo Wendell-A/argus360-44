@@ -31,28 +31,20 @@ const SimulacaoConsorcio = () => {
   const [financingRate, setFinancingRate] = useState<number>(1.12);
 
   const [assetType, setAssetType] = useState<'vehicle' | 'real_estate'>('real_estate');
+  const [financingAssetType, setFinancingAssetType] = useState<'vehicle' | 'real_estate'>('real_estate');
 
-  // Gerar opções de parcelas - mínimo 12 meses, máximo 420 meses
+  // Gerar opções de parcelas - exatamente 35 opções de 12 a 420 meses, ano a ano
   const generateInstallmentOptions = () => {
     const options = [];
-    // De 12 a 60 meses, de 12 em 12
-    for (let i = 12; i <= 60; i += 12) options.push(i);
-    // De 72 a 120 meses, de 12 em 12
-    for (let i = 72; i <= 120; i += 12) options.push(i);
-    // De 125 a 180 meses, de 5 em 5
-    for (let i = 125; i <= 180; i += 5) options.push(i);
-    // De 180 a 240 meses, de 10 em 10
-    for (let i = 180; i <= 240; i += 10) options.push(i);
-    // De 240 a 300 meses, de 20 em 20
-    for (let i = 240; i <= 300; i += 20) options.push(i);
-    // De 300 a 420 meses, de 30 em 30
-    for (let i = 300; i <= 420; i += 30) options.push(i);
-    return [...new Set(options)].sort((a, b) => a - b);
+    // De 12 a 420 meses, avançando de 12 em 12 (ano a ano) = 35 opções
+    for (let i = 12; i <= 420; i += 12) {
+      options.push(i);
+    }
+    return options;
   };
 
   const installmentOptions = generateInstallmentOptions();
-  const financingInstallmentOptions = [];
-  for (let i = 180; i <= 360; i += 12) financingInstallmentOptions.push(i);
+  const financingInstallmentOptions = installmentOptions; // Mesmas opções para ambos
 
   // Atualizar dados quando um produto for selecionado
   useEffect(() => {
@@ -88,13 +80,16 @@ const SimulacaoConsorcio = () => {
     setFinancingRate(rate);
   };
 
-  // Cálculos corrigidos
+  // Cálculos corrigidos - incluindo taxas adicionais do produto
   const consortiumCalculation = ConsortiumCalculator.calculate({
     assetValue: consortiumCreditValue,
     installments: consortiumTerm,
     downPayment: 0,
     adminRate,
-    inccRate
+    inccRate,
+    advanceFeeRate: selectedProduct?.advance_fee_rate || 0,
+    reserveFundRate: selectedProduct?.reserve_fund_rate || 0,
+    embeddedBidRate: selectedProduct?.embedded_bid_rate || 0
   });
 
   const financingAmount = financingValue - downPayment;
@@ -278,6 +273,24 @@ const SimulacaoConsorcio = () => {
                     <span>Ajuste INCC:</span>
                     <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.inccAdjustment)}</span>
                   </div>
+                  {consortiumCalculation.advanceFeeAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span>Taxa Antecipada:</span>
+                      <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.advanceFeeAmount)}</span>
+                    </div>
+                  )}
+                  {consortiumCalculation.reserveFundAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span>Fundo de Reserva:</span>
+                      <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.reserveFundAmount)}</span>
+                    </div>
+                  )}
+                  {consortiumCalculation.embeddedBidAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span>Lance Embutido:</span>
+                      <span className="font-bold text-muted-foreground">{formatCurrency(consortiumCalculation.embeddedBidAmount)} (informativo)</span>
+                    </div>
+                  )}
                   <div className="flex justify-between border-t pt-2">
                     <span>Total a Pagar:</span>
                     <span className="font-bold">{formatCurrency(consortiumCalculation.totalCost)}</span>
@@ -299,6 +312,19 @@ const SimulacaoConsorcio = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="financingAssetType">Tipo de Bem</Label>
+                <Select value={financingAssetType} onValueChange={(value: 'vehicle' | 'real_estate') => setFinancingAssetType(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vehicle">Veículo</SelectItem>
+                    <SelectItem value="real_estate">Imóvel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <Label htmlFor="financingValue">Valor do Bem</Label>
                 <Input
