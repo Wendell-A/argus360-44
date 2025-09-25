@@ -79,7 +79,7 @@ export function ClientTransferModal({ client, isOpen, onClose }: ClientTransferM
             <h3 className="font-medium mb-2">Cliente</h3>
             <p className="text-sm font-medium">{client.name}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Responsável atual: {currentUser?.full_name || 'N/A'}
+              Responsável atual: {currentUser?.profile?.full_name || 'N/A'}
             </p>
           </div>
 
@@ -93,9 +93,9 @@ export function ClientTransferModal({ client, isOpen, onClose }: ClientTransferM
                 {availableUsers.map((user) => (
                   <SelectItem key={user.user_id} value={user.user_id}>
                     <div className="flex items-center gap-2">
-                      <span>{user.full_name}</span>
+                      <span>{user.profile?.full_name}</span>
                       <span className="text-xs text-muted-foreground">
-                        ({user.email})
+                        ({user.profile?.email})
                       </span>
                     </div>
                   </SelectItem>
@@ -108,12 +108,12 @@ export function ClientTransferModal({ client, isOpen, onClose }: ClientTransferM
             <div className="rounded-lg border p-4 bg-muted/10">
               <div className="flex items-center justify-between text-sm">
                 <div className="text-center">
-                  <p className="font-medium">{currentUser?.full_name}</p>
+                  <p className="font-medium">{currentUser?.profile?.full_name}</p>
                   <p className="text-xs text-muted-foreground">De</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 <div className="text-center">
-                  <p className="font-medium">{selectedUser.full_name}</p>
+                  <p className="font-medium">{selectedUser.profile?.full_name}</p>
                   <p className="text-xs text-muted-foreground">Para</p>
                 </div>
               </div>
