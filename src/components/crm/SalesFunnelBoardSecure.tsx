@@ -11,6 +11,8 @@ import { ClientFunnelModal } from '../ClientFunnelModal';
 import { useToast } from '@/hooks/use-toast';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOffices } from '@/hooks/useOffices';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface ClientCard {
   id: string;
@@ -23,6 +25,7 @@ interface ClientCard {
   expected_value: number;
   entered_at: string;
   responsible_user_id?: string;
+  office_id?: string;
 }
 
 interface FunnelStage {
@@ -48,42 +51,112 @@ export function SalesFunnelBoardSecure({ onClientSelect }: SalesFunnelBoardProps
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const { open: sidebarOpen } = useSidebar();
-  const { user } = useAuth();
+  const { user, activeTenant } = useAuth();
+  const { offices } = useOffices();
+  const { currentUser } = useCurrentUser();
+  const userRole = currentUser?.role || 'viewer';
 
-  // Função para verificar se o usuário pode ver o cliente
-  const canAccessClient = (client: ClientCard) => {
-    // Se não há responsible_user_id, não mostrar (problema crítico de segurança)
-    if (!client.responsible_user_id) {
-      console.warn('🚨 SEGURANÇA: Cliente sem responsible_user_id encontrado:', client.id);
-      return false;
+  // Função para verificar se o usuário pode acessar um cliente específico
+  const canAccessClient = (client: ClientCard): boolean => {
+    if (!user?.id) return false;
+    
+    console.log('🔐 Verificando acesso ao cliente:', {
+      clientId: client.id,
+      clientName: client.name,
+      responsibleUserId: client.responsible_user_id,
+      currentUserId: user.id,
+      userRole,
+      userOffices: offices.length
+    });
+    
+    // Owner e Admin podem acessar todos os clientes do tenant
+    if (userRole === 'owner' || userRole === 'admin') {
+      console.log('✅ Acesso liberado: Owner/Admin');
+      return true;
     }
     
-    // Usuário pode ver apenas clientes onde é responsável (para role 'user')
-    return client.responsible_user_id === user?.id;
+    // Manager pode acessar clientes do seu escritório ou onde é responsável
+    if (userRole === 'manager') {
+      const hasOfficeAccess = offices.some(office => office.id === client.office_id);
+      const isResponsible = client.responsible_user_id === user.id;
+      const canAccess = hasOfficeAccess || isResponsible;
+      
+      console.log('🏢 Manager - Verificação de escritório:', {
+        hasOfficeAccess,
+        isResponsible,
+        canAccess,
+        clientOfficeId: client.office_id
+      });
+      
+      return canAccess;
+    }
+    
+    // User/Viewer só podem acessar clientes onde são responsáveis
+    const isResponsible = client.responsible_user_id === user.id;
+    console.log('👤 User/Viewer - É responsável?', isResponsible);
+    
+    return isResponsible;
   };
 
-  // Filtrar clientes baseado na segurança
-  const funnelData: FunnelStage[] = stages.map(stage => ({
-    id: stage.id,
-    name: stage.name,
-    color: stage.color,
-    order_index: stage.order_index,
-    clients: positions
-      .filter(pos => pos.sales_funnel_stages?.id === stage.id)
-      .map(pos => ({
-        id: pos.clients?.id || '',
-        name: pos.clients?.name || '',
-        email: pos.clients?.email || '',
-        phone: pos.clients?.phone || '',
-        classification: pos.clients?.classification || 'cold',
-        status: pos.clients?.status || 'prospect',
-        probability: pos.probability || 0,
-        expected_value: pos.expected_value || 0,
-        entered_at: pos.entered_at || '',
-        responsible_user_id: (pos.clients as any)?.responsible_user_id,
-      }))
-      .filter(canAccessClient) // Aplicar filtro de segurança
-  }));
+  // Estruturar dados do funil aplicando filtro de segurança
+  const funnelData: FunnelStage[] = React.useMemo(() => {
+    if (!stages || !positions) {
+      console.log('⚠️ Dados não carregados ainda:', { stages: !!stages, positions: !!positions });
+      return [];
+    }
+
+    console.log('🔄 Estruturando dados do funil...');
+    console.log('📋 Fases disponíveis:', stages.length);
+    console.log('📍 Posições totais:', positions.length);
+
+    const result = stages.map(stage => {
+      const stagePositions = positions.filter(pos => pos.stage_id === stage.id);
+      console.log(`📊 Fase "${stage.name}": ${stagePositions.length} posições`);
+      
+      const accessibleClients = stagePositions
+        .map(pos => ({
+          id: pos.clients?.id || '',
+          name: pos.clients?.name || '',
+          email: pos.clients?.email,
+          phone: pos.clients?.phone,
+          classification: pos.clients?.classification || 'cold',
+          status: pos.clients?.status || 'prospect',
+          probability: pos.probability || 0,
+          expected_value: pos.expected_value || 0,
+          entered_at: pos.entered_at || '',
+          responsible_user_id: (pos.clients as any)?.responsible_user_id,
+          office_id: (pos.clients as any)?.office_id,
+        }))
+        .filter((client) => {
+          if (!client.id) {
+            console.log('⚠️ Cliente com ID vazio encontrado');
+            return false;
+          }
+          
+          const hasAccess = canAccessClient(client as ClientCard);
+          if (!hasAccess) {
+            console.log('🚫 Acesso negado ao cliente:', client.name);
+          }
+          
+          return hasAccess;
+        }) as ClientCard[];
+      
+      console.log(`✅ Fase "${stage.name}": ${accessibleClients.length} clientes acessíveis`);
+      
+      return {
+        id: stage.id,
+        name: stage.name,
+        color: stage.color,
+        order_index: stage.order_index,
+        clients: accessibleClients
+      };
+    });
+
+    const totalAccessibleClients = result.reduce((sum, stage) => sum + stage.clients.length, 0);
+    console.log('🎯 Total de clientes acessíveis no funil:', totalAccessibleClients);
+
+    return result;
+  }, [stages, positions, canAccessClient]);
 
   const handleDragStart = (e: React.DragEvent, client: ClientCard) => {
     console.log('Drag started for client:', client);
@@ -202,10 +275,27 @@ export function SalesFunnelBoardSecure({ onClientSelect }: SalesFunnelBoardProps
 
   if (stagesLoading || positionsLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Carregando funil de vendas...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-sm text-muted-foreground">Carregando funil de vendas...</p>
+        </div>
       </div>
     );
+  }
+
+  // Debug: Verificar se funil está vazio
+  const totalClientsInFunnel = funnelData.reduce((sum, stage) => sum + stage.clients.length, 0);
+  
+  if (totalClientsInFunnel === 0) {
+    console.log('⚠️ FUNIL VAZIO - Diagnóstico:');
+    console.log('- Usuário:', user?.id);
+    console.log('- Role:', userRole);
+    console.log('- Tenant:', activeTenant?.tenant_id);
+    console.log('- Escritórios do usuário:', offices.length);
+    console.log('- Fases disponíveis:', stages?.length || 0);
+    console.log('- Posições totais:', positions?.length || 0);
+    console.log('- Dados das posições:', positions);
   }
 
   // Grid responsivo que considera o estado da sidebar

@@ -49,15 +49,20 @@ export function useClientFunnelPositions() {
         throw new Error('No tenant selected');
       }
 
+      console.log('🔍 Buscando posições do funil para tenant:', activeTenant.tenant_id);
+      
       const { data, error } = await supabase
         .from('client_funnel_position')
         .select(`
           *,
-          clients(id, name, email, phone, classification, status),
+          clients(id, name, email, phone, classification, status, responsible_user_id, office_id),
           sales_funnel_stages(id, name, color, order_index)
         `)
         .eq('tenant_id', activeTenant.tenant_id)
         .eq('is_current', true);
+
+      console.log('📊 Posições do funil encontradas:', data?.length || 0);
+      console.log('🔍 Dados completos das posições:', data);
 
       if (error) throw error;
       return data;
