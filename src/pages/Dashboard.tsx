@@ -38,7 +38,7 @@ import { useCommissions } from '@/hooks/useCommissions';
 import { useGoals } from '@/hooks/useGoals';
 
 interface DashboardFilters {
-  dateRange: 'today' | 'week' | 'month' | 'previous_month';
+  dateRange: 'today' | 'week' | 'month' | 'previous_month' | 'current_year' | 'previous_year' | 'all_periods';
   office: string;
   seller: string;
   product: string;
@@ -56,8 +56,8 @@ export default function Dashboard() {
   // Hooks de dados com filtros aplicados
   const { data: dashboardData, isLoading: dashboardLoading, refetch } = useDashboardOptimized(filters);
   const { data: contextualData, isLoading: contextualLoading } = useContextualDashboard();
-  const { commissions, isLoading: commissionsLoading } = useCommissions();
-  const { goals, isLoading: goalsLoading } = useGoals();
+  const { commissions, isLoading: commissionsLoading } = useCommissions(filters);
+  const { goals, isLoading: goalsLoading } = useGoals(filters);
 
   const isLoading = dashboardLoading || contextualLoading || commissionsLoading || goalsLoading;
 
@@ -252,7 +252,10 @@ export default function Dashboard() {
       today: 'Hoje',
       week: 'Esta Semana', 
       month: 'Este Mês',
-      previous_month: 'Mês Anterior'
+      previous_month: 'Mês Anterior',
+      current_year: 'Ano Atual',
+      previous_year: 'Ano Anterior',
+      all_periods: 'Todos os Períodos'
     };
     return labels[filters.dateRange];
   };
@@ -317,6 +320,9 @@ export default function Dashboard() {
                   <SelectItem value="week">Esta Semana</SelectItem>
                   <SelectItem value="month">Este Mês</SelectItem>
                   <SelectItem value="previous_month">Mês Anterior</SelectItem>
+                  <SelectItem value="current_year">Ano Atual</SelectItem>
+                  <SelectItem value="previous_year">Ano Anterior</SelectItem>
+                  <SelectItem value="all_periods">Todos os Períodos</SelectItem>
                 </SelectContent>
               </Select>
             </div>

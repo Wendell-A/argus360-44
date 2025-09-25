@@ -43,17 +43,66 @@ export type GoalStats = {
   averageProgress: number;
 };
 
-export const useGoals = () => {
+interface GoalFilters {
+  dateRange?: 'today' | 'week' | 'month' | 'previous_month' | 'current_year' | 'previous_year' | 'all_periods';
+  office?: string;
+}
+
+export const useGoals = (filters: GoalFilters = {}) => {
   const { activeTenant } = useAuth();
 
   const query = useQuery({
-    queryKey: ['goals', activeTenant?.tenant_id],
+    queryKey: ['goals', activeTenant?.tenant_id, filters],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
-      const { data, error } = await supabase
+      // Calcular datas baseadas no filtro para filtrar metas por período
+      const getDateRange = () => {
+        if (!filters.dateRange || filters.dateRange === 'all_periods') return { start: null, end: null };
+        
+        const now = new Date();
+        switch (filters.dateRange) {
+          case 'today':
+            return {
+              start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+              end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+            };
+          case 'week':
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 7);
+            return { start: weekStart, end: weekEnd };
+          case 'month':
+            return {
+              start: new Date(now.getFullYear(), now.getMonth(), 1),
+              end: new Date(now.getFullYear(), now.getMonth() + 1, 1)
+            };
+          case 'previous_month':
+            return {
+              start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+              end: new Date(now.getFullYear(), now.getMonth(), 1)
+            };
+          case 'current_year':
+            return {
+              start: new Date(now.getFullYear(), 0, 1),
+              end: new Date(now.getFullYear() + 1, 0, 1)
+            };
+          case 'previous_year':
+            return {
+              start: new Date(now.getFullYear() - 1, 0, 1),
+              end: new Date(now.getFullYear(), 0, 1)
+            };
+          default:
+            return { start: null, end: null };
+        }
+      };
+
+      const dateRange = getDateRange();
+
+      let query = supabase
         .from('goals')
         .select(`
           *,
@@ -61,11 +110,28 @@ export const useGoals = () => {
           profiles!user_id(full_name, email),
           creator:profiles!created_by(full_name)
         `)
-        .eq('tenant_id', activeTenant.tenant_id)
-        .order('created_at', { ascending: false });
+        .eq('tenant_id', activeTenant.tenant_id);
+
+      // Aplicar filtros de data se especificados (metas que se sobrepõem ao período)
+      if (dateRange.start && dateRange.end) {
+        query = query.or(`and(period_start.lte.${dateRange.end.toISOString().split('T')[0]},period_end.gte.${dateRange.start.toISOString().split('T')[0]})`);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as Goal[];
+
+      let goals = (data || []) as Goal[];
+
+      // Aplicar filtros adicionais
+      if (filters.office && filters.office !== 'all') {
+        goals = goals.filter(goal => 
+          goal.offices?.name === filters.office ||
+          goal.office_id === filters.office
+        );
+      }
+
+      return goals;
     },
     enabled: !!activeTenant?.tenant_id,
   });

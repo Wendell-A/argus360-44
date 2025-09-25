@@ -11,12 +11,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Função para calcular top produtos baseado nas vendas reais
-const calculateTopProducts = async (tenantId: string) => {
+const calculateTopProducts = async (tenantId: string, dateRange: { start: Date | null; end: Date | null } = { start: null, end: null }) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('sales')
       .select(`
         sale_value,
+        sale_date,
         consortium_products (
           name,
           category
@@ -24,6 +25,14 @@ const calculateTopProducts = async (tenantId: string) => {
       `)
       .eq('tenant_id', tenantId)
       .eq('status', 'approved');
+
+    // Aplicar filtros de data se especificados
+    if (dateRange.start && dateRange.end) {
+      query = query.gte('sale_date', dateRange.start.toISOString().split('T')[0])
+                   .lt('sale_date', dateRange.end.toISOString().split('T')[0]);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Erro ao buscar produtos:', error);
@@ -68,9 +77,9 @@ const calculateTopProducts = async (tenantId: string) => {
 };
 
 // Função para buscar vendas recentes com comissões reais
-const calculateRecentSalesWithCommissions = async (tenantId: string) => {
+const calculateRecentSalesWithCommissions = async (tenantId: string, dateRange: { start: Date | null; end: Date | null } = { start: null, end: null }) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('sales')
       .select(`
         id,
@@ -85,7 +94,15 @@ const calculateRecentSalesWithCommissions = async (tenantId: string) => {
         )
       `)
       .eq('tenant_id', tenantId)
-      .eq('status', 'approved')
+      .eq('status', 'approved');
+
+    // Aplicar filtros de data se especificados
+    if (dateRange.start && dateRange.end) {
+      query = query.gte('sale_date', dateRange.start.toISOString().split('T')[0])
+                   .lt('sale_date', dateRange.end.toISOString().split('T')[0]);
+    }
+
+    const { data, error } = await query
       .order('sale_date', { ascending: false })
       .limit(5);
 
@@ -119,9 +136,9 @@ const calculateRecentSalesWithCommissions = async (tenantId: string) => {
 };
 
 // Função para calcular performance dos vendedores baseado nas vendas reais
-const calculateVendorsPerformance = async (tenantId: string) => {
+const calculateVendorsPerformance = async (tenantId: string, dateRange: { start: Date | null; end: Date | null } = { start: null, end: null }) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('sales')
       .select(`
         sale_value,
@@ -138,6 +155,14 @@ const calculateVendorsPerformance = async (tenantId: string) => {
       `)
       .eq('tenant_id', tenantId)
       .eq('status', 'approved');
+
+    // Aplicar filtros de data se especificados
+    if (dateRange.start && dateRange.end) {
+      query = query.gte('sale_date', dateRange.start.toISOString().split('T')[0])
+                   .lt('sale_date', dateRange.end.toISOString().split('T')[0]);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Erro ao buscar vendas:', error);
@@ -204,7 +229,7 @@ const calculateVendorsPerformance = async (tenantId: string) => {
 };
 
 interface DashboardFilters {
-  dateRange?: 'today' | 'week' | 'month' | 'previous_month';
+  dateRange?: 'today' | 'week' | 'month' | 'previous_month' | 'current_year' | 'previous_year' | 'all_periods';
   office?: string;
   seller?: string;
   product?: string;
@@ -294,6 +319,50 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
           throw new Error('Tenant não selecionado');
         }
 
+        // Calcular datas baseadas no filtro
+        const getDateRange = () => {
+          if (!filters.dateRange || filters.dateRange === 'all_periods') return { start: null, end: null };
+          
+          const now = new Date();
+          switch (filters.dateRange) {
+            case 'today':
+              return {
+                start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+                end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+              };
+            case 'week':
+              const weekStart = new Date(now);
+              weekStart.setDate(now.getDate() - now.getDay());
+              const weekEnd = new Date(weekStart);
+              weekEnd.setDate(weekStart.getDate() + 7);
+              return { start: weekStart, end: weekEnd };
+            case 'month':
+              return {
+                start: new Date(now.getFullYear(), now.getMonth(), 1),
+                end: new Date(now.getFullYear(), now.getMonth() + 1, 1)
+              };
+            case 'previous_month':
+              return {
+                start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+                end: new Date(now.getFullYear(), now.getMonth(), 1)
+              };
+            case 'current_year':
+              return {
+                start: new Date(now.getFullYear(), 0, 1),
+                end: new Date(now.getFullYear() + 1, 0, 1)
+              };
+            case 'previous_year':
+              return {
+                start: new Date(now.getFullYear() - 1, 0, 1),  
+                end: new Date(now.getFullYear(), 0, 1)
+              };
+            default:
+              return { start: null, end: null };
+          }
+        };
+
+        const dateRange = getDateRange();
+
         const { data, error } = await supabase
           .rpc('get_dashboard_complete_optimized', {
             tenant_uuid: activeTenant.tenant_id
@@ -309,12 +378,41 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
           throw new Error('Nenhum dado retornado');
         }
 
-        // Buscar dados dos vendedores, produtos e vendas recentes com comissões reais
+        // Buscar dados dos vendedores, produtos e vendas recentes com comissões reais com filtros aplicados
         const [topProducts, vendorsPerformance, recentSalesWithCommissions] = await Promise.all([
-          calculateTopProducts(activeTenant.tenant_id),
-          calculateVendorsPerformance(activeTenant.tenant_id),
-          calculateRecentSalesWithCommissions(activeTenant.tenant_id)
+          calculateTopProducts(activeTenant.tenant_id, dateRange),
+          calculateVendorsPerformance(activeTenant.tenant_id, dateRange),
+          calculateRecentSalesWithCommissions(activeTenant.tenant_id, dateRange)
         ]);
+
+        // Aplicar filtros se especificados
+        let filteredTopProducts = topProducts;
+        let filteredVendorsPerformance = vendorsPerformance;
+        let filteredRecentSales = recentSalesWithCommissions;
+
+        // Filtro por produto
+        if (filters.product && filters.product !== 'all') {
+          filteredTopProducts = topProducts.filter(product => 
+            product.product_name === filters.product
+          );
+        }
+
+        // Filtro por vendedor  
+        if (filters.seller && filters.seller !== 'all') {
+          filteredVendorsPerformance = vendorsPerformance.filter(vendor => 
+            vendor.vendor_id === filters.seller
+          );
+          filteredRecentSales = recentSalesWithCommissions.filter(sale => 
+            sale.seller_name && sale.seller_name.includes(filters.seller)
+          );
+        }
+
+        // Filtro por escritório
+        if (filters.office && filters.office !== 'all') {
+          filteredVendorsPerformance = filteredVendorsPerformance.filter(vendor => 
+            vendor.office_name === filters.office
+          );
+        }
 
         // Simular filtros no frontend por enquanto (será otimizado no backend)
         let filteredData = {
@@ -326,7 +424,7 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
             active_goals: 0,
             pending_tasks: 0
           },
-          recent_sales: recentSalesWithCommissions || [],
+          recent_sales: filteredRecentSales || [],
           recent_clients: (result.recent_clients as any) || [],
           pending_tasks: (result.pending_tasks as any) || [],
           goals: (result.goals_data as any) || [],
@@ -335,69 +433,14 @@ export const useDashboardOptimized = (filters: DashboardFilters = {}) => {
             paid_commissions: 0,
             overdue_commissions: 0
           },
-          // Usar dados reais dos vendedores e produtos
-          top_products: topProducts,
-          vendors_performance: vendorsPerformance,
+          // Usar dados reais dos vendedores e produtos filtrados
+          top_products: filteredTopProducts,
+          vendors_performance: filteredVendorsPerformance,
           office_performance: [
             { office_id: '1', office_name: 'Matriz Mauá', total_sales: 12, total_revenue: 1800000, active_vendors: 5 },
             { office_id: '2', office_name: 'Paulista', total_sales: 8, total_revenue: 1200000, active_vendors: 3 },
           ]
         };
-
-        // Aplicar filtros se especificados
-        if (filters.dateRange) {
-          const now = new Date();
-          let startDate: Date;
-          let endDate = new Date();
-          
-          switch (filters.dateRange) {
-            case 'today':
-              startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-              break;
-            case 'week':
-              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-              break;
-            case 'month':
-              startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-              break;
-            case 'previous_month':
-              startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-              endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-              break;
-            default:
-              startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          }
-          
-          filteredData.recent_sales = filteredData.recent_sales.filter((sale: any) => {
-            const saleDate = new Date(sale.sale_date);
-            return saleDate >= startDate && saleDate <= endDate;
-          });
-        }
-
-        // Filtro por escritório
-        if (filters.office && filters.office !== 'all') {
-          filteredData.recent_sales = filteredData.recent_sales.filter((sale: any) => 
-            sale.office_id === filters.office
-          );
-        }
-
-        // Filtro por vendedor
-        if (filters.seller && filters.seller !== 'all') {
-          filteredData.recent_sales = filteredData.recent_sales.filter((sale: any) => 
-            sale.seller_id === filters.seller
-          );
-          
-          filteredData.vendors_performance = filteredData.vendors_performance.filter(vendor => 
-            vendor.vendor_id === filters.seller
-          );
-        }
-
-        // Filtro por produto
-        if (filters.product && filters.product !== 'all') {
-          filteredData.top_products = filteredData.top_products.filter(product => 
-            product.product_name === filters.product
-          );
-        }
 
         return filteredData;
       },
