@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Clock, AlertCircle, CheckCircle2, Plus, User } from 'lucide-react';
-import { useClientInteractions, useUpdateClientInteraction } from '@/hooks/useClientInteractions';
+import { useContextualInteractions, useUpdateContextualInteraction } from '@/hooks/useContextualInteractions';
 import { useClients } from '@/hooks/useClients';
 import { format, isAfter, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -35,9 +35,9 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   
-  const { interactions, isLoading } = useClientInteractions(clientId);
+  const { data: interactions = [], isLoading } = useContextualInteractions(clientId);
   const { clients } = useClients();
-  const { updateInteractionAsync, isUpdating } = useUpdateClientInteraction();
+  const { mutateAsync: updateInteractionAsync, isPending: isUpdating } = useUpdateContextualInteraction();
   const { toast } = useToast();
 
   // Filtrar interações que têm próximas ações agendadas ou são tarefas pendentes
@@ -56,10 +56,12 @@ export function UpcomingTasks({ clientId }: UpcomingTasksProps) {
     try {
       await updateInteractionAsync({
         id: taskId,
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        next_action: null,
-        next_action_date: null,
+        updates: {
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          next_action: '',
+          next_action_date: null,
+        }
       });
 
       toast({

@@ -2379,6 +2379,28 @@ export type Database = {
         Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
+      get_contextual_interactions: {
+        Args: { tenant_uuid: string; user_uuid: string }
+        Returns: {
+          client_id: string
+          completed_at: string
+          created_at: string
+          description: string
+          id: string
+          interaction_type: string
+          next_action: string
+          next_action_date: string
+          outcome: string
+          priority: string
+          scheduled_at: string
+          seller_id: string
+          settings: Json
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }[]
+      }
       get_contextual_sales: {
         Args: { tenant_uuid: string; user_uuid: string }
         Returns: {

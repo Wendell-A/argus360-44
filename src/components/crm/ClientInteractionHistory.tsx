@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Clock, User, MessageCircle, Phone, Mail, CheckCircle, Search, Filter, X } from 'lucide-react';
-import { useClientInteractions } from '@/hooks/useClientInteractions';
+import { useContextualInteractions } from '@/hooks/useContextualInteractions';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -70,7 +70,7 @@ const getInteractionTypeLabel = (type: string) => {
 };
 
 export function ClientInteractionHistory({ clientId }: ClientInteractionHistoryProps) {
-  const { interactions, isLoading } = useClientInteractions(clientId);
+  const { data: interactions = [], isLoading } = useContextualInteractions(clientId);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
