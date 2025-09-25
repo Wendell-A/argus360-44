@@ -18,7 +18,7 @@ import type { ExtendedConsortiumProduct } from '@/hooks/useConsortiumProducts';
 const SimulacaoConsorcio = () => {
   // Estados para Consórcio
   const [consortiumCreditValue, setConsortiumCreditValue] = useState<number>(300000);
-  const [consortiumTerm, setConsortiumTerm] = useState<number>(180);
+  const [consortiumTerm, setConsortiumTerm] = useState<number>(120);
   const [selectedProduct, setSelectedProduct] = useState<ExtendedConsortiumProduct | null>(null);
   const [adminRate, setAdminRate] = useState<number>(18);
   const [inccRate, setInccRate] = useState<number>(0.5);
@@ -32,14 +32,22 @@ const SimulacaoConsorcio = () => {
 
   const [assetType, setAssetType] = useState<'vehicle' | 'real_estate'>('real_estate');
 
-  // Gerar opções de parcelas
+  // Gerar opções de parcelas - mínimo 12 meses, máximo 420 meses
   const generateInstallmentOptions = () => {
     const options = [];
+    // De 12 a 60 meses, de 12 em 12
+    for (let i = 12; i <= 60; i += 12) options.push(i);
+    // De 72 a 120 meses, de 12 em 12
+    for (let i = 72; i <= 120; i += 12) options.push(i);
+    // De 125 a 180 meses, de 5 em 5
     for (let i = 125; i <= 180; i += 5) options.push(i);
+    // De 180 a 240 meses, de 10 em 10
     for (let i = 180; i <= 240; i += 10) options.push(i);
+    // De 240 a 300 meses, de 20 em 20
     for (let i = 240; i <= 300; i += 20) options.push(i);
+    // De 300 a 420 meses, de 30 em 30
     for (let i = 300; i <= 420; i += 30) options.push(i);
-    return options;
+    return [...new Set(options)].sort((a, b) => a - b);
   };
 
   const installmentOptions = generateInstallmentOptions();
