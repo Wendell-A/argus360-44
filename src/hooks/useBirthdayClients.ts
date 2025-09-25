@@ -26,7 +26,7 @@ export function useBirthdayClients() {
       console.log('🔍 Buscando clientes aniversariantes para tenant:', activeTenant.tenant_id);
       console.log('⏰ Data atual:', new Date().toISOString());
 
-      // Buscar clientes com data de nascimento nos próximos 7 dias
+      // Buscar clientes com data de nascimento nos últimos 3 dias, hoje, e próximos 7 dias
       const { data: clients, error } = await supabase
         .from('clients')
         .select(`
@@ -57,10 +57,12 @@ export function useBirthdayClients() {
         );
       }
 
-      // Filtrar clientes com aniversário na semana atual (próximos 7 dias)
+      // Filtrar clientes com aniversário nos últimos 3 dias, hoje, e próximos 7 dias (total: 11 dias)
       const today = new Date();
-      const weekFromToday = new Date();
-      weekFromToday.setDate(today.getDate() + 7);
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(today.getDate() - 3);
+      const sevenDaysFromToday = new Date();
+      sevenDaysFromToday.setDate(today.getDate() + 7);
 
       const birthdayClients: BirthdayClient[] = [];
 
@@ -70,16 +72,21 @@ export function useBirthdayClients() {
         const birthDate = new Date(client.birth_date);
         const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
         
-        // Se o aniversário deste ano já passou, considerar o do próximo ano
-        if (thisYearBirthday < today) {
+        // Se o aniversário deste ano já passou há mais de 3 dias, considerar o do próximo ano
+        if (thisYearBirthday < threeDaysAgo) {
           thisYearBirthday.setFullYear(today.getFullYear() + 1);
         }
 
         const daysDiff = Math.ceil((thisYearBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Incluir apenas se o aniversário estiver nos próximos 7 dias
-        if (daysDiff >= 0 && daysDiff <= 7) {
-          console.log(`🎂 Cliente ${client.name} faz aniversário em ${daysDiff} dias (birth_date: ${client.birth_date}, próximo aniversário: ${thisYearBirthday.toISOString().split('T')[0]})`);
+        // Incluir se o aniversário estiver entre -3 e +7 dias
+        if (daysDiff >= -3 && daysDiff <= 7) {
+          let status = '';
+          if (daysDiff < 0) status = `(há ${Math.abs(daysDiff)} dias)`;
+          else if (daysDiff === 0) status = '(hoje)';
+          else status = `(em ${daysDiff} dias)`;
+          
+          console.log(`🎂 Cliente ${client.name} fez/fará aniversário ${status} (birth_date: ${client.birth_date}, próximo aniversário: ${thisYearBirthday.toISOString().split('T')[0]})`);
           
           // Verificar se já foi enviada mensagem de aniversário hoje
           const { data: interactions } = await supabase
@@ -105,7 +112,7 @@ export function useBirthdayClients() {
         }
       }
 
-      console.log('🎉 Total de aniversariantes nos próximos 7 dias:', birthdayClients.length);
+      console.log('🎉 Total de aniversariantes (últimos 3 dias + próximos 7 dias):', birthdayClients.length);
       return birthdayClients.sort((a, b) => a.days_until_birthday - b.days_until_birthday);
     },
     enabled: !!activeTenant?.tenant_id,
