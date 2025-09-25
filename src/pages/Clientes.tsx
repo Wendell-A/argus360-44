@@ -503,6 +503,13 @@ export default function Clientes() {
           mode={modalMode}
           client={selectedClient}
         />
+
+        {/* Client Transfer Modal */}
+        <ClientTransferModal
+          isOpen={isTransferModalOpen}
+          onClose={() => setIsTransferModalOpen(false)}
+          client={clientToTransfer}
+        />
       </div>
     </div>
   );
