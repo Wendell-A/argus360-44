@@ -284,21 +284,30 @@ const SimulacaoConsorcio = () => {
                     <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.inccAdjustment)}</span>
                   </div>
                   {consortiumCalculation.advanceFeeAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span>Taxa Antecipada:</span>
-                      <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.advanceFeeAmount)}</span>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span>Taxa Antecipada:</span>
+                        <Badge variant="outline" className="text-xs">2% antecipação</Badge>
+                      </div>
+                      <span className="font-bold text-blue-600">{formatCurrency(consortiumCalculation.advanceFeeAmount)}</span>
                     </div>
                   )}
                   {consortiumCalculation.reserveFundAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span>Fundo de Reserva:</span>
-                      <span className="font-bold text-destructive">{formatCurrency(consortiumCalculation.reserveFundAmount)}</span>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span>Fundo de Reserva:</span>
+                        <Badge variant="outline" className="text-xs">informativo</Badge>
+                      </div>
+                      <span className="font-bold text-orange-600">{formatCurrency(consortiumCalculation.reserveFundAmount)}</span>
                     </div>
                   )}
                   {consortiumCalculation.embeddedBidAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span>Lance Embutido:</span>
-                      <span className="font-bold text-muted-foreground">{formatCurrency(consortiumCalculation.embeddedBidAmount)} (informativo)</span>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span>Lance Mínimo:</span>
+                        <Badge variant="outline" className="text-xs">valor mínimo</Badge>
+                      </div>
+                      <span className="font-bold text-muted-foreground">{formatCurrency(consortiumCalculation.embeddedBidAmount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between border-t pt-2">

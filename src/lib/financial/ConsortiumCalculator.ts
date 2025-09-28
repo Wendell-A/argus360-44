@@ -52,12 +52,16 @@ export class ConsortiumCalculator {
     const inccAdjustment = (averageBalance * (inccRate / 100)) * yearsInContract;
     
     // Cálculo das taxas adicionais
-    const advanceFeeAmount = (creditLetter * advanceFeeRate) / 100;
+    // Taxa Antecipada: 2% do valor bruto (assetValue), é uma antecipação, NÃO entra no custo total
+    const advanceFeeAmount = advanceFeeRate > 0 ? (assetValue * 0.02) : 0; // Sempre 2% do valor bruto quando aplicável
+    // Fundo de Reserva: apenas para visibilidade, NÃO entra no custo total
     const reserveFundAmount = (creditLetter * reserveFundRate) / 100;
-    const embeddedBidAmount = (creditLetter * embeddedBidRate) / 100; // Apenas informativo
+    // Lance Embutido: valor mínimo de lance, apenas informativo
+    const embeddedBidAmount = (creditLetter * embeddedBidRate) / 100;
     
-    // Valor total incluindo taxas que compõem o custo (NÃO incluir Lance Embutido no custo)
-    const totalWithFees = creditLetter + totalAdminCost + inccAdjustment + advanceFeeAmount + reserveFundAmount;
+    // Valor total incluindo apenas as taxas que compõem o custo 
+    // (NÃO incluir Taxa Antecipada pois é antecipação, NÃO incluir Fundo de Reserva pois é apenas informativo, NÃO incluir Lance Embutido)
+    const totalWithFees = creditLetter + totalAdminCost + inccAdjustment;
     
     // Parcela mensal: valor total com taxas / número de parcelas
     const monthlyPayment = totalWithFees / installments;
