@@ -12,7 +12,7 @@ import { ConsortiumCalculator } from '@/lib/financial/ConsortiumCalculator';
 import { formatCurrency } from '@/lib/utils';
 import { ProductSelector } from '@/components/ProductSelector';
 import { BankFinancingOptions } from '@/components/BankFinancingOptions';
-import { getBankRates } from '@/lib/financial/InterestRates';
+import { getBankRates, calculateIOF } from '@/lib/financial/InterestRates';
 import type { ExtendedConsortiumProduct } from '@/hooks/useConsortiumProducts';
 
 const SimulacaoConsorcio = () => {
@@ -58,14 +58,16 @@ const SimulacaoConsorcio = () => {
     }
   }, [selectedProduct]);
 
-  // Inicializar taxa do banco padrão
+  // Inicializar taxa do banco padrão baseado no tipo
   useEffect(() => {
-    const bankRates = getBankRates();
-    const defaultBank = bankRates.find(b => b.name === 'CAIXA');
+    const bankRates = getBankRates(financingAssetType);
+    const defaultBankName = financingAssetType === 'vehicle' ? 'CAIXA VEÍCULOS' : 'CAIXA';
+    const defaultBank = bankRates.find(b => b.name === defaultBankName);
     if (defaultBank) {
+      setSelectedBank(defaultBank.name);
       setFinancingRate(defaultBank.monthlyRate);
     }
-  }, []);
+  }, [financingAssetType]);
 
   // Atualizar entrada mínima quando valor do financiamento mudar
   useEffect(() => {
@@ -93,13 +95,17 @@ const SimulacaoConsorcio = () => {
   });
 
   const financingAmount = financingValue - downPayment;
+  const iofAmount = financingAssetType === 'vehicle' ? calculateIOF(financingAmount, financingTerm) : 0;
+  const totalFinancingAmount = financingAmount + iofAmount;
+  
   const priceCalculation = FinancingCalculator.calculatePrice(
-    financingAmount,
+    totalFinancingAmount,
     financingRate,
     financingTerm
   );
 
-  const economyAmount = priceCalculation.totalAmount - consortiumCalculation.totalCost;
+  const totalFinancingCost = priceCalculation.totalAmount + downPayment;
+  const economyAmount = totalFinancingCost - consortiumCalculation.totalCost;
 
   const handleRegisterQuote = () => {
     // TODO: Implementar modal de registro de orçamento
@@ -142,6 +148,9 @@ const SimulacaoConsorcio = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Financiamento</p>
                   <p className="text-lg font-bold">{formatCurrency(priceCalculation.monthlyPayment)}</p>
+                  {financingAssetType === 'vehicle' && (
+                    <p className="text-xs text-muted-foreground">+ IOF</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -368,6 +377,9 @@ const SimulacaoConsorcio = () => {
               <BankFinancingOptions
                 selectedBank={selectedBank}
                 onBankSelect={handleBankSelect}
+                assetType={financingAssetType}
+                financingAmount={financingAmount}
+                termInMonths={financingTerm}
               />
 
               <div className="p-4 bg-muted rounded-lg">
@@ -385,6 +397,16 @@ const SimulacaoConsorcio = () => {
                     <span>Valor Financiado:</span>
                     <span className="font-bold">{formatCurrency(financingAmount)}</span>
                   </div>
+                  {financingAssetType === 'vehicle' && iofAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span>IOF:</span>
+                      <span className="font-bold text-destructive">{formatCurrency(iofAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>Total Financiado:</span>
+                    <span className="font-bold">{formatCurrency(totalFinancingAmount)}</span>
+                  </div>
                   <div className="flex justify-between">
                     <span>Parcela Mensal:</span>
                     <span className="font-bold">{formatCurrency(priceCalculation.monthlyPayment)}</span>
@@ -395,8 +417,13 @@ const SimulacaoConsorcio = () => {
                   </div>
                   <div className="flex justify-between border-t pt-2">
                     <span>Total a Pagar:</span>
-                    <span className="font-bold">{formatCurrency(priceCalculation.totalAmount)}</span>
+                    <span className="font-bold">{formatCurrency(totalFinancingCost)}</span>
                   </div>
+                  {financingAssetType === 'vehicle' && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      * Inclui entrada, parcelas e IOF
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -429,7 +456,12 @@ const SimulacaoConsorcio = () => {
                 <h3 className="font-semibold text-foreground mb-2">Financiamento {selectedBank}</h3>
                 <p className="text-2xl font-bold mb-1">{formatCurrency(priceCalculation.monthlyPayment)}</p>
                 <p className="text-sm text-muted-foreground">parcela mensal</p>
-                <p className="text-sm mt-2">Total: {formatCurrency(priceCalculation.totalAmount)}</p>
+                <p className="text-sm mt-2">Total: {formatCurrency(totalFinancingCost)}</p>
+                {financingAssetType === 'vehicle' && (
+                  <Badge variant="outline" className="mt-1">
+                    Inclui IOF
+                  </Badge>
+                )}
               </div>
 
               <div className={`text-center p-4 border-2 rounded-lg ${economyAmount > 0 ? 'border-primary bg-muted' : 'border-destructive bg-muted'}`}>
@@ -444,7 +476,7 @@ const SimulacaoConsorcio = () => {
                   {economyAmount > 0 ? 'economizando com consórcio' : 'financiamento mais caro'}
                 </p>
                 <p className="text-sm mt-2">
-                  {((Math.abs(economyAmount) / priceCalculation.totalAmount) * 100).toFixed(1)}% de diferença
+                  {((Math.abs(economyAmount) / totalFinancingCost) * 100).toFixed(1)}% de diferença
                 </p>
               </div>
             </div>

@@ -1,11 +1,18 @@
 
 // Taxas baseadas no mercado brasileiro (2024)
 export const MARKET_RATES = {
-  // Financiamento de veículos
+  // Financiamento de veículos - Taxas atualizadas
   VEHICLE_FINANCING: {
-    AVERAGE: 1.99, // % ao mês
+    NOMINAL_ANNUAL: 29.30, // % ao ano (taxa nominal)
+    AVERAGE_MONTHLY: 2.19, // % ao mês equivalente
     MIN: 1.45,
-    MAX: 2.89
+    MAX: 2.89,
+    IOF: {
+      FIXED: 0.38, // % fixo
+      ANNUAL: 2.38, // % anual
+      DAILY: 0.0082, // % ao dia (2.38% / 365 * 1.15)
+      MAX_DAYS: 365
+    }
   },
   // Financiamento imobiliário
   REAL_ESTATE_FINANCING: {
@@ -66,11 +73,56 @@ export const getDefaultRates = (): InterestRateConfig => ({
   lastUpdated: new Date().toISOString()
 });
 
-export const getBankRates = () => {
+// Calcular IOF para financiamento de veículos
+export const calculateIOF = (principalAmount: number, termInMonths: number): number => {
+  const { FIXED, DAILY, MAX_DAYS } = MARKET_RATES.VEHICLE_FINANCING.IOF;
+  const daysInTerm = Math.min(termInMonths * 30, MAX_DAYS); // Aproximadamente 30 dias por mês
+  
+  const fixedIOF = (principalAmount * FIXED) / 100;
+  const dailyIOF = (principalAmount * DAILY * daysInTerm) / 100;
+  
+  return fixedIOF + dailyIOF;
+};
+
+// Converter taxa anual de veículos para mensal
+export const convertVehicleAnnualToMonthly = (annualRate: number): number => {
+  return (Math.pow(1 + annualRate / 100, 1 / 12) - 1) * 100;
+};
+
+export const getBankRates = (assetType: 'vehicle' | 'real_estate' = 'real_estate') => {
+  if (assetType === 'vehicle') {
+    // Taxas específicas para veículos
+    return [
+      {
+        name: 'CAIXA VEÍCULOS',
+        monthlyRate: convertVehicleAnnualToMonthly(MARKET_RATES.VEHICLE_FINANCING.NOMINAL_ANNUAL),
+        annualRate: MARKET_RATES.VEHICLE_FINANCING.NOMINAL_ANNUAL,
+        tr: 0,
+        hasIOF: true
+      },
+      {
+        name: 'BRADESCO VEÍCULOS', 
+        monthlyRate: convertVehicleAnnualToMonthly(30.5),
+        annualRate: 30.5,
+        tr: 0,
+        hasIOF: true
+      },
+      {
+        name: 'ITAU VEÍCULOS',
+        monthlyRate: convertVehicleAnnualToMonthly(28.9),
+        annualRate: 28.9,
+        tr: 0,
+        hasIOF: true
+      }
+    ];
+  }
+  
+  // Taxas para imóveis (original)
   return Object.entries(MARKET_RATES.REAL_BANKS).map(([bankName, data]) => ({
     name: bankName.replace('_', ' '),
     monthlyRate: convertAnnualToMonthly(data.rate, data.tr),
     annualRate: data.rate,
-    tr: data.tr
+    tr: data.tr,
+    hasIOF: false
   }));
 };
