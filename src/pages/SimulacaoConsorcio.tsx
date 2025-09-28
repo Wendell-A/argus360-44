@@ -69,13 +69,14 @@ const SimulacaoConsorcio = () => {
     }
   }, [financingAssetType]);
 
-  // Atualizar entrada mínima quando valor do financiamento mudar
+  // Atualizar entrada mínima quando valor do financiamento ou tipo mudar
   useEffect(() => {
-    const minDownPayment = financingValue * 0.35;
+    const minDownPaymentPercentage = financingAssetType === 'real_estate' ? 0.30 : 0; // 30% para imóveis, 0% para veículos
+    const minDownPayment = financingValue * minDownPaymentPercentage;
     if (downPayment < minDownPayment) {
       setDownPayment(minDownPayment);
     }
-  }, [financingValue, downPayment]);
+  }, [financingValue, downPayment, financingAssetType]);
 
   const handleBankSelect = (bankName: string, rate: number) => {
     setSelectedBank(bankName);
@@ -345,16 +346,21 @@ const SimulacaoConsorcio = () => {
               </div>
 
               <div>
-                <Label htmlFor="downPayment">Entrada (mín. 35%)</Label>
+                <Label htmlFor="downPayment">
+                  Entrada {financingAssetType === 'real_estate' ? '(mín. 30%)' : '(opcional)'}
+                </Label>
                 <Input
                   id="downPayment"
                   type="number"
                   value={downPayment}
-                  min={financingValue * 0.35}
+                  min={financingAssetType === 'real_estate' ? financingValue * 0.30 : 0}
                   onChange={(e) => setDownPayment(Number(e.target.value))}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Mínimo: {formatCurrency(financingValue * 0.35)}
+                  {financingAssetType === 'real_estate' 
+                    ? `Mínimo: ${formatCurrency(financingValue * 0.30)}` 
+                    : 'Entrada opcional para veículos'
+                  }
                 </p>
               </div>
 
