@@ -59,6 +59,16 @@ async function getMetricValue(
       query = supabase.from('commissions')
         .select(selectField)
         .eq('tenant_id', tenantId);
+      
+      // Aplicar filtros de comissão se especificados
+      if (config.commissionConfig) {
+        const types = [];
+        if (config.commissionConfig.includeOffice) types.push('office');
+        if (config.commissionConfig.includeSeller) types.push('seller');
+        if (types.length > 0) {
+          query = query.in('commission_type', types);
+        }
+      }
       break;
     case 'clients':
       query = supabase.from('clients')
@@ -135,6 +145,26 @@ function getDateField(type: MetricConfig['type']): string | null {
 }
 
 function getSelectField(config: MetricConfig): string {
+  // Para count_distinct, sempre precisamos do campo específico
+  if (config.aggregation === 'count_distinct') {
+    switch (config.type) {
+      case 'sales':
+        return 'seller_id';
+      case 'commissions':
+        return 'recipient_id';
+      case 'clients':
+        return 'responsible_user_id';
+      case 'sellers':
+        return 'user_id';
+      case 'goals':
+        return 'user_id';
+      case 'products':
+        return 'id';
+      default:
+        return 'id';
+    }
+  }
+
   if (config.aggregation === 'count') {
     return 'id';
   }
@@ -149,19 +179,31 @@ function getSelectField(config: MetricConfig): string {
 
 function calculateAggregation(data: any[], config: MetricConfig): number {
   if (!data.length) return 0;
+  
+  const field = getSelectField(config);
 
   switch (config.aggregation) {
     case 'count':
       return data.length;
     
+    case 'count_distinct':
+      const distinctValues = new Set(data.map(item => item[field]).filter(Boolean));
+      return distinctValues.size;
+    
     case 'sum':
-      const field = getSelectField(config);
       return data.reduce((sum, item) => sum + (parseFloat(item[field]) || 0), 0);
     
     case 'avg':
-      const fieldAvg = getSelectField(config);
-      const total = data.reduce((sum, item) => sum + (parseFloat(item[fieldAvg]) || 0), 0);
+      const total = data.reduce((sum, item) => sum + (parseFloat(item[field]) || 0), 0);
       return total / data.length;
+    
+    case 'min':
+      if (data.length === 0) return 0;
+      return Math.min(...data.map(item => parseFloat(item[field] || 0)));
+    
+    case 'max':
+      if (data.length === 0) return 0;
+      return Math.max(...data.map(item => parseFloat(item[field] || 0)));
     
     default:
       return data.length;

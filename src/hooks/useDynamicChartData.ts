@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChartConfig } from './useDashboardPersonalization';
+import { ChartConfig, AggregationFilter } from './useDashboardPersonalization';
 
 interface ChartDataPoint {
   name: string;
@@ -39,6 +39,16 @@ async function getChartData(config: ChartConfig, tenantId: string): Promise<Char
       query = supabase.from('commissions')
         .select(selectFields)
         .eq('tenant_id', tenantId);
+      
+      // Aplicar filtros de comissão se especificados
+      if (config.commissionConfig) {
+        const types = [];
+        if (config.commissionConfig.includeOffice) types.push('office');
+        if (config.commissionConfig.includeSeller) types.push('seller');
+        if (types.length > 0) {
+          query = query.in('commission_type', types);
+        }
+      }
       break;
     case 'clients':
       query = supabase.from('clients')
@@ -132,21 +142,28 @@ function getDateField(type: string): string {
 function processChartData(data: any[], config: ChartConfig): ChartDataPoint[] {
   if (!data.length) return [];
 
+  // Aplicar filtros de agregação se especificados
+  let processedData = data;
+  
+  if (config.aggregationFilters) {
+    processedData = applyAggregationFilters(data, config);
+  }
+
   switch (config.xAxis) {
     case 'time':
-      return processTimeData(data, config);
+      return processTimeData(processedData, config);
     
     case 'products':
-      return processProductData(data, config);
+      return processProductData(processedData, config);
     
     case 'sellers':
-      return processSellerData(data, config);
+      return processSellerData(processedData, config);
     
     case 'offices':
-      return processOfficeData(data, config);
+      return processOfficeData(processedData, config);
     
     default:
-      return processTimeData(data, config);
+      return processTimeData(processedData, config);
   }
 }
 
@@ -235,6 +252,46 @@ function processOfficeData(data: any[], config: ChartConfig): ChartDataPoint[] {
   return Object.entries(officeData)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
+}
+
+function applyAggregationFilters(data: any[], config: ChartConfig): any[] {
+  let filteredData = data;
+
+  // Aplicar filtros de produtos
+  if (config.aggregationFilters?.products) {
+    filteredData = applySpecificFilter(
+      filteredData,
+      config.aggregationFilters.products,
+      'product_id'
+    );
+  }
+
+  // Aplicar filtros de escritórios
+  if (config.aggregationFilters?.offices) {
+    filteredData = applySpecificFilter(
+      filteredData,
+      config.aggregationFilters.offices,
+      'office_id'
+    );
+  }
+
+  // Aplicar filtros de vendedores
+  if (config.aggregationFilters?.sellers) {
+    filteredData = applySpecificFilter(
+      filteredData,
+      config.aggregationFilters.sellers,
+      'seller_id'
+    );
+  }
+
+  return filteredData;
+}
+
+function applySpecificFilter(data: any[], filter: AggregationFilter, fieldName: string): any[] {
+  if (filter.type === 'specific' && filter.selectedIds) {
+    return data.filter(item => filter.selectedIds!.includes(item[fieldName]));
+  }
+  return data;
 }
 
 function formatMonth(monthKey: string): string {

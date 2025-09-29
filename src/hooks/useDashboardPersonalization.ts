@@ -2,11 +2,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+export interface AggregationFilter {
+  type: 'specific' | 'others';
+  selectedIds?: string[];
+  otherLabel?: string;
+}
+
+export interface CommissionTypeConfig {
+  includeOffice: boolean;
+  includeSeller: boolean;
+  separateTypes: boolean;
+}
+
 export interface MetricConfig {
   id: string;
   type: 'sales' | 'commissions' | 'clients' | 'sellers' | 'goals' | 'products';
   title: string;
-  aggregation?: 'sum' | 'count' | 'avg';
+  aggregation?: 'sum' | 'count' | 'avg' | 'min' | 'max' | 'count_distinct';
+  dynamicTitle?: boolean;
+  aggregationFilters?: {
+    products?: AggregationFilter;
+    offices?: AggregationFilter;
+    sellers?: AggregationFilter;
+  };
+  commissionConfig?: CommissionTypeConfig;
   filter?: {
     products?: string[];
     offices?: string[];
@@ -18,20 +37,36 @@ export interface ChartConfig {
   id: string;
   type: 'bar' | 'line' | 'pie' | 'area';
   title: string;
+  dynamicTitle?: boolean;
   yAxis: MetricConfig;
   xAxis?: 'time' | 'products' | 'sellers' | 'offices';
+  aggregationFilters?: {
+    products?: AggregationFilter;
+    offices?: AggregationFilter;
+    sellers?: AggregationFilter;
+  };
+  commissionConfig?: CommissionTypeConfig;
   aggregation?: string[];
+}
+
+export interface ListConfig {
+  id: string;
+  type: 'recent_sales' | 'top_sellers' | 'upcoming_tasks' | 'commission_breakdown';
+  title: string;
+  dynamicTitle?: boolean;
+  limit: number;
+  aggregationFilters?: {
+    products?: AggregationFilter;
+    offices?: AggregationFilter;
+    sellers?: AggregationFilter;
+  };
+  commissionConfig?: CommissionTypeConfig;
 }
 
 export interface WidgetConfigs {
   metrics: MetricConfig[];
   charts: ChartConfig[];
-  lists: {
-    id: string;
-    type: 'recent_sales' | 'top_sellers' | 'upcoming_tasks';
-    title: string;
-    limit: number;
-  }[];
+  lists: ListConfig[];
 }
 
 export interface DashboardConfiguration {
@@ -138,24 +173,33 @@ function getDefaultConfiguration(tenantId: string): DashboardConfiguration {
           type: 'sales',
           title: 'Vendas do Período',
           aggregation: 'sum',
+          dynamicTitle: true,
         },
         {
           id: 'metric-2',
           type: 'commissions',
           title: 'Comissões Pagas',
           aggregation: 'sum',
+          dynamicTitle: true,
+          commissionConfig: {
+            includeOffice: true,
+            includeSeller: true,
+            separateTypes: false,
+          },
         },
         {
           id: 'metric-3',
           type: 'clients',
           title: 'Clientes Ativos',
           aggregation: 'count',
+          dynamicTitle: true,
         },
         {
           id: 'metric-4',
           type: 'sellers',
           title: 'Vendedores Ativos',
           aggregation: 'count',
+          dynamicTitle: true,
         },
       ],
       charts: [
@@ -163,11 +207,13 @@ function getDefaultConfiguration(tenantId: string): DashboardConfiguration {
           id: 'chart-1',
           type: 'bar',
           title: 'Vendas Mensais',
+          dynamicTitle: true,
           yAxis: {
             id: 'y-1',
             type: 'sales',
             title: 'Vendas',
             aggregation: 'sum',
+            dynamicTitle: true,
           },
           xAxis: 'time',
         },
@@ -175,25 +221,40 @@ function getDefaultConfiguration(tenantId: string): DashboardConfiguration {
           id: 'chart-2',
           type: 'line',
           title: 'Evolução das Comissões',
+          dynamicTitle: true,
           yAxis: {
             id: 'y-2',
             type: 'commissions',
             title: 'Comissões',
             aggregation: 'sum',
+            dynamicTitle: true,
           },
           xAxis: 'time',
+          commissionConfig: {
+            includeOffice: true,
+            includeSeller: true,
+            separateTypes: true,
+          },
         },
         {
           id: 'chart-3',
           type: 'pie',
           title: 'Vendas por Produto',
+          dynamicTitle: true,
           yAxis: {
             id: 'y-3',
             type: 'sales',
             title: 'Vendas',
             aggregation: 'sum',
+            dynamicTitle: true,
           },
           xAxis: 'products',
+          aggregationFilters: {
+            products: {
+              type: 'others',
+              otherLabel: 'Outros Produtos',
+            },
+          },
         },
       ],
       lists: [
@@ -201,7 +262,20 @@ function getDefaultConfiguration(tenantId: string): DashboardConfiguration {
           id: 'list-1',
           type: 'recent_sales',
           title: 'Vendas Recentes',
+          dynamicTitle: true,
           limit: 5,
+        },
+        {
+          id: 'list-2',
+          type: 'commission_breakdown',
+          title: 'Detalhamento de Comissões',
+          dynamicTitle: true,
+          limit: 10,
+          commissionConfig: {
+            includeOffice: true,
+            includeSeller: true,
+            separateTypes: true,
+          },
         },
       ],
     },
