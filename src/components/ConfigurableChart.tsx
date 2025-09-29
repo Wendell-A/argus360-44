@@ -1,15 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { Settings } from 'lucide-react';
 import { ChartConfig } from '@/hooks/useDashboardPersonalization';
 import { useDynamicChartData } from '@/hooks/useDynamicChartData';
+import { WidgetConfigModal } from './WidgetConfigModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ConfigurableChartProps {
   config: ChartConfig;
+  onConfigChange?: (config: ChartConfig) => void;
 }
 
-export function ConfigurableChart({ config }: ConfigurableChartProps) {
+export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartProps) {
   const { data, isLoading } = useDynamicChartData(config);
+  const { user } = useAuth();
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+
+  // Verificar se usuário pode configurar (admin/owner)
+  const canConfigure = user && onConfigChange && 
+    (user as any)?.user_metadata?.role === 'admin' || 
+    (user as any)?.user_metadata?.role === 'owner';
 
   const formatValue = (value: number) => {
     if (config.yAxis.type === 'sales' || config.yAxis.type === 'commissions') {
@@ -32,6 +44,12 @@ export function ConfigurableChart({ config }: ConfigurableChartProps) {
     '#ff7300',
     '#0088fe',
   ];
+
+  const handleConfigSave = (newConfig: ChartConfig) => {
+    if (onConfigChange) {
+      onConfigChange(newConfig);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -188,15 +206,35 @@ export function ConfigurableChart({ config }: ConfigurableChartProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {config.title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {renderChart()}
-      </CardContent>
-    </Card>
+    <>
+      <Card className="group">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            {config.title}
+          </CardTitle>
+          {canConfigure && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfigModalOpen(true)}
+              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {renderChart()}
+        </CardContent>
+      </Card>
+
+      <WidgetConfigModal
+        open={configModalOpen}
+        onOpenChange={setConfigModalOpen}
+        widgetType="chart"
+        config={config}
+        onSave={handleConfigSave}
+      />
+    </>
   );
 }

@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Users, Target, DollarSign, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, TrendingDown, Users, Target, DollarSign, Package, Settings } from 'lucide-react';
 import { MetricConfig } from '@/hooks/useDashboardPersonalization';
 import { useDynamicMetricData } from '@/hooks/useDynamicMetricData';
+import { WidgetConfigModal } from './WidgetConfigModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DynamicMetricCardProps {
   config: MetricConfig;
+  onConfigChange?: (config: MetricConfig) => void;
 }
 
-export function DynamicMetricCard({ config }: DynamicMetricCardProps) {
+export function DynamicMetricCard({ config, onConfigChange }: DynamicMetricCardProps) {
   const { data, isLoading } = useDynamicMetricData(config);
+  const { user } = useAuth();
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+
+  // Verificar se usuário pode configurar (admin/owner)
+  const canConfigure = user && onConfigChange && 
+    (user as any)?.user_metadata?.role === 'admin' || 
+    (user as any)?.user_metadata?.role === 'owner';
 
   const getIcon = () => {
     switch (config.type) {
@@ -44,6 +55,12 @@ export function DynamicMetricCard({ config }: DynamicMetricCardProps) {
     return change >= 0 ? TrendingUp : TrendingDown;
   };
 
+  const handleConfigSave = (newConfig: MetricConfig) => {
+    if (onConfigChange) {
+      onConfigChange(newConfig);
+    }
+  };
+
   const Icon = getIcon();
   const ChangeIcon = data?.change !== undefined ? getChangeIcon(data.change) : TrendingUp;
 
@@ -63,24 +80,46 @@ export function DynamicMetricCard({ config }: DynamicMetricCardProps) {
   }
 
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {config.title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-primary" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {data?.value ? formatValue(data.value) : '0'}
-        </div>
-        {data?.change !== undefined && (
-          <div className={`flex items-center text-xs mt-1 ${getChangeColor(data.change)}`}>
-            <ChangeIcon className="h-3 w-3 mr-1" />
-            {Math.abs(data.change).toFixed(1)}% em relação ao período anterior
+    <>
+      <Card className="hover:shadow-lg transition-shadow duration-300 group">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {config.title}
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Icon className="h-4 w-4 text-primary" />
+            {canConfigure && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setConfigModalOpen(true)}
+                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {data?.value ? formatValue(data.value) : '0'}
+          </div>
+          {data?.change !== undefined && (
+            <div className={`flex items-center text-xs mt-1 ${getChangeColor(data.change)}`}>
+              <ChangeIcon className="h-3 w-3 mr-1" />
+              {Math.abs(data.change).toFixed(1)}% em relação ao período anterior
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <WidgetConfigModal
+        open={configModalOpen}
+        onOpenChange={setConfigModalOpen}
+        widgetType="metric"
+        config={config}
+        onSave={handleConfigSave}
+      />
+    </>
   );
 }
