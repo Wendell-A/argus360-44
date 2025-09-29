@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChartConfig, AggregationFilter } from './useDashboardPersonalization';
+import { applyDynamicTitle, generateChartTitle } from '@/lib/dynamicTitles';
 
 interface ChartDataPoint {
   name: string;
@@ -10,16 +11,29 @@ interface ChartDataPoint {
 
 export function useDynamicChartData(config: ChartConfig) {
   const { activeTenant } = useAuth();
+  
+  // Aplicar título dinâmico se habilitado
+  const optimizedConfig = applyDynamicTitle(config, generateChartTitle);
 
   return useQuery({
-    queryKey: ['dynamic-chart', config.id, config.type, config.yAxis.type, config.xAxis, activeTenant?.tenant_id],
+    queryKey: [
+      'dynamic-chart', 
+      optimizedConfig.id, 
+      optimizedConfig.type, 
+      optimizedConfig.yAxis.type, 
+      optimizedConfig.xAxis,
+      optimizedConfig.aggregationFilters,
+      optimizedConfig.commissionConfig,
+      activeTenant?.tenant_id
+    ],
     queryFn: async (): Promise<ChartDataPoint[]> => {
       if (!activeTenant?.tenant_id) throw new Error('No active tenant');
 
-      return await getChartData(config, activeTenant.tenant_id);
+      return await getChartData(optimizedConfig, activeTenant.tenant_id);
     },
     enabled: !!activeTenant?.tenant_id,
     staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 }
 
@@ -171,87 +185,194 @@ function processTimeData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const dateField = getDateField(config.yAxis.type);
   const valueField = getValueField(config.yAxis.type);
   
-  // Agrupar por mês
-  const monthlyData: { [key: string]: number } = {};
+  // Agrupar por mês com otimização
+  const monthlyData = new Map<string, { count: number; sum: number; values: number[] }>();
   
   data.forEach(item => {
     const date = new Date(item[dateField]);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     
-    if (config.yAxis.aggregation === 'count') {
-      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
-    } else {
-      monthlyData[monthKey] = (monthlyData[monthKey] || 0) + (parseFloat(item[valueField]) || 0);
+    if (!monthlyData.has(monthKey)) {
+      monthlyData.set(monthKey, { count: 0, sum: 0, values: [] });
+    }
+    
+    const monthData = monthlyData.get(monthKey)!;
+    monthData.count++;
+    
+    if (config.yAxis.aggregation !== 'count' && config.yAxis.aggregation !== 'count_distinct') {
+      const value = parseFloat(item[valueField] || 0);
+      monthData.sum += isNaN(value) ? 0 : value;
+      monthData.values.push(value);
     }
   });
   
-  // Converter para array e ordenar
-  return Object.entries(monthlyData)
-    .map(([month, value]) => ({
-      name: formatMonth(month),
-      value,
-    }))
+  // Converter para array e calcular valores finais
+  const result = Array.from(monthlyData.entries())
+    .map(([monthKey, data]) => {
+      let value: number;
+      
+      switch (config.yAxis.aggregation) {
+        case 'count':
+        case 'count_distinct':
+          value = data.count;
+          break;
+        case 'sum':
+          value = data.sum;
+          break;
+        case 'avg':
+          value = data.values.length > 0 ? data.sum / data.values.length : 0;
+          break;
+        case 'min':
+          value = data.values.length > 0 ? Math.min(...data.values) : 0;
+          break;
+        case 'max':
+          value = data.values.length > 0 ? Math.max(...data.values) : 0;
+          break;
+        default:
+          value = data.sum;
+      }
+      
+      return {
+        name: formatMonth(monthKey),
+        value,
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name))
     .slice(-6); // Últimos 6 meses
+  
+  return result;
 }
 
 function processProductData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const valueField = getValueField(config.yAxis.type);
-  const productData: { [key: string]: number } = {};
+  const grouped = groupAndAggregateData(data, 'product_id', valueField, config.yAxis.aggregation || 'sum');
   
-  data.forEach(item => {
-    const productName = item.consortium_products?.name || 'Produto não identificado';
+  let result = Array.from(grouped.entries())
+    .map(([productId, value]) => ({
+      name: `Produto ${productId.slice(0, 8)}`,
+      value
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  // Aplicar lógica de "Others" se configurado
+  if (config.aggregationFilters?.products?.type === 'others' && result.length > 5) {
+    const top5 = result.slice(0, 5);
+    const othersValue = result.slice(5).reduce((sum, item) => sum + item.value, 0);
     
-    if (config.yAxis.aggregation === 'count') {
-      productData[productName] = (productData[productName] || 0) + 1;
-    } else {
-      productData[productName] = (productData[productName] || 0) + (parseFloat(item[valueField]) || 0);
+    if (othersValue > 0) {
+      top5.push({
+        name: config.aggregationFilters.products.otherLabel || 'Outros Produtos',
+        value: othersValue
+      });
     }
-  });
-  
-  return Object.entries(productData)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10); // Top 10
+    
+    return top5;
+  }
+
+  return result.slice(0, 10);
 }
 
 function processSellerData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const valueField = getValueField(config.yAxis.type);
-  const sellerData: { [key: string]: number } = {};
+  const grouped = groupAndAggregateData(data, 'seller_id', valueField, config.yAxis.aggregation || 'sum');
   
-  data.forEach(item => {
-    const sellerName = item.profiles?.full_name || 'Vendedor não identificado';
+  let result = Array.from(grouped.entries())
+    .map(([sellerId, value]) => ({
+      name: `Vendedor ${sellerId.slice(0, 8)}`,
+      value
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  // Aplicar lógica de "Others" se configurado
+  if (config.aggregationFilters?.sellers?.type === 'others' && result.length > 5) {
+    const top5 = result.slice(0, 5);
+    const othersValue = result.slice(5).reduce((sum, item) => sum + item.value, 0);
     
-    if (config.yAxis.aggregation === 'count') {
-      sellerData[sellerName] = (sellerData[sellerName] || 0) + 1;
-    } else {
-      sellerData[sellerName] = (sellerData[sellerName] || 0) + (parseFloat(item[valueField]) || 0);
+    if (othersValue > 0) {
+      top5.push({
+        name: config.aggregationFilters.sellers.otherLabel || 'Outros Vendedores',
+        value: othersValue
+      });
     }
-  });
-  
-  return Object.entries(sellerData)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10); // Top 10
+    
+    return top5;
+  }
+
+  return result.slice(0, 10);
 }
 
 function processOfficeData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const valueField = getValueField(config.yAxis.type);
-  const officeData: { [key: string]: number } = {};
+  const grouped = groupAndAggregateData(data, 'office_id', valueField, config.yAxis.aggregation || 'sum');
+  
+  return Array.from(grouped.entries())
+    .map(([officeId, value]) => ({
+      name: `Escritório ${officeId.slice(0, 8)}`,
+      value
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+}
+
+/**
+ * Função utilitária para agrupar e agregar dados
+ */
+function groupAndAggregateData(
+  data: any[], 
+  groupField: string, 
+  valueField: string, 
+  aggregation: string
+): Map<string, number> {
+  const grouped = new Map<string, { count: number; sum: number; values: number[] }>();
   
   data.forEach(item => {
-    const officeName = item.offices?.name || 'Escritório não identificado';
+    const groupKey = item[groupField] || 'N/A';
     
-    if (config.yAxis.aggregation === 'count') {
-      officeData[officeName] = (officeData[officeName] || 0) + 1;
-    } else {
-      officeData[officeName] = (officeData[officeName] || 0) + (parseFloat(item[valueField]) || 0);
+    if (!grouped.has(groupKey)) {
+      grouped.set(groupKey, { count: 0, sum: 0, values: [] });
+    }
+    
+    const groupData = grouped.get(groupKey)!;
+    groupData.count++;
+    
+    if (aggregation !== 'count' && aggregation !== 'count_distinct') {
+      const value = parseFloat(item[valueField] || 0);
+      if (!isNaN(value)) {
+        groupData.sum += value;
+        groupData.values.push(value);
+      }
     }
   });
   
-  return Object.entries(officeData)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
+  // Calcular valores finais baseado na agregação
+  const result = new Map<string, number>();
+  
+  grouped.forEach((data, key) => {
+    let finalValue: number;
+    
+    switch (aggregation) {
+      case 'count':
+      case 'count_distinct':
+        finalValue = data.count;
+        break;
+      case 'avg':
+        finalValue = data.values.length > 0 ? data.sum / data.values.length : 0;
+        break;
+      case 'min':
+        finalValue = data.values.length > 0 ? Math.min(...data.values) : 0;
+        break;
+      case 'max':
+        finalValue = data.values.length > 0 ? Math.max(...data.values) : 0;
+        break;
+      case 'sum':
+      default:
+        finalValue = data.sum;
+    }
+    
+    result.set(key, finalValue);
+  });
+  
+  return result;
 }
 
 function applyAggregationFilters(data: any[], config: ChartConfig): any[] {

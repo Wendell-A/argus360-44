@@ -2,17 +2,30 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetricConfig } from './useDashboardPersonalization';
+import { optimizeMetricConfig } from '@/lib/dynamicTitles';
 
 interface MetricData {
   value: number;
   change?: number;
+  optimizedConfig?: MetricConfig;
 }
 
 export function useDynamicMetricData(config: MetricConfig) {
   const { activeTenant } = useAuth();
+  
+  // Otimizar configuração para performance e títulos dinâmicos
+  const optimizedConfig = optimizeMetricConfig(config);
 
   return useQuery({
-    queryKey: ['dynamic-metric', config.id, config.type, config.aggregation, activeTenant?.tenant_id],
+    queryKey: [
+      'dynamic-metric', 
+      optimizedConfig.id, 
+      optimizedConfig.type, 
+      optimizedConfig.aggregation, 
+      optimizedConfig.commissionConfig,
+      optimizedConfig.aggregationFilters,
+      activeTenant?.tenant_id
+    ],
     queryFn: async (): Promise<MetricData> => {
       if (!activeTenant?.tenant_id) throw new Error('No active tenant');
 
@@ -22,18 +35,22 @@ export function useDynamicMetricData(config: MetricConfig) {
       const previousPeriodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const previousPeriodEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
-      const currentValue = await getMetricValue(config, activeTenant.tenant_id, currentPeriodStart, now);
-      const previousValue = await getMetricValue(config, activeTenant.tenant_id, previousPeriodStart, previousPeriodEnd);
+      const [currentValue, previousValue] = await Promise.all([
+        getMetricValue(optimizedConfig, activeTenant.tenant_id, currentPeriodStart, now),
+        getMetricValue(optimizedConfig, activeTenant.tenant_id, previousPeriodStart, previousPeriodEnd)
+      ]);
 
       const change = previousValue > 0 ? ((currentValue - previousValue) / previousValue) * 100 : 0;
 
       return {
         value: currentValue,
         change,
+        optimizedConfig, // Retornar config otimizada para uso no componente
       };
     },
     enabled: !!activeTenant?.tenant_id,
     staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 }
 
@@ -113,11 +130,67 @@ async function getMetricValue(
     query = query.in('office_id', config.filter.offices);
   }
 
+  // Aplicar filtros de agregação se especificados
+  if (config.aggregationFilters) {
+    const processedData = await applyAggregationFilters(query, config, tenantId);
+    return calculateAggregation(processedData, config);
+  }
+
   const { data, error } = await query;
 
   if (error) throw error;
 
   return calculateAggregation(data || [], config);
+}
+
+/**
+ * Aplica filtros de agregação específicos
+ */
+async function applyAggregationFilters(
+  baseQuery: any,
+  config: MetricConfig,
+  tenantId: string
+): Promise<any[]> {
+  const results: any[] = [];
+
+  // Processar filtros de produtos
+  if (config.aggregationFilters?.products) {
+    const filter = config.aggregationFilters.products;
+    if (filter.type === 'specific' && filter.selectedIds?.length) {
+      const { data } = await baseQuery.in('product_id', filter.selectedIds);
+      if (data) results.push(...data);
+    } else {
+      // Para "others", buscar todos e processar depois
+      const { data } = await baseQuery;
+      if (data) results.push(...data);
+    }
+  }
+
+  // Processar filtros de escritórios
+  if (config.aggregationFilters?.offices) {
+    const filter = config.aggregationFilters.offices;
+    if (filter.type === 'specific' && filter.selectedIds?.length) {
+      const { data } = await baseQuery.in('office_id', filter.selectedIds);
+      if (data) results.push(...data);
+    }
+  }
+
+  // Processar filtros de vendedores
+  if (config.aggregationFilters?.sellers) {
+    const filter = config.aggregationFilters.sellers;
+    if (filter.type === 'specific' && filter.selectedIds?.length) {
+      const { data } = await baseQuery.in('seller_id', filter.selectedIds);
+      if (data) results.push(...data);
+    }
+  }
+
+  // Se nenhum filtro específico foi aplicado, buscar todos os dados
+  if (results.length === 0) {
+    const { data } = await baseQuery;
+    return data || [];
+  }
+
+  return results;
 }
 
 function getTableName(type: MetricConfig['type']): string {

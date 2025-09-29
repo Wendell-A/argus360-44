@@ -84,7 +84,7 @@ export function DynamicMetricCard({ config, onConfigChange }: DynamicMetricCardP
       <Card className="hover:shadow-lg transition-shadow duration-300 group">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            {config.title}
+            {data?.optimizedConfig?.title || config.title}
           </CardTitle>
           <div className="flex items-center gap-1">
             <Icon className="h-4 w-4 text-primary" />
@@ -117,7 +117,7 @@ export function DynamicMetricCard({ config, onConfigChange }: DynamicMetricCardP
         open={configModalOpen}
         onOpenChange={setConfigModalOpen}
         widgetType="metric"
-        config={config}
+        config={data?.optimizedConfig || config}
         onSave={handleConfigSave}
       />
     </>
