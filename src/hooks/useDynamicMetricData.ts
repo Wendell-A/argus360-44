@@ -4,6 +4,33 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MetricConfig } from './useDashboardPersonalization';
 import { optimizeMetricConfig } from '@/lib/dynamicTitles';
 
+// Cache inteligente por tipo de dado
+const getStaleTimeByType = (type: string): number => {
+  switch (type) {
+    case 'commissions':
+      return 2 * 60 * 1000; // 2 minutos para comissões (mais voláteis)
+    case 'sales':
+      return 5 * 60 * 1000; // 5 minutos para vendas
+    case 'clients':
+      return 10 * 60 * 1000; // 10 minutos para clientes (menos voláteis)
+    default:
+      return 5 * 60 * 1000; // 5 minutos padrão
+  }
+};
+
+const getGcTimeByType = (type: string): number => {
+  switch (type) {
+    case 'commissions':
+      return 5 * 60 * 1000; // 5 minutos para comissões
+    case 'sales':
+      return 10 * 60 * 1000; // 10 minutos para vendas
+    case 'clients':
+      return 15 * 60 * 1000; // 15 minutos para clientes
+    default:
+      return 10 * 60 * 1000; // 10 minutos padrão
+  }
+};
+
 interface MetricData {
   value: number;
   change?: number;
@@ -49,8 +76,8 @@ export function useDynamicMetricData(config: MetricConfig) {
       };
     },
     enabled: !!activeTenant?.tenant_id,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: getStaleTimeByType(optimizedConfig.type), // Cache inteligente por tipo
+    gcTime: getGcTimeByType(optimizedConfig.type), // TTL diferenciado
   });
 }
 

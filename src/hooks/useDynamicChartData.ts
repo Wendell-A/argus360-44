@@ -4,6 +4,33 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ChartConfig, AggregationFilter } from './useDashboardPersonalization';
 import { applyDynamicTitle, generateChartTitle } from '@/lib/dynamicTitles';
 
+// Cache inteligente por tipo de dado (gráficos)
+const getStaleTimeByType = (dataType: string): number => {
+  switch (dataType) {
+    case 'commissions':
+      return 2 * 60 * 1000; // 2 minutos para comissões
+    case 'sales':
+      return 5 * 60 * 1000; // 5 minutos para vendas
+    case 'clients':
+      return 10 * 60 * 1000; // 10 minutos para clientes
+    default:
+      return 5 * 60 * 1000; // 5 minutos padrão
+  }
+};
+
+const getGcTimeByType = (dataType: string): number => {
+  switch (dataType) {
+    case 'commissions':
+      return 5 * 60 * 1000; // 5 minutos para comissões
+    case 'sales':
+      return 10 * 60 * 1000; // 10 minutos para vendas
+    case 'clients':
+      return 15 * 60 * 1000; // 15 minutos para clientes
+    default:
+      return 10 * 60 * 1000; // 10 minutos padrão
+  }
+};
+
 interface ChartDataPoint {
   name: string;
   value: number;
@@ -32,8 +59,8 @@ export function useDynamicChartData(config: ChartConfig) {
       return await getChartData(optimizedConfig, activeTenant.tenant_id);
     },
     enabled: !!activeTenant?.tenant_id,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: getStaleTimeByType(optimizedConfig.yAxis.type), // Cache inteligente por tipo
+    gcTime: getGcTimeByType(optimizedConfig.yAxis.type), // TTL diferenciado
   });
 }
 
