@@ -16,7 +16,6 @@ import {
   Shield,
   FileText,
   Target,
-  UsersIcon,
   Building,
   LogOut,
   Calculator,
@@ -75,7 +74,7 @@ export default function AppSidebar() {
         { name: 'CRM', path: '/crm', icon: Users, enabled: true },
         { name: 'Clientes', path: '/clientes', icon: UserCheck, enabled: true },
         { name: 'Vendas', path: '/vendas', icon: ShoppingCart, enabled: true },
-        { name: 'Vendedores', path: '/vendedores', icon: UsersIcon, enabled: menuConfig?.modules?.sellers || false },
+        { name: 'Vendedores', path: '/vendedores', icon: Users, enabled: menuConfig?.modules?.sellers || false },
         { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
         { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },
         { name: 'Orçamentos', path: '/proposals', icon: FileSpreadsheet, enabled: true },
@@ -92,7 +91,7 @@ export default function AppSidebar() {
         { name: 'Escritórios', path: '/escritorios', icon: Building, enabled: menuConfig?.modules?.offices || false },
         { name: 'Departamentos', path: '/departamentos', icon: Building2, enabled: menuConfig?.modules?.departments || false },
         { name: 'Cargos', path: '/cargos', icon: Briefcase, enabled: menuConfig?.modules?.positions || false },
-        { name: 'Equipes', path: '/equipes', icon: UsersIcon, enabled: menuConfig?.modules?.teams || false },
+        { name: 'Equipes', path: '/equipes', icon: Users, enabled: menuConfig?.modules?.teams || false },
       ]
     },
     {
