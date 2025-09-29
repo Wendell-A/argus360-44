@@ -182,11 +182,13 @@ export function ConfigurableDashboard() {
       </div>
 
       {/* Listas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {activeConfig.widget_configs.lists.map((list) => (
-          <DynamicList key={list.id} config={list} />
-        ))}
-      </div>
+      {activeConfig.widget_configs.lists && activeConfig.widget_configs.lists.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {activeConfig.widget_configs.lists.map((list) => (
+            <DynamicList key={list.id} config={list} />
+          ))}
+        </div>
+      )}
 
       {/* Modal de Configuração */}
       {canManageConfigs && (

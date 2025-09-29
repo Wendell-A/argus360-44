@@ -122,7 +122,52 @@ async function getChartData(config: ChartConfig, tenantId: string): Promise<Char
 
   if (error) throw error;
 
-  return processChartData(data || [], config);
+  // Se for comissões com vendedores/offices, buscar nomes dos profiles/offices
+  let processedData = data || [];
+  if (config.yAxis.type === 'commissions' && (config.xAxis === 'sellers' || config.xAxis === 'offices')) {
+    processedData = await enrichCommissionData(processedData, config.xAxis, tenantId);
+  }
+
+  return processChartData(processedData, config);
+}
+
+// Função auxiliar para enriquecer dados de comissões com nomes
+async function enrichCommissionData(data: any[], axis: string, tenantId: string): Promise<any[]> {
+  if (!data.length) return data;
+  
+  const recipientIds = [...new Set(data.map(item => item.recipient_id))].filter(Boolean);
+  if (!recipientIds.length) return data;
+
+  if (axis === 'sellers') {
+    // Buscar nomes dos profiles
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', recipientIds);
+    
+    const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
+    
+    return data.map(item => ({
+      ...item,
+      recipient_name: profileMap.get(item.recipient_id) || `Vendedor ${item.recipient_id?.slice(0, 8)}`
+    }));
+  } else if (axis === 'offices') {
+    // Buscar nomes dos escritórios
+    const { data: offices } = await supabase
+      .from('offices')
+      .select('id, name')
+      .in('id', recipientIds)
+      .eq('tenant_id', tenantId);
+    
+    const officeMap = new Map(offices?.map(o => [o.id, o.name]) || []);
+    
+    return data.map(item => ({
+      ...item,
+      recipient_name: officeMap.get(item.recipient_id) || `Escritório ${item.recipient_id?.slice(0, 8)}`
+    }));
+  }
+
+  return data;
 }
 
 function getTableName(type: string): string {
@@ -146,20 +191,28 @@ function getSelectFields(config: ChartConfig): string {
       return `${valueField}, ${dateField}`;
     
     case 'products':
+      // Para comissões, buscar via sale_id -> sales -> product_id
+      if (config.yAxis.type === 'commissions') {
+        return `${valueField}, sale_id, sales!inner(product_id, consortium_products!inner(name))`;
+      }
       return `${valueField}, product_id, consortium_products!inner(name)`;
     
     case 'sellers':
-      // Para comissões, usar recipient_id + commission_type
+      // Para comissões, usar recipient_id SEM JOIN
       if (config.yAxis.type === 'commissions') {
-        return `${valueField}, recipient_id, commission_type, profiles!commissions_recipient_id_fkey(full_name)`;
+        return `${valueField}, recipient_id, commission_type`;
       }
       // Para vendas, usar seller_id
       if (config.yAxis.type === 'sales') {
         return `${valueField}, seller_id, profiles!sales_seller_id_fkey(full_name)`;
       }
-      return `${valueField}, seller_id, profiles(full_name)`;
+      return `${valueField}, seller_id`;
     
     case 'offices':
+      // Para comissões, usar recipient_id SEM JOIN
+      if (config.yAxis.type === 'commissions') {
+        return `${valueField}, recipient_id, commission_type`;
+      }
       return `${valueField}, office_id, offices!inner(name)`;
     
     default:
@@ -285,8 +338,18 @@ function processProductData(data: any[], config: ChartConfig): ChartDataPoint[] 
   const productMap = new Map<string, { name: string; values: number[] }>();
   
   data.forEach(item => {
-    const productId = item.product_id;
-    const productName = item.consortium_products?.name || `Produto ${productId?.slice(0, 8) || 'N/A'}`;
+    let productId: string;
+    let productName: string;
+
+    // Para comissões, buscar via sales.consortium_products
+    if (config.yAxis.type === 'commissions' && item.sales?.consortium_products) {
+      productId = item.sales.product_id;
+      productName = item.sales.consortium_products.name;
+    } else {
+      productId = item.product_id;
+      productName = item.consortium_products?.name || `Produto ${productId?.slice(0, 8) || 'N/A'}`;
+    }
+    
     const value = parseFloat(item[valueField] || 0);
     
     if (!productMap.has(productId)) {
@@ -335,26 +398,22 @@ function processSellerData(data: any[], config: ChartConfig): ChartDataPoint[] {
     let sellerId: string;
     let sellerName: string;
     
-    // Para comissões, usar recipient_id e filtrar por commission_type
+    // Para comissões, usar recipient_id e nome enriquecido
     if (config.yAxis.type === 'commissions') {
-      // Se configurado para mostrar apenas sellers
+      // Filtrar por commission_type se configurado
       if (config.commissionConfig?.includeSeller === true && 
           config.commissionConfig?.includeOffice === false) {
-        // Filtrar apenas comissões de vendedores
         if (item.commission_type !== 'seller') return;
       }
       
-      // Se configurado para mostrar apenas offices
       if (config.commissionConfig?.includeOffice === true && 
           config.commissionConfig?.includeSeller === false) {
-        // Filtrar apenas comissões de escritórios
         if (item.commission_type !== 'office') return;
       }
       
       sellerId = item.recipient_id;
-      sellerName = item.profiles?.full_name || `Vendedor ${sellerId?.slice(0, 8) || 'N/A'}`;
+      sellerName = item.recipient_name || `Vendedor ${sellerId?.slice(0, 8) || 'N/A'}`;
     } else {
-      // Para outros tipos, usar seller_id
       sellerId = item.seller_id;
       sellerName = item.profiles?.full_name || `Vendedor ${sellerId?.slice(0, 8) || 'N/A'}`;
     }
@@ -407,8 +466,18 @@ function processOfficeData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const officeMap = new Map<string, { name: string; values: number[] }>();
   
   data.forEach(item => {
-    const officeId = item.office_id;
-    const officeName = item.offices?.name || `Escritório ${officeId?.slice(0, 8) || 'N/A'}`;
+    let officeId: string;
+    let officeName: string;
+
+    // Para comissões, usar recipient_id e nome enriquecido
+    if (config.yAxis.type === 'commissions') {
+      officeId = item.recipient_id;
+      officeName = item.recipient_name || `Escritório ${officeId?.slice(0, 8) || 'N/A'}`;
+    } else {
+      officeId = item.office_id;
+      officeName = item.offices?.name || `Escritório ${officeId?.slice(0, 8) || 'N/A'}`;
+    }
+    
     const value = parseFloat(item[valueField] || 0);
     
     if (!officeMap.has(officeId)) {
