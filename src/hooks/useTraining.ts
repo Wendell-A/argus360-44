@@ -43,21 +43,21 @@ export const useTrainingCategories = () => {
         throw new Error('Tenant não encontrado');
       }
 
-      // Buscar categorias
+      // Buscar categorias (incluir globais e específicas do tenant)
       const { data: categories, error: categoriesError } = await supabase
         .from('training_categories')
         .select('*')
-        .eq('tenant_id', activeTenant.tenant_id)
+        .or(`tenant_id.eq.${activeTenant.tenant_id},tenant_id.is.null`)
         .eq('is_active', true)
         .order('order_index', { ascending: true });
 
       if (categoriesError) throw categoriesError;
 
-      // Buscar vídeos para cada categoria
+      // Buscar vídeos (incluir globais e específicos do tenant)
       const { data: videos, error: videosError } = await supabase
         .from('training_videos')
         .select('*')
-        .eq('tenant_id', activeTenant.tenant_id)
+        .or(`tenant_id.eq.${activeTenant.tenant_id},tenant_id.is.null`)
         .eq('is_active', true)
         .order('order_index', { ascending: true });
 
