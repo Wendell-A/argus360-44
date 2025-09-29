@@ -23,9 +23,10 @@ const VIBRANT_COLORS = [
 interface ConfigurableChartProps {
   config: ChartConfig;
   onConfigChange?: (config: ChartConfig) => void;
+  isRefreshing?: boolean;
 }
 
-export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartProps) {
+export function ConfigurableChart({ config, onConfigChange, isRefreshing = false }: ConfigurableChartProps) {
   const { data, isLoading } = useDynamicChartData(config);
   const { user, activeTenant } = useAuth();
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -210,7 +211,7 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
 
   return (
     <>
-      <Card className="group">
+      <Card className="group relative">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             {config.title}
@@ -229,6 +230,16 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
         <CardContent>
           {renderChart()}
         </CardContent>
+        
+        {/* Overlay de Loading */}
+        {isRefreshing && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg animate-fade-in z-10">
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground">Atualizando dados...</p>
+            </div>
+          </div>
+        )}
       </Card>
 
       <WidgetConfigModal

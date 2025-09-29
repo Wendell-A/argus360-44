@@ -149,7 +149,11 @@ function getSelectFields(config: ChartConfig): string {
       return `${valueField}, product_id, consortium_products!inner(name)`;
     
     case 'sellers':
-      // Usar a foreign key correta dependendo da tabela
+      // Para comissões, usar recipient_id + commission_type
+      if (config.yAxis.type === 'commissions') {
+        return `${valueField}, recipient_id, commission_type, profiles!commissions_recipient_id_fkey(full_name)`;
+      }
+      // Para vendas, usar seller_id
       if (config.yAxis.type === 'sales') {
         return `${valueField}, seller_id, profiles!sales_seller_id_fkey(full_name)`;
       }
@@ -328,8 +332,35 @@ function processSellerData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const sellerMap = new Map<string, { name: string; values: number[] }>();
   
   data.forEach(item => {
-    const sellerId = item.seller_id;
-    const sellerName = item.profiles?.full_name || `Vendedor ${sellerId?.slice(0, 8) || 'N/A'}`;
+    let sellerId: string;
+    let sellerName: string;
+    
+    // Para comissões, usar recipient_id e filtrar por commission_type
+    if (config.yAxis.type === 'commissions') {
+      // Se configurado para mostrar apenas sellers
+      if (config.commissionConfig?.includeSeller === true && 
+          config.commissionConfig?.includeOffice === false) {
+        // Filtrar apenas comissões de vendedores
+        if (item.commission_type !== 'seller') return;
+      }
+      
+      // Se configurado para mostrar apenas offices
+      if (config.commissionConfig?.includeOffice === true && 
+          config.commissionConfig?.includeSeller === false) {
+        // Filtrar apenas comissões de escritórios
+        if (item.commission_type !== 'office') return;
+      }
+      
+      sellerId = item.recipient_id;
+      sellerName = item.profiles?.full_name || `Vendedor ${sellerId?.slice(0, 8) || 'N/A'}`;
+    } else {
+      // Para outros tipos, usar seller_id
+      sellerId = item.seller_id;
+      sellerName = item.profiles?.full_name || `Vendedor ${sellerId?.slice(0, 8) || 'N/A'}`;
+    }
+    
+    if (!sellerId) return; // Pular itens sem vendedor
+    
     const value = parseFloat(item[valueField] || 0);
     
     if (!sellerMap.has(sellerId)) {
@@ -348,6 +379,7 @@ function processSellerData(data: any[], config: ChartConfig): ChartDataPoint[] {
         value: aggregatedValue
       };
     })
+    .filter(item => item.value > 0) // Filtrar itens com valor zero
     .sort((a, b) => b.value - a.value);
 
   // Aplicar lógica de "Others" se configurado

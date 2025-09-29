@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 export function ConfigurableDashboard() {
   const [selectedConfig, setSelectedConfig] = useState<'A' | 'B' | 'C'>('A');
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { user, activeTenant } = useAuth();
   const { data: configurations } = useDashboardConfigurations();
   const { data: activeConfig, isLoading, refetch } = useActiveDashboardConfig(selectedConfig);
@@ -38,11 +39,18 @@ export function ConfigurableDashboard() {
     };
 
     try {
+      setIsRefreshing(true);
       await saveMutation.mutateAsync(updatedConfig);
       await refetch();
-      toast.success('Configuração salva com sucesso!');
+      toast.success('Configuração salva com sucesso!', {
+        description: 'Os dados foram atualizados',
+        duration: 2000,
+      });
     } catch (error) {
       toast.error('Erro ao salvar configuração');
+    } finally {
+      // Delay para mostrar animação
+      setTimeout(() => setIsRefreshing(false), 800);
     }
   };
 
@@ -60,11 +68,18 @@ export function ConfigurableDashboard() {
     };
 
     try {
+      setIsRefreshing(true);
       await saveMutation.mutateAsync(updatedConfig);
       await refetch();
-      toast.success('Configuração salva com sucesso!');
+      toast.success('Configuração salva com sucesso!', {
+        description: 'Os dados foram atualizados',
+        duration: 2000,
+      });
     } catch (error) {
       toast.error('Erro ao salvar configuração');
+    } finally {
+      // Delay para mostrar animação
+      setTimeout(() => setIsRefreshing(false), 800);
     }
   };
 
@@ -161,6 +176,7 @@ export function ConfigurableDashboard() {
             key={chart.id} 
             config={chart} 
             onConfigChange={handleChartChange}
+            isRefreshing={isRefreshing}
           />
         ))}
       </div>

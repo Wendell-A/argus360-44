@@ -121,6 +121,45 @@ export function DashboardConfigModal({ isOpen, onClose, configName, currentConfi
     }));
   };
 
+  const addList = () => {
+    const newList: any = {
+      id: `list-${Date.now()}`,
+      type: 'recent_sales',
+      title: 'Nova Lista',
+      limit: 10,
+    };
+    
+    setLocalConfig(prev => ({
+      ...prev,
+      widget_configs: {
+        ...prev.widget_configs,
+        lists: [...(prev.widget_configs.lists || []), newList],
+      },
+    }));
+  };
+
+  const updateList = (index: number, updates: any) => {
+    setLocalConfig(prev => ({
+      ...prev,
+      widget_configs: {
+        ...prev.widget_configs,
+        lists: (prev.widget_configs.lists || []).map((list, i) => 
+          i === index ? { ...list, ...updates } : list
+        ),
+      },
+    }));
+  };
+
+  const removeList = (index: number) => {
+    setLocalConfig(prev => ({
+      ...prev,
+      widget_configs: {
+        ...prev.widget_configs,
+        lists: (prev.widget_configs.lists || []).filter((_, i) => i !== index),
+      },
+    }));
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -333,10 +372,68 @@ export function DashboardConfigModal({ isOpen, onClose, configName, currentConfi
             <TabsContent value="lists" className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Listas</h3>
+                <Button onClick={addList} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Lista
+                </Button>
               </div>
-              <p className="text-muted-foreground">
-                Configuração de listas será implementada na próxima versão.
-              </p>
+
+              <div className="grid gap-4">
+                {(localConfig.widget_configs.lists || []).map((list: any, index: number) => (
+                  <Card key={list.id}>
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <Label>Título</Label>
+                          <Input
+                            value={list.title}
+                            onChange={(e) => updateList(index, { title: e.target.value })}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label>Tipo de Lista</Label>
+                          <Select
+                            value={list.type}
+                            onValueChange={(value: any) => updateList(index, { type: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="recent_sales">Vendas Recentes</SelectItem>
+                              <SelectItem value="top_sellers">Top Vendedores</SelectItem>
+                              <SelectItem value="upcoming_tasks">Tarefas Pendentes</SelectItem>
+                              <SelectItem value="commission_breakdown">Detalhamento Comissões</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Limite de Itens</Label>
+                          <Input
+                            type="number"
+                            value={list.limit}
+                            onChange={(e) => updateList(index, { limit: parseInt(e.target.value) || 5 })}
+                            min={1}
+                            max={50}
+                          />
+                        </div>
+
+                        <div className="flex items-end">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeList(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </TabsContent>
           </Tabs>
 
