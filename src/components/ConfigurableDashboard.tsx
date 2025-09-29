@@ -35,7 +35,7 @@ export function ConfigurableDashboard() {
 
     try {
       await saveMutation.mutateAsync(updatedConfig);
-      refetch();
+      await refetch();
       toast.success('Configuração salva com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar configuração');
@@ -57,7 +57,7 @@ export function ConfigurableDashboard() {
 
     try {
       await saveMutation.mutateAsync(updatedConfig);
-      refetch();
+      await refetch();
       toast.success('Configuração salva com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar configuração');

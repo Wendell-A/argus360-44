@@ -3,16 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Eye, Edit, MoreHorizontal, Percent, Calculator, AlertCircle } from "lucide-react";
+import { Eye, Edit, MoreHorizontal, Percent, Calculator, AlertCircle, Copy } from "lucide-react";
 import type { ExtendedConsortiumProduct } from "@/hooks/useConsortiumProducts";
 
 interface ConsortiumCardProps {
   product: ExtendedConsortiumProduct;
   onEdit: (product: ExtendedConsortiumProduct) => void;
   onView: (product: ExtendedConsortiumProduct) => void;
+  onDuplicate?: (productId: string) => void;
 }
 
-export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps) => {
+export const ConsortiumCard = ({ product, onEdit, onView, onDuplicate }: ConsortiumCardProps) => {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -86,6 +87,12 @@ export const ConsortiumCard = ({ product, onEdit, onView }: ConsortiumCardProps)
                   <Edit className="w-4 h-4 mr-2" />
                   Editar
                 </DropdownMenuItem>
+                {onDuplicate && (
+                  <DropdownMenuItem onClick={() => onDuplicate(product.id)}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Duplicar
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

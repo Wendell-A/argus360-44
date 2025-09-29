@@ -33,16 +33,7 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
     return value.toLocaleString('pt-BR');
   };
 
-  const colors = [
-    'hsl(var(--primary))',
-    'hsl(var(--secondary))',
-    'hsl(var(--accent))',
-    '#8884d8',
-    '#82ca9d',
-    '#ffc658',
-    '#ff7300',
-    '#0088fe',
-  ];
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
   const handleConfigSave = (newConfig: ChartConfig) => {
     if (onConfigChange) {

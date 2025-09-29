@@ -161,6 +161,47 @@ export const useConsortiumProducts = () => {
     },
   });
 
+  // Mutation para duplicar produto
+  const duplicateProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      if (!activeTenant?.tenant_id) throw new Error('Tenant não encontrado');
+
+      const { data: original, error: fetchError } = await supabase
+        .from('consortium_products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const baseName = original.name.replace(/ #\d+$/, '');
+      const { data: existing } = await supabase
+        .from('consortium_products')
+        .select('name')
+        .eq('tenant_id', activeTenant.tenant_id)
+        .ilike('name', `${baseName} #%`);
+
+      const nextNumber = (existing?.length || 0) + 1;
+      const { id, created_at, updated_at, ...productData } = original;
+
+      const { data, error } = await supabase
+        .from('consortium_products')
+        .insert({ ...productData, name: `${baseName} #${nextNumber}` })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['consortium_products'] });
+      toast({ title: 'Sucesso', description: 'Produto duplicado!' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Erro ao duplicar', variant: 'destructive' });
+    },
+  });
+
   return {
     products,
     isLoading,
@@ -168,9 +209,11 @@ export const useConsortiumProducts = () => {
     createProduct: createProductMutation.mutate,
     updateProduct: updateProductMutation.mutate,
     deleteProduct: deleteProductMutation.mutate,
+    duplicateProduct: duplicateProductMutation.mutate,
     isCreating: createProductMutation.isPending,
     isUpdating: updateProductMutation.isPending,
     isDeleting: deleteProductMutation.isPending,
+    isDuplicating: duplicateProductMutation.isPending,
   };
 };
 

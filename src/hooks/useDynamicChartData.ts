@@ -146,13 +146,17 @@ function getSelectFields(config: ChartConfig): string {
       return `${valueField}, ${dateField}`;
     
     case 'products':
-      return `${valueField}, product_id, consortium_products(name)`;
+      return `${valueField}, product_id, consortium_products!inner(name)`;
     
     case 'sellers':
+      // Usar a foreign key correta dependendo da tabela
+      if (config.yAxis.type === 'sales') {
+        return `${valueField}, seller_id, profiles!sales_seller_id_fkey(full_name)`;
+      }
       return `${valueField}, seller_id, profiles(full_name)`;
     
     case 'offices':
-      return `${valueField}, office_id, offices(name)`;
+      return `${valueField}, office_id, offices!inner(name)`;
     
     default:
       const defaultDateField = getDateField(config.yAxis.type);
@@ -272,13 +276,31 @@ function processTimeData(data: any[], config: ChartConfig): ChartDataPoint[] {
 
 function processProductData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const valueField = getValueField(config.yAxis.type);
-  const grouped = groupAndAggregateData(data, 'product_id', valueField, config.yAxis.aggregation || 'sum');
   
-  let result = Array.from(grouped.entries())
-    .map(([productId, value]) => ({
-      name: `Produto ${productId.slice(0, 8)}`,
-      value
-    }))
+  // Agrupar dados com nomes de produtos
+  const productMap = new Map<string, { name: string; values: number[] }>();
+  
+  data.forEach(item => {
+    const productId = item.product_id;
+    const productName = item.consortium_products?.name || `Produto ${productId?.slice(0, 8) || 'N/A'}`;
+    const value = parseFloat(item[valueField] || 0);
+    
+    if (!productMap.has(productId)) {
+      productMap.set(productId, { name: productName, values: [] });
+    }
+    
+    productMap.get(productId)!.values.push(value);
+  });
+
+  // Calcular agregação e converter para array
+  let result = Array.from(productMap.entries())
+    .map(([productId, data]) => {
+      const aggregatedValue = aggregateValues(data.values, config.yAxis.aggregation || 'sum');
+      return {
+        name: data.name,
+        value: aggregatedValue
+      };
+    })
     .sort((a, b) => b.value - a.value);
 
   // Aplicar lógica de "Others" se configurado
@@ -301,13 +323,31 @@ function processProductData(data: any[], config: ChartConfig): ChartDataPoint[] 
 
 function processSellerData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const valueField = getValueField(config.yAxis.type);
-  const grouped = groupAndAggregateData(data, 'seller_id', valueField, config.yAxis.aggregation || 'sum');
   
-  let result = Array.from(grouped.entries())
-    .map(([sellerId, value]) => ({
-      name: `Vendedor ${sellerId.slice(0, 8)}`,
-      value
-    }))
+  // Agrupar dados com nomes de vendedores
+  const sellerMap = new Map<string, { name: string; values: number[] }>();
+  
+  data.forEach(item => {
+    const sellerId = item.seller_id;
+    const sellerName = item.profiles?.full_name || `Vendedor ${sellerId?.slice(0, 8) || 'N/A'}`;
+    const value = parseFloat(item[valueField] || 0);
+    
+    if (!sellerMap.has(sellerId)) {
+      sellerMap.set(sellerId, { name: sellerName, values: [] });
+    }
+    
+    sellerMap.get(sellerId)!.values.push(value);
+  });
+
+  // Calcular agregação e converter para array
+  let result = Array.from(sellerMap.entries())
+    .map(([sellerId, data]) => {
+      const aggregatedValue = aggregateValues(data.values, config.yAxis.aggregation || 'sum');
+      return {
+        name: data.name,
+        value: aggregatedValue
+      };
+    })
     .sort((a, b) => b.value - a.value);
 
   // Aplicar lógica de "Others" se configurado
@@ -330,15 +370,53 @@ function processSellerData(data: any[], config: ChartConfig): ChartDataPoint[] {
 
 function processOfficeData(data: any[], config: ChartConfig): ChartDataPoint[] {
   const valueField = getValueField(config.yAxis.type);
-  const grouped = groupAndAggregateData(data, 'office_id', valueField, config.yAxis.aggregation || 'sum');
   
-  return Array.from(grouped.entries())
-    .map(([officeId, value]) => ({
-      name: `Escritório ${officeId.slice(0, 8)}`,
-      value
-    }))
+  // Agrupar dados com nomes de escritórios
+  const officeMap = new Map<string, { name: string; values: number[] }>();
+  
+  data.forEach(item => {
+    const officeId = item.office_id;
+    const officeName = item.offices?.name || `Escritório ${officeId?.slice(0, 8) || 'N/A'}`;
+    const value = parseFloat(item[valueField] || 0);
+    
+    if (!officeMap.has(officeId)) {
+      officeMap.set(officeId, { name: officeName, values: [] });
+    }
+    
+    officeMap.get(officeId)!.values.push(value);
+  });
+
+  // Calcular agregação e converter para array
+  return Array.from(officeMap.entries())
+    .map(([officeId, data]) => {
+      const aggregatedValue = aggregateValues(data.values, config.yAxis.aggregation || 'sum');
+      return {
+        name: data.name,
+        value: aggregatedValue
+      };
+    })
     .sort((a, b) => b.value - a.value)
     .slice(0, 10);
+}
+
+function aggregateValues(values: number[], aggregation: string): number {
+  if (values.length === 0) return 0;
+  
+  switch (aggregation) {
+    case 'sum':
+      return values.reduce((sum, val) => sum + val, 0);
+    case 'avg':
+      return values.reduce((sum, val) => sum + val, 0) / values.length;
+    case 'min':
+      return Math.min(...values);
+    case 'max':
+      return Math.max(...values);
+    case 'count':
+    case 'count_distinct':
+      return values.length;
+    default:
+      return values.reduce((sum, val) => sum + val, 0);
+  }
 }
 
 /**

@@ -24,18 +24,21 @@ export interface CommissionMetrics {
   };
 }
 
-export function useCommissionBreakdown(enabled: boolean = true) {
+export function useCommissionBreakdown(
+  enabled: boolean = true,
+  filterType?: 'office' | 'seller' | 'both'
+) {
   const { user, activeTenant } = useAuth();
 
   return useQuery({
-    queryKey: ['commission-breakdown', user?.id, activeTenant?.tenant_id],
+    queryKey: ['commission-breakdown', user?.id, activeTenant?.tenant_id, filterType],
     queryFn: async (): Promise<CommissionMetrics> => {
       if (!user?.id || !activeTenant?.tenant_id) {
         throw new Error('Usuário ou tenant não encontrado');
       }
 
       // Query otimizada para buscar breakdown por tipo
-      const { data: breakdownData, error } = await supabase
+      let query = supabase
         .from('commissions')
         .select(`
           commission_type,
@@ -43,6 +46,13 @@ export function useCommissionBreakdown(enabled: boolean = true) {
           status
         `)
         .eq('tenant_id', activeTenant.tenant_id);
+
+      // Aplicar filtro de tipo se especificado
+      if (filterType && filterType !== 'both') {
+        query = query.eq('commission_type', filterType);
+      }
+
+      const { data: breakdownData, error } = await query;
 
       if (error) {
         console.error('Erro ao buscar breakdown de comissões:', error);
@@ -53,7 +63,7 @@ export function useCommissionBreakdown(enabled: boolean = true) {
       const officeCommissions = breakdownData?.filter(c => c.commission_type === 'office') || [];
       const sellerCommissions = breakdownData?.filter(c => c.commission_type === 'seller') || [];
 
-      const processCommissionData = (commissions: any[]): CommissionBreakdown => {
+      const processCommissionData = (commissions: any[], type: 'office' | 'seller'): CommissionBreakdown => {
         const total_amount = commissions.reduce((sum, c) => sum + (c.commission_amount || 0), 0);
         const count = commissions.length;
         const avg_amount = count > 0 ? total_amount / count : 0;
@@ -71,7 +81,7 @@ export function useCommissionBreakdown(enabled: boolean = true) {
           .reduce((sum, c) => sum + (c.commission_amount || 0), 0);
 
         return {
-          commission_type: commissions[0]?.commission_type || 'office',
+          commission_type: type,
           total_amount,
           count,
           avg_amount,
@@ -81,8 +91,8 @@ export function useCommissionBreakdown(enabled: boolean = true) {
         };
       };
 
-      const office = processCommissionData(officeCommissions);
-      const seller = processCommissionData(sellerCommissions);
+      const office = processCommissionData(officeCommissions, 'office');
+      const seller = processCommissionData(sellerCommissions, 'seller');
 
       // Métricas combinadas
       const combined_total = office.total_amount + seller.total_amount;

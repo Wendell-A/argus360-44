@@ -25,9 +25,11 @@ export default function Consorcios() {
     createProduct, 
     updateProduct, 
     deleteProduct,
+    duplicateProduct,
     isCreating,
     isUpdating,
-    isDeleting
+    isDeleting,
+    isDuplicating
   } = useConsortiumProducts();
 
   console.log("Consorcios page - activeTenant:", activeTenant);
@@ -56,6 +58,12 @@ export default function Consorcios() {
   const handleDeleteProduct = (id: string) => {
     if (confirm("Tem certeza que deseja deletar este produto?")) {
       deleteProduct(id);
+    }
+  };
+
+  const handleDuplicateProduct = (id: string) => {
+    if (confirm("Deseja duplicar este produto?")) {
+      duplicateProduct(id);
     }
   };
 
@@ -281,6 +289,7 @@ export default function Consorcios() {
                 product={product}
                 onEdit={handleEditProduct}
                 onView={handleEditProduct}
+                onDuplicate={handleDuplicateProduct}
               />
             ))}
           </div>
