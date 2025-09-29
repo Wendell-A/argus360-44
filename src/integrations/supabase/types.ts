@@ -1209,6 +1209,76 @@ export type Database = {
           },
         ]
       }
+      proposals: {
+        Row: {
+          client_id: string
+          created_at: string
+          data_da_simulacao: string
+          id: string
+          office_id: string
+          prazo: number
+          product_id: string
+          taxa_comissao_escritorio: number
+          taxa_comissao_vendedor: number
+          tenant_id: string
+          updated_at: string
+          valor_da_parcela: number
+          valor_da_simulacao: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data_da_simulacao: string
+          id?: string
+          office_id: string
+          prazo: number
+          product_id: string
+          taxa_comissao_escritorio: number
+          taxa_comissao_vendedor: number
+          tenant_id: string
+          updated_at?: string
+          valor_da_parcela: number
+          valor_da_simulacao: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data_da_simulacao?: string
+          id?: string
+          office_id?: string
+          prazo?: number
+          product_id?: string
+          taxa_comissao_escritorio?: number
+          taxa_comissao_vendedor?: number
+          tenant_id?: string
+          updated_at?: string
+          valor_da_parcela?: number
+          valor_da_simulacao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_invitation_links: {
         Row: {
           created_at: string | null

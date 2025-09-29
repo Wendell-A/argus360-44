@@ -12,6 +12,7 @@ import { ConsortiumCalculator } from '@/lib/financial/ConsortiumCalculator';
 import { formatCurrency } from '@/lib/utils';
 import { ProductSelector } from '@/components/ProductSelector';
 import { BankFinancingOptions } from '@/components/BankFinancingOptions';
+import { ProposalModal } from '@/components/ProposalModal';
 import { getBankRates, calculateIOF } from '@/lib/financial/InterestRates';
 import type { ExtendedConsortiumProduct } from '@/hooks/useConsortiumProducts';
 
@@ -32,6 +33,7 @@ const SimulacaoConsorcio = () => {
 
   const [assetType, setAssetType] = useState<'vehicle' | 'real_estate'>('real_estate');
   const [financingAssetType, setFinancingAssetType] = useState<'vehicle' | 'real_estate'>('real_estate');
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
 
   // Gerar opções de parcelas - exatamente 35 opções de 12 a 420 meses, ano a ano
   const generateInstallmentOptions = () => {
@@ -109,8 +111,7 @@ const SimulacaoConsorcio = () => {
   const economyAmount = totalFinancingCost - consortiumCalculation.totalCost;
 
   const handleRegisterQuote = () => {
-    // TODO: Implementar modal de registro de orçamento
-    console.log('Registrar orçamento');
+    setIsProposalModalOpen(true);
   };
 
   return (
@@ -497,7 +498,12 @@ const SimulacaoConsorcio = () => {
             </div>
 
             <div className="mt-6 text-center">
-              <Button onClick={handleRegisterQuote} size="lg" className="w-full md:w-auto">
+              <Button 
+                onClick={handleRegisterQuote} 
+                size="lg" 
+                className="w-full md:w-auto"
+                disabled={!consortiumCreditValue || !selectedProduct}
+              >
                 <FileText className="w-4 h-4 mr-2" />
                 Registrar Orçamento
               </Button>
@@ -508,6 +514,18 @@ const SimulacaoConsorcio = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ProposalModal
+        open={isProposalModalOpen}
+        onOpenChange={setIsProposalModalOpen}
+        simulationData={{
+          creditValue: consortiumCreditValue,
+          monthlyPayment: consortiumCalculation.monthlyPayment,
+          term: consortiumTerm,
+          productId: selectedProduct?.id || '',
+          adminRate: adminRate,
+        }}
+      />
     </div>
   );
 };
