@@ -183,41 +183,55 @@ function getTableName(type: string): string {
 }
 
 function getSelectFields(config: ChartConfig): string {
-  const valueField = getValueField(config.yAxis.type);
+  const baseFields = 'id, tenant_id, created_at';
+  const yType = config.yAxis.type;
+  const xType = config.xAxis;
   
-  switch (config.xAxis) {
-    case 'time':
-      const dateField = getDateField(config.yAxis.type);
-      return `${valueField}, ${dateField}`;
+  switch (yType) {
+    case 'sales':
+      return `${baseFields}, sale_value, sale_date, seller_id, product_id, office_id, status`;
     
-    case 'products':
-      // Para comissões, buscar via sale_id -> sales -> product_id
-      if (config.yAxis.type === 'commissions') {
-        return `${valueField}, sale_id, sales!inner(product_id, consortium_products!inner(name))`;
+    case 'commissions':
+      // CRITICAL: Não fazer JOIN direto com profiles/offices
+      // recipient_id não tem FK - enriquecer dados depois
+      let commSelect = `${baseFields}, commission_amount, due_date, recipient_id, recipient_type, commission_type, sale_id`;
+      
+      // Se X-axis é produto, precisamos do JOIN com sales -> consortium_products
+      if (xType === 'products') {
+        commSelect += `, sales!inner(product_id, consortium_products(name))`;
       }
-      return `${valueField}, product_id, consortium_products!inner(name)`;
+      
+      return commSelect;
+    
+    case 'clients':
+      // Clientes podem ser agrupados por vendedor (responsible_user_id) ou escritório
+      let clientSelect = `${baseFields}, name, responsible_user_id, office_id`;
+      
+      if (xType === 'sellers') {
+        clientSelect += `, profiles!clients_responsible_user_id_fkey(full_name)`;
+      }
+      
+      return clientSelect;
     
     case 'sellers':
-      // Para comissões, usar recipient_id SEM JOIN
-      if (config.yAxis.type === 'commissions') {
-        return `${valueField}, recipient_id, commission_type`;
-      }
-      // Para vendas, usar seller_id
-      if (config.yAxis.type === 'sales') {
-        return `${valueField}, seller_id, profiles!sales_seller_id_fkey(full_name)`;
-      }
-      return `${valueField}, seller_id`;
+      // Vendedores sempre vem de tenant_users com JOIN para profiles
+      return `${baseFields}, profiles!inner(full_name, id)`;
     
-    case 'offices':
-      // Para comissões, usar recipient_id SEM JOIN
-      if (config.yAxis.type === 'commissions') {
-        return `${valueField}, recipient_id, commission_type`;
+    case 'goals':
+      // Metas podem ser individuais (user_id) ou de escritório (office_id)
+      let goalsSelect = `${baseFields}, target_amount, current_amount, goal_type, user_id, office_id`;
+      
+      if (xType === 'sellers') {
+        goalsSelect += `, profiles!goals_user_id_fkey(full_name)`;
       }
-      return `${valueField}, office_id, offices!inner(name)`;
+      
+      return goalsSelect;
+    
+    case 'products':
+      return `${baseFields}, name, commission_rate`;
     
     default:
-      const defaultDateField = getDateField(config.yAxis.type);
-      return `${valueField}, ${defaultDateField}`;
+      return baseFields;
   }
 }
 

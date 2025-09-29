@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Settings } from 'lucide-react';
+import { Settings, AlertCircle } from 'lucide-react';
 import { ChartConfig } from '@/hooks/useDashboardPersonalization';
 import { useDynamicChartData } from '@/hooks/useDynamicChartData';
+import { validateChartConfig, getValidationMessage } from '@/lib/chartValidation';
 import { WidgetConfigModal } from './WidgetConfigModal';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -27,9 +29,15 @@ interface ConfigurableChartProps {
 }
 
 export function ConfigurableChart({ config, onConfigChange, isRefreshing = false }: ConfigurableChartProps) {
-  const { data, isLoading } = useDynamicChartData(config);
   const { user, activeTenant } = useAuth();
   const [configModalOpen, setConfigModalOpen] = useState(false);
+  
+  // Validar configuração antes de buscar dados
+  const validation = validateChartConfig(config);
+  const validationMessage = getValidationMessage(config);
+  
+  // Só buscar dados se configuração for válida
+  const { data, isLoading } = useDynamicChartData(config);
 
   // Verificar se usuário pode configurar (admin/owner)
   const canConfigure = user && activeTenant && onConfigChange && 
@@ -53,6 +61,46 @@ export function ConfigurableChart({ config, onConfigChange, isRefreshing = false
       onConfigChange(newConfig);
     }
   };
+
+  // Se configuração inválida, mostrar mensagem
+  if (!validation.isValid) {
+    return (
+      <Card className="h-full">
+        <CardHeader className="relative group">
+          <CardTitle className="text-sm font-medium pr-8">{config.title}</CardTitle>
+          {canConfigure && onConfigChange && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfigModalOpen(true)}
+              className="absolute right-4 top-4 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Configuração Inválida</strong>
+              <p className="mt-2 text-sm">{validationMessage}</p>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+        
+        {canConfigure && onConfigChange && (
+          <WidgetConfigModal
+            open={configModalOpen}
+            onOpenChange={setConfigModalOpen}
+            widgetType="chart"
+            config={config}
+            onSave={handleConfigSave}
+          />
+        )}
+      </Card>
+    );
+  }
 
   if (isLoading) {
     return (

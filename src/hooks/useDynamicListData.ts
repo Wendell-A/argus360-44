@@ -137,28 +137,57 @@ async function getUpcomingTasks(tenantId: string, limit: number) {
 }
 
 async function getCommissionBreakdown(tenantId: string, limit: number) {
-  const { data, error } = await supabase
+  // CRITICAL FIX: commissions.recipient_id não tem FK para profiles/offices
+  // Implementar busca em duas etapas (igual useDynamicChartData.ts)
+  
+  // Etapa 1: Buscar comissões básicas
+  const { data: commissions, error } = await supabase
     .from('commissions')
-    .select(`
-      id,
-      commission_amount,
-      commission_type,
-      status,
-      due_date,
-      profiles!commissions_recipient_id_fkey(full_name),
-      offices(name)
-    `)
+    .select('id, commission_amount, commission_type, status, due_date, recipient_id, recipient_type')
     .eq('tenant_id', tenantId)
     .order('due_date', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
+  if (!commissions || commissions.length === 0) return [];
 
-  return (data || []).map(commission => ({
+  // Etapa 2: Enriquecer com nomes de recipients
+  const sellerIds = commissions
+    .filter(c => c.recipient_type === 'seller')
+    .map(c => c.recipient_id);
+  
+  const officeIds = commissions
+    .filter(c => c.recipient_type === 'office')
+    .map(c => c.recipient_id);
+
+  // Buscar nomes de vendedores
+  const sellerNames = new Map<string, string>();
+  if (sellerIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', sellerIds);
+    
+    profiles?.forEach(p => sellerNames.set(p.id, p.full_name));
+  }
+
+  // Buscar nomes de escritórios
+  const officeNames = new Map<string, string>();
+  if (officeIds.length > 0) {
+    const { data: offices } = await supabase
+      .from('offices')
+      .select('id, name')
+      .in('id', officeIds);
+    
+    offices?.forEach(o => officeNames.set(o.id, o.name));
+  }
+
+  // Mapear resultados com nomes enriquecidos
+  return commissions.map(commission => ({
     id: commission.id,
-    recipient_name: commission.commission_type === 'office' 
-      ? (commission.offices as any)?.name || 'N/A'
-      : (commission.profiles as any)?.full_name || 'N/A',
+    recipient_name: commission.recipient_type === 'office'
+      ? officeNames.get(commission.recipient_id) || 'Escritório Desconhecido'
+      : sellerNames.get(commission.recipient_id) || 'Vendedor Desconhecido',
     commission_type: commission.commission_type,
     commission_amount: commission.commission_amount,
     status: commission.status,
