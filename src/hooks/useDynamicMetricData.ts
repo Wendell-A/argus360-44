@@ -43,14 +43,51 @@ async function getMetricValue(
   startDate: Date, 
   endDate: Date
 ): Promise<number> {
-  const tableName = getTableName(config.type);
-  let query = supabase.from(tableName as any);
-
-  // Aplicar filtros básicos
-  query = (query as any).eq('tenant_id', tenantId);
-  
-  // Aplicar filtro de data baseado no tipo
+  let query;
+  const selectField = getSelectField(config);
   const dateField = getDateField(config.type);
+
+  // Criar query específica por tipo para garantir tipagem correta
+  switch (config.type) {
+    case 'sales':
+      query = supabase.from('sales')
+        .select(selectField)
+        .eq('tenant_id', tenantId)
+        .eq('status', 'approved');
+      break;
+    case 'commissions':
+      query = supabase.from('commissions')
+        .select(selectField)
+        .eq('tenant_id', tenantId);
+      break;
+    case 'clients':
+      query = supabase.from('clients')
+        .select(selectField)
+        .eq('tenant_id', tenantId);
+      break;
+    case 'sellers':
+      query = supabase.from('tenant_users')
+        .select(selectField)
+        .eq('tenant_id', tenantId)
+        .eq('active', true);
+      break;
+    case 'goals':
+      query = supabase.from('goals')
+        .select(selectField)
+        .eq('tenant_id', tenantId);
+      break;
+    case 'products':
+      query = supabase.from('consortium_products')
+        .select(selectField)
+        .eq('tenant_id', tenantId);
+      break;
+    default:
+      query = supabase.from('sales')
+        .select(selectField)
+        .eq('tenant_id', tenantId);
+  }
+
+  // Aplicar filtro de data se disponível
   if (dateField) {
     query = query
       .gte(dateField, startDate.toISOString().split('T')[0])
@@ -66,12 +103,7 @@ async function getMetricValue(
     query = query.in('office_id', config.filter.offices);
   }
 
-  // Aplicar status específicos por tipo
-  if (config.type === 'sales') {
-    query = query.eq('status', 'approved');
-  }
-
-  const { data, error } = await query.select(getSelectField(config));
+  const { data, error } = await query;
 
   if (error) throw error;
 

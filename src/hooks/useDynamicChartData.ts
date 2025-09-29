@@ -24,20 +24,50 @@ export function useDynamicChartData(config: ChartConfig) {
 }
 
 async function getChartData(config: ChartConfig, tenantId: string): Promise<ChartDataPoint[]> {
-  const tableName = getTableName(config.yAxis.type);
-  let query = supabase.from(tableName as any);
+  const selectFields = getSelectFields(config);
+  let query;
 
-  // Filtros básicos
-  query = (query as any).eq('tenant_id', tenantId);
-
-  // Aplicar filtros de status específicos
-  if (config.yAxis.type === 'sales') {
-    query = query.eq('status', 'approved');
+  // Criar query específica por tipo para garantir tipagem correta
+  switch (config.yAxis.type) {
+    case 'sales':
+      query = supabase.from('sales')
+        .select(selectFields)
+        .eq('tenant_id', tenantId)
+        .eq('status', 'approved');
+      break;
+    case 'commissions':
+      query = supabase.from('commissions')
+        .select(selectFields)
+        .eq('tenant_id', tenantId);
+      break;
+    case 'clients':
+      query = supabase.from('clients')
+        .select(selectFields)
+        .eq('tenant_id', tenantId);
+      break;
+    case 'sellers':
+      query = supabase.from('tenant_users')
+        .select(selectFields)
+        .eq('tenant_id', tenantId)
+        .eq('active', true);
+      break;
+    case 'goals':
+      query = supabase.from('goals')
+        .select(selectFields)
+        .eq('tenant_id', tenantId);
+      break;
+    case 'products':
+      query = supabase.from('consortium_products')
+        .select(selectFields)
+        .eq('tenant_id', tenantId);
+      break;
+    default:
+      query = supabase.from('sales')
+        .select(selectFields)
+        .eq('tenant_id', tenantId);
   }
 
-  // Selecionar campos baseados no eixo X
-  const selectFields = getSelectFields(config);
-  const { data, error } = await query.select(selectFields);
+  const { data, error } = await query;
 
   if (error) throw error;
 
