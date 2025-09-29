@@ -8,7 +8,9 @@ import {
   CreditCard, 
   Settings, 
   LogOut,
-  Monitor
+  Monitor,
+  GraduationCap,
+  MessageSquare
 } from 'lucide-react';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
@@ -40,6 +42,16 @@ const AdminLayout = () => {
       name: 'Super Admins',
       href: '/admin/super-admins',
       icon: Shield,
+    },
+    {
+      name: 'Treinamentos',
+      href: '/admin/training',
+      icon: GraduationCap,
+    },
+    {
+      name: 'Suporte',
+      href: '/admin/support',
+      icon: MessageSquare,
     },
     {
       name: 'Monitor Sistema',
