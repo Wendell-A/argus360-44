@@ -634,6 +634,42 @@ export type Database = {
           },
         ]
       }
+      dashboard_configurations: {
+        Row: {
+          config_name: string
+          created_at: string
+          created_by: string
+          id: string
+          is_default: boolean | null
+          tenant_id: string
+          updated_at: string
+          user_id: string | null
+          widget_configs: Json
+        }
+        Insert: {
+          config_name: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_default?: boolean | null
+          tenant_id: string
+          updated_at?: string
+          user_id?: string | null
+          widget_configs?: Json
+        }
+        Update: {
+          config_name?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_default?: boolean | null
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string | null
+          widget_configs?: Json
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           created_at: string
