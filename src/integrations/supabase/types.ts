@@ -2257,7 +2257,7 @@ export type Database = {
           is_active: boolean
           name: string
           order_index: number
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2267,7 +2267,7 @@ export type Database = {
           is_active?: boolean
           name: string
           order_index?: number
-          tenant_id: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2277,7 +2277,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           order_index?: number
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2299,7 +2299,7 @@ export type Database = {
           id: string
           is_active: boolean
           order_index: number
-          tenant_id: string
+          tenant_id: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -2313,7 +2313,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
-          tenant_id: string
+          tenant_id?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -2327,7 +2327,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
-          tenant_id?: string
+          tenant_id?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
