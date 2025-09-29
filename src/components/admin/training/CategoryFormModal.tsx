@@ -86,18 +86,12 @@ export function CategoryFormModal({ open, onClose, category }: CategoryFormModal
         }
       );
     } else {
-      createMutation.mutate(
-        {
-          ...values,
-          tenant_id: '00000000-0000-0000-0000-000000000000', // Será substituído pelo tenant do admin
-        } as any,
-        {
-          onSuccess: () => {
-            onClose();
-            form.reset();
-          },
-        }
-      );
+      createMutation.mutate(values as any, {
+        onSuccess: () => {
+          onClose();
+          form.reset();
+        },
+      });
     }
   };
 

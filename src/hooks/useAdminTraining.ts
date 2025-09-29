@@ -73,10 +73,14 @@ export const useCreateTrainingCategory = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (category: Omit<TrainingCategory, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (category: Omit<TrainingCategory, 'id' | 'created_at' | 'updated_at' | 'tenant_id'>) => {
       const { data, error } = await supabase
         .from('training_categories')
-        .insert(category)
+        .insert({
+          ...category,
+          // tenant_id será NULL para conteúdo global de super admin
+          tenant_id: null as any
+        })
         .select()
         .single();
 
@@ -192,7 +196,7 @@ export const useCreateTrainingVideo = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (video: Omit<TrainingVideo, 'id' | 'created_at' | 'updated_at' | 'thumbnail_url' | 'duration_seconds'> & { youtube_video_id: string }) => {
+    mutationFn: async (video: Omit<TrainingVideo, 'id' | 'created_at' | 'updated_at' | 'thumbnail_url' | 'duration_seconds' | 'tenant_id'> & { youtube_video_id: string }) => {
       // Extrair ID do vídeo se for uma URL completa
       const videoId = extractYoutubeVideoId(video.youtube_video_id);
       
@@ -200,6 +204,8 @@ export const useCreateTrainingVideo = () => {
         ...video,
         youtube_video_id: videoId,
         thumbnail_url: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        // tenant_id será NULL para conteúdo global de super admin
+        tenant_id: null as any
       };
 
       const { data, error } = await supabase
