@@ -1305,12 +1305,15 @@ export type Database = {
       sales: {
         Row: {
           approval_date: string | null
+          ata: string | null
           cancellation_date: string | null
           client_id: string
+          cod_grupo: number | null
           commission_amount: number
           commission_rate: number
           completion_date: string | null
           contract_number: string | null
+          cota: number | null
           created_at: string | null
           down_payment: number | null
           id: string
@@ -1319,6 +1322,7 @@ export type Database = {
           notes: string | null
           office_id: string
           product_id: string
+          proposta: string | null
           sale_date: string
           sale_value: number
           seller_id: string
@@ -1329,12 +1333,15 @@ export type Database = {
         }
         Insert: {
           approval_date?: string | null
+          ata?: string | null
           cancellation_date?: string | null
           client_id: string
+          cod_grupo?: number | null
           commission_amount: number
           commission_rate: number
           completion_date?: string | null
           contract_number?: string | null
+          cota?: number | null
           created_at?: string | null
           down_payment?: number | null
           id?: string
@@ -1343,6 +1350,7 @@ export type Database = {
           notes?: string | null
           office_id: string
           product_id: string
+          proposta?: string | null
           sale_date?: string
           sale_value: number
           seller_id: string
@@ -1353,12 +1361,15 @@ export type Database = {
         }
         Update: {
           approval_date?: string | null
+          ata?: string | null
           cancellation_date?: string | null
           client_id?: string
+          cod_grupo?: number | null
           commission_amount?: number
           commission_rate?: number
           completion_date?: string | null
           contract_number?: string | null
+          cota?: number | null
           created_at?: string | null
           down_payment?: number | null
           id?: string
@@ -1367,6 +1378,7 @@ export type Database = {
           notes?: string | null
           office_id?: string
           product_id?: string
+          proposta?: string | null
           sale_date?: string
           sale_value?: number
           seller_id?: string

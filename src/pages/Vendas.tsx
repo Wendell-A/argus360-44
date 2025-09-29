@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash2, CheckCircle, X } from "lucide-react";
 import SaleModal from "@/components/SaleModal";
+import SalesFilters, { SalesFilterValues } from "@/components/SalesFilters";
 import { useSales, useCreateSale, useUpdateSale, useDeleteSale } from "@/hooks/useSales";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +32,7 @@ export default function Vendas() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState(null);
+  const [filters, setFilters] = useState<SalesFilterValues>({});
 
   const { sales, isLoading } = useSales();
   const { createSaleAsync, isCreating } = useCreateSale();
@@ -38,6 +40,57 @@ export default function Vendas() {
   const { deleteSaleAsync, isDeleting } = useDeleteSale();
   
   const { toast } = useToast();
+
+  // Aplicar filtros às vendas
+  const filteredSales = useMemo(() => {
+    if (!sales) return [];
+    
+    return sales.filter((sale) => {
+      // Filtro por nome do cliente
+      if (filters.clientName && !sale.clients?.name?.toLowerCase().includes(filters.clientName.toLowerCase())) {
+        return false;
+      }
+      
+      // Filtro por nome do produto
+      if (filters.productName && !sale.consortium_products?.name?.toLowerCase().includes(filters.productName.toLowerCase())) {
+        return false;
+      }
+      
+      // Filtro por status
+      if (filters.status && filters.status !== "all" && sale.status !== filters.status) {
+        return false;
+      }
+      
+      // Filtro por data de início
+      if (filters.dateFrom && sale.sale_date && new Date(sale.sale_date) < new Date(filters.dateFrom)) {
+        return false;
+      }
+      
+      // Filtro por data de fim
+      if (filters.dateTo && sale.sale_date && new Date(sale.sale_date) > new Date(filters.dateTo)) {
+        return false;
+      }
+      
+      // Filtro por pendências
+      if (filters.pendingAta && sale.ata) {
+        return false;
+      }
+      
+      if (filters.pendingProposta && sale.proposta) {
+        return false;
+      }
+      
+      if (filters.pendingCodGrupo && sale.cod_grupo) {
+        return false;
+      }
+      
+      if (filters.pendingCota && sale.cota) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [sales, filters]);
 
   const handleCreateSale = () => {
     setSelectedSale(null);
@@ -163,6 +216,28 @@ export default function Vendas() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const getDocumentationStatus = (sale) => {
+    const pending = [];
+    if (!sale.ata) pending.push("Ata");
+    if (!sale.proposta) pending.push("Proposta");
+    if (!sale.cod_grupo) pending.push("Cód. Grupo");
+    if (!sale.cota) pending.push("Cota");
+    
+    if (pending.length === 0) {
+      return <Badge variant="default" className="bg-green-600">Completo</Badge>;
+    }
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {pending.map((doc) => (
+          <Badge key={doc} variant="secondary" className="text-xs">
+            {doc} Pendente
+          </Badge>
+        ))}
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -184,18 +259,24 @@ export default function Vendas() {
         </Button>
       </div>
 
+      <SalesFilters onFilterChange={setFilters} />
+
       <Card>
         <CardHeader>
           <CardTitle>Lista de Vendas</CardTitle>
         </CardHeader>
         <CardContent>
-          {sales.length === 0 ? (
+          {filteredSales.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhuma venda encontrada</p>
-              <Button onClick={handleCreateSale} className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Criar primeira venda
-              </Button>
+              <p className="text-muted-foreground">
+                {sales.length === 0 ? "Nenhuma venda encontrada" : "Nenhuma venda corresponde aos filtros"}
+              </p>
+              {sales.length === 0 && (
+                <Button onClick={handleCreateSale} className="mt-4">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar primeira venda
+                </Button>
+              )}
             </div>
           ) : (
             <Table>
@@ -207,11 +288,12 @@ export default function Vendas() {
                   <TableHead>Comissão</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Status da Documentação</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sales.map((sale) => (
+                {filteredSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell>
                       {sale.clients?.name || 'Cliente não encontrado'}
@@ -225,6 +307,7 @@ export default function Vendas() {
                     </TableCell>
                     <TableCell>{formatDate(sale.sale_date)}</TableCell>
                     <TableCell>{getStatusBadge(sale.status)}</TableCell>
+                    <TableCell>{getDocumentationStatus(sale)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button

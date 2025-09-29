@@ -29,13 +29,16 @@ export default function SaleModal({ open, onOpenChange, sale, onSave, isLoading 
     product_id: "",
     office_id: "",
     sale_value: "",
-    down_payment: "",
     installments: "",
     monthly_payment: "",
     commission_rate: "",
     sale_date: "",
     status: "pending",
     notes: "",
+    ata: "",
+    proposta: "",
+    cod_grupo: "",
+    cota: "",
   });
 
   const { clients } = useClients();
@@ -51,13 +54,16 @@ export default function SaleModal({ open, onOpenChange, sale, onSave, isLoading 
         product_id: sale.product_id || "",
         office_id: sale.office_id || "",
         sale_value: sale.sale_value?.toString() || "",
-        down_payment: sale.down_payment?.toString() || "",
         installments: sale.installments?.toString() || "",
         monthly_payment: sale.monthly_payment?.toString() || "",
         commission_rate: sale.commission_rate?.toString() || "",
         sale_date: sale.sale_date || "",
         status: sale.status || "pending",
         notes: sale.notes || "",
+        ata: sale.ata || "",
+        proposta: sale.proposta || "",
+        cod_grupo: sale.cod_grupo?.toString() || "",
+        cota: sale.cota?.toString() || "",
       });
     } else {
       setFormData({
@@ -66,13 +72,16 @@ export default function SaleModal({ open, onOpenChange, sale, onSave, isLoading 
         product_id: "",
         office_id: "",
         sale_value: "",
-        down_payment: "",
         installments: "",
         monthly_payment: "",
         commission_rate: "",
         sale_date: new Date().toISOString().split('T')[0],
         status: "pending",
         notes: "",
+        ata: "",
+        proposta: "",
+        cod_grupo: "",
+        cota: "",
       });
     }
   }, [sale, open]);
@@ -114,7 +123,7 @@ export default function SaleModal({ open, onOpenChange, sale, onSave, isLoading 
       product_id: formData.product_id,
       office_id: formData.office_id,
       sale_value: saleValue,
-      down_payment: formData.down_payment ? parseFloat(formData.down_payment) : 0,
+      down_payment: 0, // Sempre 0 conforme Tarefa 3
       installments: parseInt(formData.installments),
       monthly_payment: parseFloat(formData.monthly_payment),
       commission_rate: commissionRate,
@@ -122,6 +131,10 @@ export default function SaleModal({ open, onOpenChange, sale, onSave, isLoading 
       sale_date: formData.sale_date,
       status: formData.status,
       notes: formData.notes || null,
+      ata: formData.ata || null,
+      proposta: formData.proposta || null,
+      cod_grupo: formData.cod_grupo ? parseInt(formData.cod_grupo) : null,
+      cota: formData.cota ? parseInt(formData.cota) : null,
     };
 
     onSave(data);
@@ -218,14 +231,46 @@ export default function SaleModal({ open, onOpenChange, sale, onSave, isLoading 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="down_payment">Entrada</Label>
+              <Label htmlFor="ata">Ata</Label>
               <Input
-                id="down_payment"
+                id="ata"
+                type="text"
+                placeholder="Número da ata"
+                value={formData.ata}
+                onChange={(e) => handleChange("ata", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="proposta">Proposta</Label>
+              <Input
+                id="proposta"
+                type="text"
+                placeholder="Número da proposta"
+                value={formData.proposta}
+                onChange={(e) => handleChange("proposta", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cod_grupo">Cód. Grupo</Label>
+              <Input
+                id="cod_grupo"
                 type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.down_payment}
-                onChange={(e) => handleChange("down_payment", e.target.value)}
+                placeholder="Código do grupo"
+                value={formData.cod_grupo}
+                onChange={(e) => handleChange("cod_grupo", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cota">Cota</Label>
+              <Input
+                id="cota"
+                type="number"
+                placeholder="Número da cota"
+                value={formData.cota}
+                onChange={(e) => handleChange("cota", e.target.value)}
               />
             </div>
 
