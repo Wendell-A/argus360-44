@@ -31,6 +31,8 @@ import Configuracoes from '@/pages/Configuracoes';
 import Auditoria from '@/pages/Auditoria';
 import AuditoriaSeguranca from '@/pages/AuditoriaSeguranca';
 import Suporte from '@/pages/Suporte';
+import Proposals from '@/pages/Proposals';
+import Training from '@/pages/Training';
 import NotFound from '@/pages/NotFound';
 import { PublicRoute } from '@/components/auth/PublicRoute';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -83,6 +85,8 @@ function App() {
                 <Route path="/comissoes" element={<Comissoes />} />
                 <Route path="/consorcios" element={<Consorcios />} />
                 <Route path="/simulacao-consorcio" element={<SimulacaoConsorcio />} />
+                <Route path="/proposals" element={<Proposals />} />
+                <Route path="/training" element={<Training />} />
                 <Route path="/suporte" element={<Suporte />} />
                 <Route path="/metas" element={<Metas />} />
                 <Route path="/relatorios" element={<Relatorios />} />

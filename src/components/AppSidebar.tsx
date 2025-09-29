@@ -22,7 +22,9 @@ import {
   Calculator,
   Briefcase,
   Car,
-  MessageSquare
+  MessageSquare,
+  FileSpreadsheet,
+  Play
 } from 'lucide-react';
 import {
   Sidebar,
@@ -76,8 +78,10 @@ export default function AppSidebar() {
         { name: 'Vendedores', path: '/vendedores', icon: UsersIcon, enabled: menuConfig?.modules?.sellers || false },
         { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
         { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },
+        { name: 'Orçamentos', path: '/proposals', icon: FileSpreadsheet, enabled: true },
         { name: 'Metas', path: '/metas', icon: Target, enabled: true },
         { name: 'Simulação Consórcio', path: '/simulacao-consorcio', icon: Calculator, enabled: true },
+        { name: 'Treinamentos', path: '/training', icon: Play, enabled: true },
         { name: 'Suporte', path: '/suporte', icon: MessageSquare, enabled: true },
       ]
     },
