@@ -8,6 +8,18 @@ import { useDynamicChartData } from '@/hooks/useDynamicChartData';
 import { WidgetConfigModal } from './WidgetConfigModal';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Cores vibrantes para todos os gráficos
+const VIBRANT_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // green
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#14b8a6', // teal
+  '#f97316', // orange
+];
+
 interface ConfigurableChartProps {
   config: ChartConfig;
   onConfigChange?: (config: ChartConfig) => void;
@@ -33,7 +45,7 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
     return value.toLocaleString('pt-BR');
   };
 
-  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+  
 
   const handleConfigSave = (newConfig: ChartConfig) => {
     if (onConfigChange) {
@@ -88,7 +100,7 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
               />
               <Bar 
                 dataKey="value" 
-                fill="hsl(var(--primary))"
+                fill={VIBRANT_COLORS[0]}
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -120,9 +132,9 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
               <Line 
                 type="monotone" 
                 dataKey="value" 
-                stroke="hsl(var(--primary))"
+                stroke={VIBRANT_COLORS[0]}
                 strokeWidth={2}
-                dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
+                dot={{ fill: VIBRANT_COLORS[0], strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -153,8 +165,9 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
               <Area 
                 type="monotone" 
                 dataKey="value" 
-                stroke="hsl(var(--primary))"
-                fill="hsl(var(--primary) / 0.2)"
+                stroke={VIBRANT_COLORS[0]}
+                fill={VIBRANT_COLORS[0]}
+                fillOpacity={0.6}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -175,7 +188,7 @@ export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartP
                 dataKey="value"
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  <Cell key={`cell-${index}`} fill={VIBRANT_COLORS[index % VIBRANT_COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip 

@@ -329,6 +329,38 @@ export function WidgetConfigModal({
             </Select>
           </div>
         </div>
+
+        {/* Configuração de Comissões para Gráficos */}
+        {chartConfig.yAxis.type === 'commissions' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Configuração de Comissões</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Incluir Comissões de Escritório</Label>
+                <Switch
+                  checked={chartConfig.commissionConfig?.includeOffice ?? true}
+                  onCheckedChange={(checked) => updateCommissionConfig({ includeOffice: checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Incluir Comissões de Vendedores</Label>
+                <Switch
+                  checked={chartConfig.commissionConfig?.includeSeller ?? true}
+                  onCheckedChange={(checked) => updateCommissionConfig({ includeSeller: checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Separar por Tipo</Label>
+                <Switch
+                  checked={chartConfig.commissionConfig?.separateTypes ?? false}
+                  onCheckedChange={(checked) => updateCommissionConfig({ separateTypes: checked })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };
