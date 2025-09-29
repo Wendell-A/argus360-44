@@ -14,13 +14,12 @@ interface DynamicMetricCardProps {
 
 export function DynamicMetricCard({ config, onConfigChange }: DynamicMetricCardProps) {
   const { data, isLoading } = useDynamicMetricData(config);
-  const { user } = useAuth();
+  const { user, activeTenant } = useAuth();
   const [configModalOpen, setConfigModalOpen] = useState(false);
 
   // Verificar se usuário pode configurar (admin/owner)
-  const canConfigure = user && onConfigChange && 
-    (user as any)?.user_metadata?.role === 'admin' || 
-    (user as any)?.user_metadata?.role === 'owner';
+  const canConfigure = user && activeTenant && onConfigChange && 
+    ['owner', 'admin'].includes(activeTenant.user_role || '');
 
   const getIcon = () => {
     switch (config.type) {

@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Eye, Save } from 'lucide-react';
-import { useActiveDashboardConfig, useDashboardConfigurations } from '@/hooks/useDashboardPersonalization';
+import { toast } from 'sonner';
+import { useActiveDashboardConfig, useDashboardConfigurations, useSaveDashboardConfiguration } from '@/hooks/useDashboardPersonalization';
 import { DashboardConfigModal } from './DashboardConfigModal';
 import { DynamicMetricCard } from './DynamicMetricCard';
 import { ConfigurableChart } from './ConfigurableChart';
@@ -12,11 +13,56 @@ import { useAuth } from '@/contexts/AuthContext';
 export function ConfigurableDashboard() {
   const [selectedConfig, setSelectedConfig] = useState<'A' | 'B' | 'C'>('A');
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, activeTenant } = useAuth();
   const { data: configurations } = useDashboardConfigurations();
-  const { data: activeConfig, isLoading } = useActiveDashboardConfig(selectedConfig);
+  const { data: activeConfig, isLoading, refetch } = useActiveDashboardConfig(selectedConfig);
+  const saveMutation = useSaveDashboardConfiguration();
 
-  const canManageConfigs = user && ['owner', 'admin'].includes(user.role || '');
+  const canManageConfigs = user && activeTenant && ['owner', 'admin'].includes(activeTenant.user_role || '');
+
+  const handleMetricChange = async (newConfig: any) => {
+    if (!activeConfig) return;
+    
+    const updatedConfig = {
+      ...activeConfig,
+      widget_configs: {
+        ...activeConfig.widget_configs,
+        metrics: activeConfig.widget_configs.metrics.map(metric => 
+          metric.id === newConfig.id ? newConfig : metric
+        ),
+      },
+    };
+
+    try {
+      await saveMutation.mutateAsync(updatedConfig);
+      refetch();
+      toast.success('Configuração salva com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao salvar configuração');
+    }
+  };
+
+  const handleChartChange = async (newConfig: any) => {
+    if (!activeConfig) return;
+    
+    const updatedConfig = {
+      ...activeConfig,
+      widget_configs: {
+        ...activeConfig.widget_configs,
+        charts: activeConfig.widget_configs.charts.map(chart => 
+          chart.id === newConfig.id ? newConfig : chart
+        ),
+      },
+    };
+
+    try {
+      await saveMutation.mutateAsync(updatedConfig);
+      refetch();
+      toast.success('Configuração salva com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao salvar configuração');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -96,14 +142,22 @@ export function ConfigurableDashboard() {
       {/* Cards de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {activeConfig.widget_configs.metrics.map((metric) => (
-          <DynamicMetricCard key={metric.id} config={metric} />
+          <DynamicMetricCard 
+            key={metric.id} 
+            config={metric} 
+            onConfigChange={handleMetricChange}
+          />
         ))}
       </div>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {activeConfig.widget_configs.charts.map((chart) => (
-          <ConfigurableChart key={chart.id} config={chart} />
+          <ConfigurableChart 
+            key={chart.id} 
+            config={chart} 
+            onConfigChange={handleChartChange}
+          />
         ))}
       </div>
 

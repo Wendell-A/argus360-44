@@ -15,13 +15,12 @@ interface ConfigurableChartProps {
 
 export function ConfigurableChart({ config, onConfigChange }: ConfigurableChartProps) {
   const { data, isLoading } = useDynamicChartData(config);
-  const { user } = useAuth();
+  const { user, activeTenant } = useAuth();
   const [configModalOpen, setConfigModalOpen] = useState(false);
 
   // Verificar se usuário pode configurar (admin/owner)
-  const canConfigure = user && onConfigChange && 
-    (user as any)?.user_metadata?.role === 'admin' || 
-    (user as any)?.user_metadata?.role === 'owner';
+  const canConfigure = user && activeTenant && onConfigChange && 
+    ['owner', 'admin'].includes(activeTenant.user_role || '');
 
   const formatValue = (value: number) => {
     if (config.yAxis.type === 'sales' || config.yAxis.type === 'commissions') {
