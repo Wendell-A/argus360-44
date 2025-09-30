@@ -34,6 +34,7 @@ import AuditoriaSeguranca from '@/pages/AuditoriaSeguranca';
 import Suporte from '@/pages/Suporte';
 import Proposals from '@/pages/Proposals';
 import Training from '@/pages/Training';
+import Profile from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 import { PublicRoute } from '@/components/auth/PublicRoute';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -94,6 +95,7 @@ function App() {
                 <Route path="/proposals" element={<Proposals />} />
                 <Route path="/training" element={<Training />} />
                 <Route path="/suporte" element={<Suporte />} />
+                <Route path="/perfil" element={<Profile />} />
                 <Route path="/metas" element={<Metas />} />
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/escritorios" element={<Escritorios />} />

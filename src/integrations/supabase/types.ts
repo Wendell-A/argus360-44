@@ -3051,6 +3051,10 @@ export type Database = {
         Args: { tenant_uuid: string; user_uuid: string }
         Returns: Json
       }
+      get_user_profile_complete: {
+        Args: { user_uuid: string }
+        Returns: Json
+      }
       get_user_profile_safe: {
         Args: { user_uuid: string }
         Returns: Json

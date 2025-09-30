@@ -24,7 +24,8 @@ import {
   MessageSquare,
   FileSpreadsheet,
   Play,
-  FileWarning
+  FileWarning,
+  User
 } from 'lucide-react';
 import {
   Sidebar,
@@ -100,6 +101,7 @@ export default function AppSidebar() {
     {
       group: 'Sistema',
       items: [
+        { name: 'Perfil', path: '/perfil', icon: User, enabled: true },
         { name: 'Usuários', path: '/usuarios', icon: Users, enabled: menuConfig?.modules?.users || false },
         { name: 'Convites', path: '/convites', icon: FileText, enabled: menuConfig?.modules?.invitations || false },
         { name: 'Permissões', path: '/permissoes', icon: Shield, enabled: menuConfig?.modules?.permissions || false },
