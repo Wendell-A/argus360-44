@@ -546,6 +546,13 @@ export type Database = {
             foreignKeyName: "fk_commissions_parent"
             columns: ["parent_commission_id"]
             isOneToOne: false
+            referencedRelation: "commission_details_view"
+            referencedColumns: ["commission_id"]
+          },
+          {
+            foreignKeyName: "fk_commissions_parent"
+            columns: ["parent_commission_id"]
+            isOneToOne: false
             referencedRelation: "commissions"
             referencedColumns: ["id"]
           },
@@ -2444,6 +2451,66 @@ export type Database = {
       }
     }
     Views: {
+      commission_details_view: {
+        Row: {
+          base_amount: number | null
+          client_id: string | null
+          commission_amount: number | null
+          commission_id: string | null
+          commission_rate: number | null
+          commission_type: string | null
+          due_date: string | null
+          installment_number: number | null
+          office_id: string | null
+          product_id: string | null
+          product_name: string | null
+          recipient_id: string | null
+          recipient_type: string | null
+          sale_date: string | null
+          sale_id: string | null
+          seller_id: string | null
+          status: string | null
+          tenant_id: string | null
+          total_installments: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "consortium_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals_with_client_info: {
         Row: {
           client_email: string | null

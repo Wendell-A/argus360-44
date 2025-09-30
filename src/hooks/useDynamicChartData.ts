@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChartConfig, AggregationFilter } from './useDashboardPersonalization';
 import { applyDynamicTitle, generateChartTitle } from '@/lib/dynamicTitles';
+import { normalizeXAxis, normalizeDataType } from '@/lib/dimensions';
 
 // Cache inteligente por tipo de dado (gráficos)
 const getStaleTimeByType = (dataType: string): number => {
@@ -39,8 +40,14 @@ interface ChartDataPoint {
 export function useDynamicChartData(config: ChartConfig) {
   const { activeTenant } = useAuth();
   
-  // Aplicar título dinâmico se habilitado
-  const optimizedConfig = applyDynamicTitle(config, generateChartTitle);
+  // Normalizar xAxis para evitar conflitos plural/singular
+  const normalizedXAxis = normalizeXAxis(config.xAxis);
+  
+  // Aplicar título dinâmico e normalização
+  const optimizedConfig = {
+    ...applyDynamicTitle(config, generateChartTitle),
+    xAxis: normalizedXAxis,
+  };
 
   return useQuery({
     queryKey: [
@@ -48,7 +55,7 @@ export function useDynamicChartData(config: ChartConfig) {
       optimizedConfig.id, 
       optimizedConfig.type, 
       optimizedConfig.yAxis.type, 
-      optimizedConfig.xAxis,
+      normalizedXAxis,
       optimizedConfig.aggregationFilters,
       optimizedConfig.commissionConfig,
       activeTenant?.tenant_id
@@ -124,8 +131,9 @@ async function getChartData(config: ChartConfig, tenantId: string): Promise<Char
 
   // Se for comissões com vendedores/offices, buscar nomes dos profiles/offices
   let processedData = data || [];
-  if (config.yAxis.type === 'commissions' && (config.xAxis === 'sellers' || config.xAxis === 'offices')) {
-    processedData = await enrichCommissionData(processedData, config.xAxis, tenantId);
+  const normalizedXAxis = normalizeXAxis(config.xAxis);
+  if (config.yAxis.type === 'commissions' && (normalizedXAxis === 'sellers' || normalizedXAxis === 'offices')) {
+    processedData = await enrichCommissionData(processedData, normalizedXAxis, tenantId);
   }
 
   return processChartData(processedData, config);
@@ -139,13 +147,38 @@ async function enrichCommissionData(data: any[], axis: string, tenantId: string)
   if (!recipientIds.length) return data;
 
   if (axis === 'sellers') {
-    // Buscar nomes dos profiles
-    const { data: profiles } = await supabase
+    // IMPORTANTE: Buscar via tenant_users primeiro para garantir contexto do tenant
+    const { data: tenantUsers, error: tuError } = await supabase
+      .from('tenant_users')
+      .select('user_id, active')
+      .eq('tenant_id', tenantId)
+      .eq('active', true)
+      .in('user_id', recipientIds as string[]);
+
+    if (tuError) {
+      console.error('[enrichCommissionData] Erro ao buscar tenant_users:', tuError);
+      return data;
+    }
+
+    const validUserIds = tenantUsers?.map(tu => tu.user_id) || [];
+    
+    if (validUserIds.length === 0) {
+      return data;
+    }
+
+    // Agora buscar nomes em profiles
+    const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name')
-      .in('id', recipientIds);
+      .in('id', validUserIds);
+
+    if (profilesError) {
+      console.error('[enrichCommissionData] Erro ao buscar profiles:', profilesError);
+    }
     
-    const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
+    const profileMap = new Map(
+      profiles?.map(p => [p.id, p.full_name || `Vendedor ${p.id.slice(0, 8)}`]) || []
+    );
     
     return data.map(item => ({
       ...item,
@@ -277,7 +310,10 @@ function processChartData(data: any[], config: ChartConfig): ChartDataPoint[] {
     processedData = applyAggregationFilters(data, config);
   }
 
-  switch (config.xAxis) {
+  // Normalizar xAxis para garantir compatibilidade
+  const normalizedXAxis = normalizeXAxis(config.xAxis);
+
+  switch (normalizedXAxis) {
     case 'time':
       return processTimeData(processedData, config);
     
@@ -294,6 +330,7 @@ function processChartData(data: any[], config: ChartConfig): ChartDataPoint[] {
       return processClientData(processedData, config);
     
     default:
+      console.warn(`[processChartData] Eixo X desconhecido: ${normalizedXAxis}`);
       return processTimeData(processedData, config);
   }
 }
