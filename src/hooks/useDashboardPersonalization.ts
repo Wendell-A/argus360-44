@@ -24,6 +24,7 @@ export interface MetricConfig {
     products?: AggregationFilter;
     offices?: AggregationFilter;
     sellers?: AggregationFilter;
+    clients?: AggregationFilter;
   };
   commissionConfig?: CommissionTypeConfig;
   filter?: {
@@ -39,11 +40,12 @@ export interface ChartConfig {
   title: string;
   dynamicTitle?: boolean;
   yAxis: MetricConfig;
-  xAxis?: 'time' | 'products' | 'sellers' | 'offices';
+  xAxis?: 'time' | 'products' | 'sellers' | 'offices' | 'clients';
   aggregationFilters?: {
     products?: AggregationFilter;
     offices?: AggregationFilter;
     sellers?: AggregationFilter;
+    clients?: AggregationFilter;
   };
   commissionConfig?: CommissionTypeConfig;
   aggregation?: string[];
@@ -59,6 +61,7 @@ export interface ListConfig {
     products?: AggregationFilter;
     offices?: AggregationFilter;
     sellers?: AggregationFilter;
+    clients?: AggregationFilter;
   };
   commissionConfig?: CommissionTypeConfig;
 }

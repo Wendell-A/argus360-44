@@ -10,7 +10,7 @@ import { ChartConfig } from '@/hooks/useDashboardPersonalization';
  */
 
 export type YAxisType = 'sales' | 'commissions' | 'clients' | 'goals';
-export type XAxisType = 'time' | 'product' | 'seller' | 'office';
+export type XAxisType = 'time' | 'product' | 'seller' | 'office' | 'clients';
 export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min' | 'max';
 
 export interface TestCase {
@@ -32,7 +32,7 @@ export interface TestResult {
 
 /**
  * Matriz de compatibilidade - combinações que fazem sentido semanticamente
- * NOTA: Produtos e Vendedores são DIMENSÕES (X-axis), não métricas (Y-axis)
+ * NOTA: Produtos, Vendedores e Clientes são DIMENSÕES (X-axis), não métricas (Y-axis)
  */
 const COMPATIBILITY_MATRIX: Record<YAxisType, Record<XAxisType, boolean>> = {
   sales: {
@@ -40,24 +40,28 @@ const COMPATIBILITY_MATRIX: Record<YAxisType, Record<XAxisType, boolean>> = {
     product: true,   // Vendas por produto ✓
     seller: true,    // Vendas por vendedor ✓
     office: true,    // Vendas por escritório ✓
+    clients: true,   // Vendas por cliente ✓ (análise de comportamento)
   },
   commissions: {
     time: true,      // Comissões ao longo do tempo ✓
     product: true,   // Comissões por produto ✓
     seller: true,    // Comissões por vendedor ✓
     office: true,    // Comissões por escritório ✓
+    clients: true,   // Comissões por cliente ✓ (via JOIN com sales)
   },
   clients: {
-    time: true,      // Clientes ao longo do tempo ✓
+    time: true,      // Novos clientes ao longo do tempo ✓
     product: false,  // Clientes por produto ✗ (não tem FK direto)
-    seller: true,    // Clientes por vendedor responsável ✓
-    office: true,    // Clientes por escritório ✓
+    seller: true,    // Novos clientes por vendedor responsável ✓
+    office: true,    // Novos clientes por escritório ✓
+    clients: false,  // Não faz sentido agrupar clientes por clientes ✗
   },
   goals: {
     time: true,      // Metas ao longo do tempo ✓
     product: false,  // Metas por produto ✗ (não tem FK direto)
     seller: true,    // Metas individuais por vendedor ✓
     office: true,    // Metas por escritório ✓
+    clients: false,  // Metas por cliente ✗ (não tem FK direto)
   },
 };
 
@@ -72,12 +76,12 @@ const VALID_AGGREGATIONS: Record<YAxisType, AggregationType[]> = {
 };
 
 /**
- * Gera todos os casos de teste (96 combinações)
- * 4 tipos Y-axis × 4 tipos X-axis × 6 agregações = 96 combinações
+ * Gera todos os casos de teste (120 combinações)
+ * 4 tipos Y-axis × 5 tipos X-axis × 6 agregações = 120 combinações
  */
 export function generateTestCases(): TestCase[] {
   const yAxisTypes: YAxisType[] = ['sales', 'commissions', 'clients', 'goals'];
-  const xAxisTypes: XAxisType[] = ['time', 'product', 'seller', 'office'];
+  const xAxisTypes: XAxisType[] = ['time', 'product', 'seller', 'office', 'clients'];
   const aggregations: AggregationType[] = ['sum', 'count', 'count_distinct', 'avg', 'min', 'max'];
 
   const testCases: TestCase[] = [];

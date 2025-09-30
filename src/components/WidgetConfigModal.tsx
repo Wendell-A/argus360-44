@@ -58,12 +58,13 @@ const X_AXIS_OPTIONS = [
   { value: 'products', label: 'Produtos' },
   { value: 'sellers', label: 'Vendedores' },
   { value: 'offices', label: 'Escritórios' },
+  { value: 'clients', label: 'Clientes' },
 ];
 
 const METRIC_TYPES = [
   { value: 'sales', label: 'Vendas' },
   { value: 'commissions', label: 'Comissões' },
-  { value: 'clients', label: 'Clientes' },
+  { value: 'clients', label: 'Novos Clientes' },
   { value: 'goals', label: 'Metas' },
 ];
 

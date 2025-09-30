@@ -11,7 +11,7 @@ export interface ValidationResult {
 }
 
 export type YAxisType = 'sales' | 'commissions' | 'clients' | 'goals';
-export type XAxisType = 'time' | 'product' | 'seller' | 'office';
+export type XAxisType = 'time' | 'product' | 'seller' | 'office' | 'clients';
 export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min' | 'max';
 
 /**
@@ -23,24 +23,28 @@ const COMPATIBILITY_MATRIX: Record<string, Record<string, boolean>> = {
     product: true,   // Vendas tem product_id
     seller: true,    // Vendas tem seller_id
     office: true,    // Vendas tem office_id
+    clients: true,   // Vendas tem client_id - análise por cliente
   },
   commissions: {
     time: true,      // Comissões tem due_date
     product: true,   // Comissões -> sale_id -> sales -> product_id
     seller: true,    // Comissões tem recipient_id (quando recipient_type='seller')
     office: true,    // Comissões tem recipient_id (quando recipient_type='office')
+    clients: true,   // Comissões -> sale_id -> sales -> client_id
   },
   clients: {
     time: true,      // Clientes tem created_at
     product: false,  // Clientes não tem FK direto para produtos
     seller: true,    // Clientes tem responsible_user_id
     office: true,    // Clientes tem office_id
+    clients: false,  // Não faz sentido agrupar clientes por clientes
   },
   goals: {
     time: true,      // Metas tem period_start/period_end
     product: false,  // Metas não tem FK direto para produtos
     seller: true,    // Metas individuais tem user_id
     office: true,    // Metas de escritório tem office_id
+    clients: false,  // Metas não tem FK direto para clientes
   },
 };
 

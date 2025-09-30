@@ -1,19 +1,19 @@
 # Matriz de Compatibilidade - Dashboard Personalizável
 
 **Data:** 30/09/2025  
-**Versão:** 2.0 (BREAKING CHANGES)  
+**Versão:** 2.1 (Adição de Clientes como Dimensão)  
 **Autor:** Sistema Argos360
 
 ## 📊 Visão Geral
 
 Este documento define a matriz completa de compatibilidade entre tipos de dados (Y-axis), agrupamentos (X-axis) e agregações para o dashboard personalizável.
 
-**Total de Combinações:** 96 (4 × 4 × 6)
+**Total de Combinações:** 120 (4 × 5 × 6)
 - **Y-axis (Tipos de Dados - Métricas):** 4 opções
-- **X-axis (Agrupamentos - Dimensões):** 4 opções  
+- **X-axis (Agrupamentos - Dimensões):** 5 opções  
 - **Agregações:** 6 opções
 
-> **NOTA IMPORTANTE:** Produtos e Vendedores são DIMENSÕES de agrupamento (X-axis), não métricas (Y-axis)
+> **NOTA IMPORTANTE:** Produtos, Vendedores e Clientes são DIMENSÕES de agrupamento (X-axis), não métricas (Y-axis)
 
 ---
 
@@ -21,13 +21,14 @@ Este documento define a matriz completa de compatibilidade entre tipos de dados 
 
 ### 1. **Vendas (sales)**
 - **Tabela:** `sales`
-- **Campos Principais:** `sale_value`, `sale_date`, `seller_id`, `product_id`, `office_id`
+- **Campos Principais:** `sale_value`, `sale_date`, `seller_id`, `product_id`, `office_id`, `client_id`
 - **Agregações Válidas:** `sum`, `count`, `avg`, `min`, `max`
 - **Agrupamentos Compatíveis:**
   - ✅ **Tempo** - tem `sale_date`
   - ✅ **Produtos** - tem `product_id` (FK para `consortium_products`)
   - ✅ **Vendedores** - tem `seller_id` (FK para `profiles`)
   - ✅ **Escritórios** - tem `office_id` (FK para `offices`)
+  - ✅ **Clientes** - tem `client_id` (FK para `clients`) - **NOVO**
 
 ---
 
@@ -40,6 +41,7 @@ Este documento define a matriz completa de compatibilidade entre tipos de dados 
   - ✅ **Produtos** - via `sale_id -> sales -> product_id` (JOIN indireto)
   - ✅ **Vendedores** - `recipient_id` quando `recipient_type = 'seller'` ⚠️ *Sem FK - enriquecimento necessário*
   - ✅ **Escritórios** - `recipient_id` quando `recipient_type = 'office'` ⚠️ *Sem FK - enriquecimento necessário*
+  - ✅ **Clientes** - via `sale_id -> sales -> client_id` (JOIN indireto) - **NOVO**
 
 **IMPORTANTE:** A tabela `commissions` **NÃO possui foreign keys** para `recipient_id`. É necessário buscar dados em duas etapas:
 1. Buscar comissões com `recipient_id` e `recipient_type`
@@ -47,15 +49,18 @@ Este documento define a matriz completa de compatibilidade entre tipos de dados 
 
 ---
 
-### 3. **Clientes (clients)**
+### 3. **Novos Clientes (clients)** - RENOMEADO
 - **Tabela:** `clients`
 - **Campos Principais:** `name`, `created_at`, `responsible_user_id`, `office_id`
 - **Agregações Válidas:** `count`, `count_distinct`
 - **Agrupamentos Compatíveis:**
-  - ✅ **Tempo** - tem `created_at`
+  - ✅ **Tempo** - tem `created_at` (data de aquisição)
   - ❌ **Produtos** - sem relacionamento direto
   - ✅ **Vendedores** - tem `responsible_user_id` (FK para `profiles`)
   - ✅ **Escritórios** - tem `office_id` (FK para `offices`)
+  - ❌ **Clientes** - não faz sentido agrupar clientes por clientes
+
+**NOTA:** Esta métrica representa a **aquisição de novos clientes** (contagem de registros na tabela `clients`). Para analisar o comportamento dos clientes existentes (vendas, comissões, etc.), use "Clientes" como dimensão de agrupamento (X-axis).
 
 ---
 
@@ -96,12 +101,13 @@ Aplicáveis a: `clients`
 - **`product`** - Agrupamento por produtos (`consortium_products`)
 - **`seller`** - Agrupamento por vendedores (`tenant_users`/`profiles`)
 - **`office`** - Agrupamento por escritórios (`offices`)
+- **`clients`** - Agrupamento por clientes (`clients`) - **NOVO** - Permite análise de comportamento por cliente
 
 ---
 
 ## ✅ Matriz de Compatibilidade Completa
 
-### 1. Vendas (sales) - 24 combinações
+### 1. Vendas (sales) - 30 combinações
 
 | X-Axis \ Agregação | sum | count | avg | min | max | count_distinct |
 |-------------------|-----|-------|-----|-----|-----|----------------|
@@ -109,12 +115,19 @@ Aplicáveis a: `clients`
 | **Produtos**      | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
 | **Vendedores**    | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
 | **Escritórios**   | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
+| **Clientes** 🆕   | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
 
-**Combinações Válidas:** 20 de 24
+**Combinações Válidas:** 25 de 30
+
+**Novos casos de uso habilitados:**
+- 💰 Total vendido por cliente
+- 📊 Número de vendas por cliente (frequência)
+- 💵 Ticket médio por cliente
+- 📈 Valor mínimo/máximo de venda por cliente
 
 ---
 
-### 2. Comissões (commissions) - 24 combinações
+### 2. Comissões (commissions) - 30 combinações
 
 | X-Axis \ Agregação | sum | count | avg | min | max | count_distinct |
 |-------------------|-----|-------|-----|-----|-----|----------------|
@@ -122,13 +135,19 @@ Aplicáveis a: `clients`
 | **Produtos** ⚠️   | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
 | **Vendedores** ⚠️ | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
 | **Escritórios** ⚠️| ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
+| **Clientes** 🆕⚠️ | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
 
-**Combinações Válidas:** 20 de 24  
-⚠️ **Requer enriquecimento de dados** (sem FK direto)
+**Combinações Válidas:** 25 de 30  
+⚠️ **Requer enriquecimento de dados** (Clientes requer JOIN através de `sales`)
+
+**Novos casos de uso habilitados:**
+- 💰 Total de comissão gerada por cliente
+- 📊 Número de comissões por cliente
+- 💵 Comissão média por cliente
 
 ---
 
-### 3. Clientes (clients) - 24 combinações
+### 3. Novos Clientes (clients) - 30 combinações
 
 | X-Axis \ Agregação | sum | count | avg | min | max | count_distinct |
 |-------------------|-----|-------|-----|-----|-----|----------------|
@@ -136,12 +155,15 @@ Aplicáveis a: `clients`
 | **Produtos**      | ❌  | ❌    | ❌  | ❌  | ❌  | ❌             |
 | **Vendedores**    | ❌  | ✅    | ❌  | ❌  | ❌  | ✅             |
 | **Escritórios**   | ❌  | ✅    | ❌  | ❌  | ❌  | ✅             |
+| **Clientes**      | ❌  | ❌    | ❌  | ❌  | ❌  | ❌             |
 
-**Combinações Válidas:** 6 de 24
+**Combinações Válidas:** 6 de 30
+
+**Nota:** Esta métrica mede **aquisição de clientes**, não comportamento. Para análises de comportamento de clientes (vendas, comissões), use "Clientes" como X-axis.
 
 ---
 
-### 4. Metas (goals) - 24 combinações
+### 4. Metas (goals) - 30 combinações
 
 | X-Axis \ Agregação | sum | count | avg | min | max | count_distinct |
 |-------------------|-----|-------|-----|-----|-----|----------------|
@@ -149,31 +171,40 @@ Aplicáveis a: `clients`
 | **Produtos**      | ❌  | ❌    | ❌  | ❌  | ❌  | ❌             |
 | **Vendedores**    | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
 | **Escritórios**   | ✅  | ✅    | ✅  | ✅  | ✅  | ❌             |
+| **Clientes**      | ❌  | ❌    | ❌  | ❌  | ❌  | ❌             |
 
-**Combinações Válidas:** 15 de 24
+**Combinações Válidas:** 15 de 30
 
 ---
 
 ## 📊 Resumo Estatístico
 
-### Total de Combinações: 96
+### Total de Combinações: 120
 
-- ✅ **Combinações Válidas:** 61 (63.5%)
-- ❌ **Combinações Inválidas:** 35 (36.5%)
+- ✅ **Combinações Válidas:** 71 (59.2%)
+- ❌ **Combinações Inválidas:** 49 (40.8%)
 
 ### Por Tipo de Dado (Y-axis):
 
-| Tipo        | Válidas | Inválidas | Taxa |
-|-------------|---------|-----------|------|
-| Vendas      | 20/24   | 4/24      | 83%  |
-| Comissões   | 20/24   | 4/24      | 83%  |
-| Clientes    | 6/24    | 18/24     | 25%  |
-| Metas       | 15/24   | 9/24      | 63%  |
+| Tipo            | Válidas | Inválidas | Taxa  |
+|-----------------|---------|-----------|-------|
+| Vendas          | 25/30   | 5/30      | 83.3% |
+| Comissões       | 25/30   | 5/30      | 83.3% |
+| Novos Clientes  | 6/30    | 24/30     | 20.0% |
+| Metas           | 15/30   | 15/30     | 50.0% |
 
-### Melhorias v2.0:
-- **Redução de combinações inválidas:** De 81 para 35 (-57%)
-- **Aumento na taxa de aproveitamento:** De 43.75% para 63.5% (+45%)
-- **Eliminação de "furos":** Removidos sellers (8%) e products (0%) como Y-axis
+### Melhorias v2.1:
+- **Nova dimensão de análise:** Clientes como X-axis habilitado
+- **Novos insights:** +10 combinações válidas (vendas e comissões por cliente)
+- **Renomeação conceitual:** "Clientes" → "Novos Clientes" (Y-axis) para evitar confusão
+- **Total de combinações:** 96 → 120 (+25%)
+- **Taxa de aproveitamento:** 63.5% → 59.2% (ligeira redução esperada com mais opções)
+
+### Impacto de Negócio:
+- 🎯 **Visão 360º do cliente:** Agora é possível analisar vendas, comissões e comportamento por cliente
+- 📊 **Análise de LTV:** Total vendido e comissões geradas por cliente ao longo do tempo
+- 🔍 **Segmentação:** Identificar clientes mais valiosos vs. clientes inativos
+- 💡 **Inteligência comercial:** Ticket médio, frequência de compra, e padrões por cliente
 
 ---
 
@@ -233,6 +264,35 @@ Recomendação: Monitorar performance e adicionar índices se necessário.
 ---
 
 ## 📝 Changelog
+
+### v2.1 - 30/09/2025 (Clientes como Dimensão)
+**Adição de Análise de Comportamento de Clientes**
+
+**Mudanças:**
+- ✅ Adicionado `clients` como tipo de X-axis (dimensão de agrupamento)
+- ✅ Renomeado métrica Y-axis de "Clientes" para "Novos Clientes" (para evitar ambiguidade)
+- ✅ Habilitadas 10 novas combinações válidas (vendas e comissões por cliente)
+- ✅ Implementado processamento de dados `processClientData()` em `useDynamicChartData.ts`
+- ✅ Atualizada validação em `chartValidation.ts` e `dashboardTestMatrix.ts`
+
+**Impacto:**
+- Total de combinações: 96 → 120 (+24 combinações)
+- Combinações válidas: 61 → 71 (+10 combinações)
+- Taxa de aproveitamento: 63.5% → 59.2% (redução esperada com mais opções)
+- **Habilitação crítica:** Análise de comportamento de clientes (vendas, comissões, ticket médio por cliente)
+
+**Motivo:**
+A matriz anterior limitava severamente a análise de clientes ao tratá-los apenas como uma métrica de contagem (Y-axis). Esta atualização corrige isso ao habilitar "Clientes" como dimensão de agrupamento (X-axis), permitindo análises cruciais como:
+- Total vendido por cliente (CLV - Customer Lifetime Value)
+- Comissões geradas por cliente
+- Ticket médio por cliente
+- Frequência de compra por cliente
+
+**Diferença conceitual:**
+- **Y-axis "Novos Clientes"** = Contagem de aquisição (quantos clientes novos por período/vendedor/escritório)
+- **X-axis "Clientes"** = Dimensão de análise (como os clientes existentes se comportam em vendas/comissões)
+
+---
 
 ### v2.0 - 30/09/2025 (BREAKING CHANGES)
 **Correção Conceitual da Matriz**

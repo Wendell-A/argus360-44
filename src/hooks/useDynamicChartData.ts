@@ -189,7 +189,14 @@ function getSelectFields(config: ChartConfig): string {
   
   switch (yType) {
     case 'sales':
-      return `${baseFields}, sale_value, sale_date, seller_id, product_id, office_id, status`;
+      let salesSelect = `${baseFields}, sale_value, sale_date, seller_id, product_id, office_id, status`;
+      
+      // Se X-axis é clientes, incluir client_id e JOIN com clients
+      if (xType === 'clients') {
+        salesSelect += `, client_id, clients(name)`;
+      }
+      
+      return salesSelect;
     
     case 'commissions':
       // CRITICAL: Não fazer JOIN direto com profiles/offices
@@ -199,6 +206,11 @@ function getSelectFields(config: ChartConfig): string {
       // Se X-axis é produto, precisamos do JOIN com sales -> consortium_products
       if (xType === 'products') {
         commSelect += `, sales!inner(product_id, consortium_products(name))`;
+      }
+      
+      // Se X-axis é clientes, precisamos do JOIN com sales -> clients
+      if (xType === 'clients') {
+        commSelect += `, sales!inner(client_id, clients(name))`;
       }
       
       return commSelect;
@@ -277,6 +289,9 @@ function processChartData(data: any[], config: ChartConfig): ChartDataPoint[] {
     
     case 'offices':
       return processOfficeData(processedData, config);
+    
+    case 'clients':
+      return processClientData(processedData, config);
     
     default:
       return processTimeData(processedData, config);
@@ -512,6 +527,69 @@ function processOfficeData(data: any[], config: ChartConfig): ChartDataPoint[] {
     })
     .sort((a, b) => b.value - a.value)
     .slice(0, 10);
+}
+
+function processClientData(data: any[], config: ChartConfig): ChartDataPoint[] {
+  const valueField = getValueField(config.yAxis.type);
+  
+  // Agrupar dados com nomes de clientes
+  const clientMap = new Map<string, { name: string; values: number[] }>();
+  
+  data.forEach(item => {
+    let clientId: string;
+    let clientName: string;
+    
+    // Para comissões, buscar via sales.clients
+    if (config.yAxis.type === 'commissions' && item.sales?.clients) {
+      clientId = item.sales.client_id;
+      clientName = item.sales.clients.name;
+    } else if (config.yAxis.type === 'sales') {
+      clientId = item.client_id;
+      clientName = item.clients?.name || `Cliente ${clientId?.slice(0, 8) || 'N/A'}`;
+    } else {
+      // Para outros tipos, pular se não tiver client_id
+      return;
+    }
+    
+    if (!clientId) return; // Pular itens sem cliente
+    
+    const value = parseFloat(item[valueField] || 0);
+    
+    if (!clientMap.has(clientId)) {
+      clientMap.set(clientId, { name: clientName, values: [] });
+    }
+    
+    clientMap.get(clientId)!.values.push(value);
+  });
+
+  // Calcular agregação e converter para array
+  let result = Array.from(clientMap.entries())
+    .map(([clientId, data]) => {
+      const aggregatedValue = aggregateValues(data.values, config.yAxis.aggregation || 'sum');
+      return {
+        name: data.name,
+        value: aggregatedValue
+      };
+    })
+    .filter(item => item.value > 0) // Filtrar itens com valor zero
+    .sort((a, b) => b.value - a.value);
+
+  // Aplicar lógica de "Others" se configurado
+  if (config.aggregationFilters?.clients?.type === 'others' && result.length > 5) {
+    const top5 = result.slice(0, 5);
+    const othersValue = result.slice(5).reduce((sum, item) => sum + item.value, 0);
+    
+    if (othersValue > 0) {
+      top5.push({
+        name: config.aggregationFilters.clients.otherLabel || 'Outros Clientes',
+        value: othersValue
+      });
+    }
+    
+    return top5;
+  }
+
+  return result.slice(0, 10);
 }
 
 function aggregateValues(values: number[], aggregation: string): number {
