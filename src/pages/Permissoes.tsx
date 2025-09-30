@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionGuard, AccessDenied } from '@/components/PermissionGuard';
-import { PermissionPresets } from '@/components/PermissionPresets';
+import { PermissionCrudGroup } from '@/components/PermissionCrudGroup';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Shield, 
   Users, 
@@ -20,54 +18,23 @@ import {
   Building, 
   DollarSign,
   Settings,
-  Info,
   Mail,
-  Eye,
-  Edit,
-  Plus,
-  Trash2,
-  CheckCircle,
   Search,
   Sparkles
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-// Dicionário de explicações baseado nas permissões reais do banco
-const permissionExplanations = {
+// Módulos e recursos do sistema (formato granular)
+const moduleDefinitions = {
   system: {
     name: 'Sistema',
     description: 'Configurações e administração do sistema',
     icon: Settings,
     color: 'text-purple-600',
-    permissions: {
-      'permissions': {
-        name: 'Gerenciar Permissões',
-        description: 'Controlar quem pode fazer o que no sistema',
-        example: 'Definir se um usuário pode criar vendas ou apenas visualizar',
-        actions: {
-          'read': 'Ver permissões existentes',
-          'write': 'Alterar permissões de usuários e funções',
-          'create': 'Criar novas configurações de permissão',
-          'delete': 'Remover permissões desnecessárias'
-        }
-      },
-      'settings': {
-        name: 'Configurações Gerais',
-        description: 'Alterar configurações do sistema',
-        example: 'Configurar horários de funcionamento, dados da empresa',
-        actions: {
-          'read': 'Ver configurações atuais',
-          'write': 'Alterar configurações do sistema'
-        }
-      },
-      'audit': {
-        name: 'Logs de Auditoria',
-        description: 'Visualizar histórico de ações no sistema',
-        example: 'Ver quem criou, editou ou excluiu dados',
-        actions: {
-          'read': 'Visualizar logs de atividades'
-        }
-      }
+    resources: {
+      permissions: 'Gerenciar Permissões',
+      settings: 'Configurações Gerais',
+      audit: 'Logs de Auditoria',
     }
   },
   users: {
@@ -75,38 +42,10 @@ const permissionExplanations = {
     description: 'Gestão de usuários e colaboradores',
     icon: Users,
     color: 'text-blue-600',
-    permissions: {
-      'management': {
-        name: 'Gerenciar Usuários',
-        description: 'Controlar usuários do sistema',
-        example: 'Criar conta para novo funcionário, desativar usuário que saiu',
-        actions: {
-          'create': 'Criar novos usuários',
-          'read': 'Ver lista de usuários',
-          'update': 'Editar dados de usuários',
-          'delete': 'Desativar usuários'
-        }
-      },
-      'invitations': {
-        name: 'Convites',
-        description: 'Enviar convites para novos usuários',
-        example: 'Convidar novo vendedor para se cadastrar no sistema',
-        actions: {
-          'create': 'Enviar novos convites',
-          'read': 'Ver convites enviados',
-          'update': 'Reenviar ou cancelar convites',
-          'delete': 'Remover convites pendentes'
-        }
-      },
-      'roles': {
-        name: 'Funções e Cargos',
-        description: 'Definir funções dos usuários',
-        example: 'Promover vendedor para gerente, alterar permissões',
-        actions: {
-          'read': 'Ver funções dos usuários',
-          'write': 'Alterar funções e permissões'
-        }
-      }
+    resources: {
+      management: 'Gerenciar Usuários',
+      invitations: 'Convites',
+      roles: 'Funções e Cargos',
     }
   },
   sales: {
@@ -114,34 +53,9 @@ const permissionExplanations = {
     description: 'Gestão do processo de vendas',
     icon: ShoppingCart,
     color: 'text-green-600',
-    permissions: {
-      'management': {
-        name: 'Gerenciar Vendas',
-        description: 'Controlar todo o processo de vendas',
-        example: 'Criar nova venda, editar dados, cancelar venda',
-        actions: {
-          'create': 'Criar novas vendas',
-          'read': 'Ver vendas existentes',
-          'update': 'Editar dados das vendas',
-          'delete': 'Cancelar ou remover vendas'
-        }
-      },
-      'approval': {
-        name: 'Aprovar Vendas',
-        description: 'Aprovar ou rejeitar vendas',
-        example: 'Aprovar venda para liberar comissão',
-        actions: {
-          'write': 'Aprovar ou rejeitar vendas'
-        }
-      },
-      'view': {
-        name: 'Visualizar Vendas',
-        description: 'Ver informações de vendas',
-        example: 'Consultar vendas da equipe, relatórios',
-        actions: {
-          'read': 'Ver todas as vendas do sistema'
-        }
-      }
+    resources: {
+      management: 'Gerenciar Vendas',
+      approval: 'Aprovar Vendas',
     }
   },
   clients: {
@@ -149,28 +63,9 @@ const permissionExplanations = {
     description: 'Gestão de clientes e prospects',
     icon: UserCheck,
     color: 'text-orange-600',
-    permissions: {
-      'management': {
-        name: 'Gerenciar Clientes',
-        description: 'Controlar dados dos clientes',
-        example: 'Cadastrar novo cliente, atualizar contato',
-        actions: {
-          'create': 'Cadastrar novos clientes',
-          'read': 'Ver lista de clientes',
-          'update': 'Editar dados dos clientes',
-          'delete': 'Remover clientes inativos'
-        }
-      },
-      'interactions': {
-        name: 'Interações com Clientes',
-        description: 'Registrar contatos e interações',
-        example: 'Registrar ligação, agendar reunião',
-        actions: {
-          'create': 'Registrar novas interações',
-          'read': 'Ver histórico de contatos',
-          'update': 'Editar interações existentes'
-        }
-      }
+    resources: {
+      management: 'Gerenciar Clientes',
+      interactions: 'Interações com Clientes',
     }
   },
   reports: {
@@ -178,23 +73,9 @@ const permissionExplanations = {
     description: 'Relatórios e análises',
     icon: FileText,
     color: 'text-indigo-600',
-    permissions: {
-      'view': {
-        name: 'Visualizar Relatórios',
-        description: 'Acessar relatórios do sistema',
-        example: 'Ver relatório de vendas mensais, comissões',
-        actions: {
-          'read': 'Visualizar todos os relatórios'
-        }
-      },
-      'export': {
-        name: 'Exportar Relatórios',
-        description: 'Fazer download de relatórios',
-        example: 'Baixar relatório em Excel ou PDF',
-        actions: {
-          'create': 'Gerar e baixar relatórios'
-        }
-      }
+    resources: {
+      view: 'Visualizar Relatórios',
+      export: 'Exportar Relatórios',
     }
   },
   offices: {
@@ -202,18 +83,8 @@ const permissionExplanations = {
     description: 'Gestão de escritórios e filiais',
     icon: Building,
     color: 'text-cyan-600',
-    permissions: {
-      'management': {
-        name: 'Gerenciar Escritórios',
-        description: 'Controlar escritórios da empresa',
-        example: 'Criar nova filial, alterar responsável',
-        actions: {
-          'create': 'Criar novos escritórios',
-          'read': 'Ver escritórios existentes',
-          'update': 'Editar dados dos escritórios',
-          'delete': 'Desativar escritórios'
-        }
-      }
+    resources: {
+      management: 'Gerenciar Escritórios',
     }
   },
   commissions: {
@@ -221,18 +92,8 @@ const permissionExplanations = {
     description: 'Gestão de comissões e pagamentos',
     icon: DollarSign,
     color: 'text-emerald-600',
-    permissions: {
-      'management': {
-        name: 'Gerenciar Comissões',
-        description: 'Controlar pagamento de comissões',
-        example: 'Aprovar pagamento, configurar percentuais',
-        actions: {
-          'create': 'Criar configurações de comissão',
-          'read': 'Ver comissões calculadas',
-          'update': 'Editar regras de comissão',
-          'write': 'Aprovar pagamentos'
-        }
-      }
+    resources: {
+      management: 'Gerenciar Comissões',
     }
   }
 };
@@ -270,68 +131,103 @@ const roleDescriptions = {
   }
 };
 
-const actionIcons = {
-  create: Plus,
-  read: Eye,
-  update: Edit,
-  delete: Trash2,
-  write: Edit,
-  approve: CheckCircle
-};
+// Interface para permissões granulares
+interface GranularPermissions {
+  [key: string]: {
+    create: boolean;
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+  };
+}
+
+type RoleType = 'owner' | 'admin' | 'manager' | 'user' | 'viewer';
 
 export default function Permissoes() {
   const { activeTenant } = useAuth();
-  const { 
-    allPermissions, 
-    isLoading, 
-    updateRolePermissions,
-    useRolePermissions
-  } = usePermissions();
-  
-  const [selectedRole, setSelectedRole] = useState<string>('user');
+  const [selectedRole, setSelectedRole] = useState<RoleType>('user');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [granularPermissions, setGranularPermissions] = useState<GranularPermissions>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  // Buscar permissões da role selecionada
-  const { data: currentRolePermissions, isLoading: loadingRolePerms } = useRolePermissions(selectedRole);
-
-  // Atualizar estado quando carregar permissões da role
+  // Carregar permissões granulares da role selecionada
   useEffect(() => {
-    if (currentRolePermissions) {
-      const permissionIds = currentRolePermissions.map(rp => rp.permission_id);
-      setSelectedPermissions(permissionIds);
-    } else {
-      setSelectedPermissions([]);
-    }
-  }, [currentRolePermissions, selectedRole]);
+    const loadRolePermissions = async () => {
+      if (!activeTenant?.tenant_id) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('tenant_users')
+          .select('granular_permissions')
+          .eq('tenant_id', activeTenant.tenant_id)
+          .eq('role', selectedRole)
+          .limit(1)
+          .single();
 
-  const filteredModules = Object.entries(permissionExplanations).filter(([moduleKey, module]) =>
-    module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    Object.values(module.permissions).some(perm => 
-      perm.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+        if (error && error.code !== 'PGRST116') {
+          console.error('Erro ao carregar permissões:', error);
+          return;
+        }
+
+        if (data?.granular_permissions) {
+          setGranularPermissions(data.granular_permissions as GranularPermissions);
+        } else {
+          // Inicializar vazio se não houver permissões
+          setGranularPermissions({});
+        }
+      } catch (error) {
+        console.error('Erro ao buscar permissões:', error);
+        setGranularPermissions({});
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRolePermissions();
+  }, [selectedRole, activeTenant?.tenant_id]);
+
+  const filteredModules = Object.entries(moduleDefinitions).filter(([moduleKey, module]) =>
+    module.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handlePermissionToggle = (permissionId: string) => {
-    setSelectedPermissions(prev => 
-      prev.includes(permissionId) 
-        ? prev.filter(id => id !== permissionId)
-        : [...prev, permissionId]
-    );
+  const handlePermissionChange = (moduleKey: string, resource: string, action: 'create' | 'read' | 'update' | 'delete', value: boolean) => {
+    const key = `${moduleKey}:${resource}`;
+    setGranularPermissions(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        create: prev[key]?.create || false,
+        read: prev[key]?.read || false,
+        update: prev[key]?.update || false,
+        delete: prev[key]?.delete || false,
+        [action]: value,
+      }
+    }));
   };
 
-  const handleRoleChange = (role: string) => {
+  const handleRoleChange = (role: RoleType) => {
     setSelectedRole(role);
-    // As permissões serão carregadas automaticamente pelo useEffect
   };
 
   const handleSaveRolePermissions = async () => {
+    if (!activeTenant?.tenant_id) return;
+    
+    setIsSaving(true);
     try {
-      await updateRolePermissions.mutateAsync({
-        role: selectedRole,
-        permissionIds: selectedPermissions
-      });
+      // Atualizar todas as entradas de tenant_users com essa role
+      const { error } = await supabase
+        .from('tenant_users')
+        .update({ 
+          granular_permissions: granularPermissions,
+          updated_at: new Date().toISOString()
+        })
+        .eq('tenant_id', activeTenant.tenant_id)
+        .eq('role', selectedRole);
+
+      if (error) throw error;
 
       toast({
         title: "Permissões salvas com sucesso",
@@ -344,6 +240,8 @@ export default function Permissoes() {
         description: "Não foi possível salvar as permissões. Tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -423,14 +321,6 @@ export default function Permissoes() {
             </CardContent>
           </Card>
 
-          {/* Presets de Permissões */}
-          <PermissionPresets
-            selectedRole={selectedRole}
-            allPermissions={allPermissions}
-            onApplyPreset={(permissionIds) => setSelectedPermissions(permissionIds)}
-            isLoading={loadingRolePerms || updateRolePermissions.isPending}
-          />
-
           {/* Seletor de Função para Configurar */}
           <Card>
             <CardHeader>
@@ -439,17 +329,17 @@ export default function Permissoes() {
                 Configurar Permissões por Função
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Selecione uma função para configurar suas permissões específicas ou use os presets acima
+                Selecione uma função para configurar suas permissões granulares (CRUD)
               </p>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 {Object.entries(roleDescriptions).map(([roleKey, role]) => (
                   <Button
                     key={roleKey}
                     variant={selectedRole === roleKey ? "default" : "outline"}
-                    onClick={() => handleRoleChange(roleKey)}
-                    disabled={loadingRolePerms}
+                    onClick={() => handleRoleChange(roleKey as RoleType)}
+                    disabled={isLoading}
                   >
                     {role.name}
                   </Button>
@@ -457,15 +347,15 @@ export default function Permissoes() {
               </div>
               <Button 
                 onClick={handleSaveRolePermissions}
-                disabled={updateRolePermissions.isPending || loadingRolePerms}
+                disabled={isSaving || isLoading}
                 className="w-full sm:w-auto"
               >
-                {updateRolePermissions.isPending ? 'Salvando...' : 'Salvar Permissões'}
+                {isSaving ? 'Salvando...' : 'Salvar Permissões'}
               </Button>
             </CardContent>
           </Card>
 
-          {/* Módulos de Permissões */}
+          {/* Módulos de Permissões com CRUD */}
           <div className="grid gap-6">
             {filteredModules.map(([moduleKey, module]) => {
               const IconComponent = module.icon;
@@ -486,85 +376,28 @@ export default function Permissoes() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {Object.entries(module.permissions).map(([permKey, permission]) => (
-                        <div key={`${moduleKey}-${permKey}`} className="border rounded-lg p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <h4 className="font-medium flex items-center gap-2">
-                                {permission.name}
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <div className="space-y-2">
-                                      <p className="font-medium">{permission.description}</p>
-                                      <p className="text-xs">
-                                        <strong>Exemplo:</strong> {permission.example}
-                                      </p>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </h4>
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {permission.description}
-                              </p>
-                              <p className="text-xs text-muted-foreground italic">
-                                💡 {permission.example}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <Separator className="my-3" />
-                          
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium">Ações Disponíveis:</p>
-                            <div className="grid grid-cols-1 gap-3">
-                              {Object.entries(permission.actions).map(([actionKey, actionDescription]) => {
-                                const ActionIcon = actionIcons[actionKey as keyof typeof actionIcons] || Eye;
-                                
-                                // Encontrar a permissão correspondente no banco com as novas nomenclaturas
-                                const dbPermission = allPermissions.find(p => 
-                                  p.module === moduleKey && 
-                                  p.resource === permKey &&
-                                  p.actions.includes(actionKey)
-                                );
-                                
-                                const isChecked = dbPermission ? selectedPermissions.includes(dbPermission.id) : false;
-                                const isLoading = loadingRolePerms || updateRolePermissions.isPending;
-                                
-                                return (
-                                  <div key={actionKey} className="flex items-center justify-between p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors">
-                                    <div className="flex items-center gap-3">
-                                      <div className="p-1.5 rounded-md bg-muted">
-                                        <ActionIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                      </div>
-                                      <div>
-                                        <span className="text-sm font-medium capitalize">{actionKey}</span>
-                                        <p className="text-xs text-muted-foreground mt-0.5">
-                                          {String(actionDescription)}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      {!dbPermission && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          Em breve
-                                        </Badge>
-                                      )}
-                                      <Switch
-                                        checked={isChecked}
-                                        onCheckedChange={() => dbPermission && handlePermissionToggle(dbPermission.id)}
-                                        disabled={!dbPermission || isLoading}
-                                      />
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                             </div>
-                          </div>
-                        </div>
-                      ))}
+                      {Object.entries(module.resources).map(([resourceKey, resourceName]) => {
+                        const moduleResourceKey = `${moduleKey}:${resourceKey}`;
+                        const permissions = granularPermissions[moduleResourceKey] || {
+                          create: false,
+                          read: false,
+                          update: false,
+                          delete: false,
+                        };
+
+                        return (
+                          <PermissionCrudGroup
+                            key={moduleResourceKey}
+                            moduleKey={moduleResourceKey}
+                            moduleName={resourceName}
+                            permissions={permissions}
+                            onChange={(action, value) => 
+                              handlePermissionChange(moduleKey, resourceKey, action, value)
+                            }
+                            disabled={isSaving}
+                          />
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
