@@ -872,6 +872,47 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          cta_link: string | null
+          data: Json
+          id: string
+          is_read: boolean
+          tenant_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cta_link?: string | null
+          data?: Json
+          id?: string
+          is_read?: boolean
+          tenant_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cta_link?: string | null
+          data?: Json
+          id?: string
+          is_read?: boolean
+          tenant_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       office_users: {
         Row: {
           active: boolean | null
@@ -2636,6 +2677,16 @@ export type Database = {
         }
         Returns: Json
       }
+      create_notification: {
+        Args: {
+          p_cta_link?: string
+          p_data: Json
+          p_tenant_id: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       create_super_admin: {
         Args: { p_email: string; p_full_name: string; p_password: string }
         Returns: Json
@@ -2862,6 +2913,10 @@ export type Database = {
       get_tenant_analytics: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_unread_notification_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       get_user_context_offices: {
         Args: { tenant_uuid: string; user_uuid: string }

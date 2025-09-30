@@ -39,6 +39,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 // Componentes internos para resolver problemas de importação
 const SidebarItem = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
@@ -145,6 +146,7 @@ export default function AppSidebar() {
                 )}
               </div>
             )}
+            <NotificationBell />
           </div>
         </div>
 
