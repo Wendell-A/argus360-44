@@ -677,6 +677,114 @@ export type Database = {
         }
         Relationships: []
       }
+      defaulters: {
+        Row: {
+          ata: string | null
+          bem_descricao: string | null
+          cliente_nome: string | null
+          cod_grupo: string | null
+          cod_revenda: string | null
+          cota: number | null
+          created_at: string
+          data_alocacao: string | null
+          data_atualizacao: string | null
+          data_contabilizacao: string | null
+          email: string | null
+          empresa: string | null
+          id: string
+          parcelas_pagas: number | null
+          parcelas_vencidas: number | null
+          prazo_cota_meses: number | null
+          proposta: string | null
+          revenda: string | null
+          sale_id: string | null
+          sequencia: number | null
+          situacao_cobranca: string | null
+          status_cota: string | null
+          telefone: string | null
+          tenant_id: string
+          tipo_cota: string | null
+          updated_at: string
+          valor_bem_atual: number | null
+          valor_bem_venda: number | null
+        }
+        Insert: {
+          ata?: string | null
+          bem_descricao?: string | null
+          cliente_nome?: string | null
+          cod_grupo?: string | null
+          cod_revenda?: string | null
+          cota?: number | null
+          created_at?: string
+          data_alocacao?: string | null
+          data_atualizacao?: string | null
+          data_contabilizacao?: string | null
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          parcelas_pagas?: number | null
+          parcelas_vencidas?: number | null
+          prazo_cota_meses?: number | null
+          proposta?: string | null
+          revenda?: string | null
+          sale_id?: string | null
+          sequencia?: number | null
+          situacao_cobranca?: string | null
+          status_cota?: string | null
+          telefone?: string | null
+          tenant_id: string
+          tipo_cota?: string | null
+          updated_at?: string
+          valor_bem_atual?: number | null
+          valor_bem_venda?: number | null
+        }
+        Update: {
+          ata?: string | null
+          bem_descricao?: string | null
+          cliente_nome?: string | null
+          cod_grupo?: string | null
+          cod_revenda?: string | null
+          cota?: number | null
+          created_at?: string
+          data_alocacao?: string | null
+          data_atualizacao?: string | null
+          data_contabilizacao?: string | null
+          email?: string | null
+          empresa?: string | null
+          id?: string
+          parcelas_pagas?: number | null
+          parcelas_vencidas?: number | null
+          prazo_cota_meses?: number | null
+          proposta?: string | null
+          revenda?: string | null
+          sale_id?: string | null
+          sequencia?: number | null
+          situacao_cobranca?: string | null
+          status_cota?: string | null
+          telefone?: string | null
+          tenant_id?: string
+          tipo_cota?: string | null
+          updated_at?: string
+          valor_bem_atual?: number | null
+          valor_bem_venda?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defaulters_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defaulters_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -2896,6 +3004,16 @@ export type Database = {
       }
       get_dashboard_stats_config: {
         Args: { tenant_uuid: string; user_uuid: string }
+        Returns: Json
+      }
+      get_defaulters_list: {
+        Args: {
+          p_page_number?: number
+          p_page_size?: number
+          p_search_term?: string
+          p_situacao_filter?: string
+          p_status_filter?: string
+        }
         Returns: Json
       }
       get_query_performance_metrics: {

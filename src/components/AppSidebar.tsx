@@ -23,7 +23,8 @@ import {
   Car,
   MessageSquare,
   FileSpreadsheet,
-  Play
+  Play,
+  FileWarning
 } from 'lucide-react';
 import {
   Sidebar,
@@ -75,6 +76,7 @@ export default function AppSidebar() {
         { name: 'CRM', path: '/crm', icon: Users, enabled: true },
         { name: 'Clientes', path: '/clientes', icon: UserCheck, enabled: true },
         { name: 'Vendas', path: '/vendas', icon: ShoppingCart, enabled: true },
+        { name: 'Inadimplentes', path: '/inadimplentes', icon: FileWarning, enabled: true },
         { name: 'Vendedores', path: '/vendedores', icon: Users, enabled: menuConfig?.modules?.sellers || false },
         { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
         { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },

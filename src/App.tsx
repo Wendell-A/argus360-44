@@ -14,6 +14,7 @@ import Dashboard from '@/pages/Dashboard';
 import CRM from '@/pages/CRM';
 import Clientes from '@/pages/Clientes';
 import Vendas from '@/pages/Vendas';
+import Inadimplentes from '@/pages/Inadimplentes';
 import Vendedores from '@/pages/Vendedores';
 import Comissoes from '@/pages/Comissoes';
 import Consorcios from '@/pages/Consorcios';
@@ -85,6 +86,7 @@ function App() {
                 <Route path="/crm" element={<CRM />} />
                 <Route path="/clientes" element={<Clientes />} />
                 <Route path="/vendas" element={<Vendas />} />
+                <Route path="/inadimplentes" element={<Inadimplentes />} />
                 <Route path="/vendedores" element={<Vendedores />} />
                 <Route path="/comissoes" element={<Comissoes />} />
                 <Route path="/consorcios" element={<Consorcios />} />
