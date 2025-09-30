@@ -2261,6 +2261,7 @@ export type Database = {
           context_level: number | null
           created_at: string | null
           department_id: string | null
+          granular_permissions: Json | null
           id: string
           invited_at: string | null
           joined_at: string | null
@@ -2278,6 +2279,7 @@ export type Database = {
           context_level?: number | null
           created_at?: string | null
           department_id?: string | null
+          granular_permissions?: Json | null
           id?: string
           invited_at?: string | null
           joined_at?: string | null
@@ -2295,6 +2297,7 @@ export type Database = {
           context_level?: number | null
           created_at?: string | null
           department_id?: string | null
+          granular_permissions?: Json | null
           id?: string
           invited_at?: string | null
           joined_at?: string | null
@@ -3077,6 +3080,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      has_granular_permission: {
+        Args: {
+          p_action: string
+          p_module: string
+          p_resource: string
+          p_tenant_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       is_authenticated_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -3105,6 +3118,10 @@ export type Database = {
           p_record_id: string
           p_table_name: string
         }
+        Returns: undefined
+      }
+      migrate_role_permissions_to_granular: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       process_invitation_on_auth: {

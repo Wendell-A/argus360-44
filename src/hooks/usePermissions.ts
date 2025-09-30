@@ -15,6 +15,22 @@ interface PermissionCheck {
   action: string;
 }
 
+// Tipo para permissões granulares
+interface GranularPermissions {
+  [key: string]: {
+    create: boolean;
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+    manage?: boolean;
+  };
+}
+
+// Tipo estendido de Tenant com granular_permissions
+type TenantWithGranular = Tables<'tenant_users'> & {
+  granular_permissions?: GranularPermissions;
+};
+
 export const usePermissions = () => {
   const { user, activeTenant } = useAuth();
   const queryClient = useQueryClient();
@@ -99,40 +115,79 @@ export const usePermissions = () => {
     });
   };
 
-  // Verificar se o usuário tem uma permissão específica
-  const hasPermission = (check: PermissionCheck): boolean => {
+  // Verificar se o usuário tem uma permissão específica (suporta formato granular)
+  const hasPermission = (check: PermissionCheck | string): boolean => {
     if (!user || !activeTenant) return false;
 
-    // Owner tem todas as permissões
-    if (activeTenant.user_role === 'owner') return true;
+    // Suportar formato granular: "module:resource.action"
+    let module: string, resource: string, action: string;
+    
+    if (typeof check === 'string') {
+      const parts = check.split('.');
+      if (parts.length === 2) {
+        const [moduleResource, actionPart] = parts;
+        const [modulePart, resourcePart] = moduleResource.split(':');
+        module = modulePart;
+        resource = resourcePart;
+        action = actionPart;
+      } else {
+        console.warn('Formato de permissão inválido:', check);
+        return false;
+      }
+    } else {
+      ({ module, resource, action } = check);
+    }
 
-    // Verificar permissões específicas do usuário primeiro
+    // Owner e Admin sempre têm acesso
+    if (['owner', 'admin'].includes(activeTenant.user_role)) {
+      return true;
+    }
+
+    // 1. Verificar permissões granulares do usuário
+    const tenantData = activeTenant as unknown as TenantWithGranular;
+    const granularPerms = tenantData.granular_permissions;
+    const moduleKey = `${module}:${resource}`;
+    
+    if (granularPerms && granularPerms[moduleKey]) {
+      const permissions = granularPerms[moduleKey];
+      
+      // Se tem 'manage', tem todas as permissões
+      if (permissions.manage) return true;
+      
+      // Verificar ação específica
+      if (action === 'create' && permissions.create) return true;
+      if (action === 'read' && permissions.read) return true;
+      if (action === 'update' && permissions.update) return true;
+      if (action === 'delete' && permissions.delete) return true;
+    }
+
+    // 2. Verificar permissões específicas do usuário (sistema antigo)
     const userHasPermission = userPermissions?.some(up => {
       const permission = up.permissions as Permission;
-      return permission.module === check.module &&
-             permission.resource === check.resource &&
-             permission.actions.includes(check.action);
+      return permission.module === module &&
+             permission.resource === resource &&
+             permission.actions.includes(action);
     });
 
     if (userHasPermission) return true;
 
-    // Verificar permissões da função
+    // 3. Verificar permissões da função (sistema antigo)
     const roleHasPermission = rolePermissions?.some(rp => {
       const permission = rp.permissions as Permission;
-      return permission.module === check.module &&
-             permission.resource === check.resource &&
-             permission.actions.includes(check.action);
+      return permission.module === module &&
+             permission.resource === resource &&
+             permission.actions.includes(action);
     });
 
     return roleHasPermission || false;
   };
 
-  // Verificar múltiplas permissões
-  const hasAnyPermission = (checks: PermissionCheck[]): boolean => {
+  // Verificar múltiplas permissões (suporta formato granular)
+  const hasAnyPermission = (checks: (PermissionCheck | string)[]): boolean => {
     return checks.some(check => hasPermission(check));
   };
 
-  const hasAllPermissions = (checks: PermissionCheck[]): boolean => {
+  const hasAllPermissions = (checks: (PermissionCheck | string)[]): boolean => {
     return checks.every(check => hasPermission(check));
   };
 

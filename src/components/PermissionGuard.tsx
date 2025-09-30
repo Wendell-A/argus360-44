@@ -11,8 +11,9 @@ interface PermissionCheck {
 
 interface PermissionGuardProps {
   children: React.ReactNode;
-  permission?: PermissionCheck;
-  permissions?: PermissionCheck[];
+  // Suporta formato granular: "module:resource.action" ou objeto tradicional
+  permission?: PermissionCheck | string;
+  permissions?: (PermissionCheck | string)[];
   requireAll?: boolean;
   fallback?: React.ReactNode;
   roles?: string[];
@@ -40,6 +41,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   let hasAccess = false;
 
   if (permission) {
+    // Suporta formato granular string ou objeto tradicional
     hasAccess = hasPermission(permission);
   } else if (permissions.length > 0) {
     hasAccess = requireAll 
