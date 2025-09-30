@@ -9,7 +9,7 @@ import { ChartConfig } from '@/hooks/useDashboardPersonalization';
  * - 6 tipos de agregação (sum, count, count_distinct, avg, min, max)
  */
 
-export type YAxisType = 'sales' | 'commissions' | 'clients' | 'sellers' | 'goals' | 'products';
+export type YAxisType = 'sales' | 'commissions' | 'clients' | 'goals';
 export type XAxisType = 'time' | 'product' | 'seller' | 'office';
 export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min' | 'max';
 
@@ -32,6 +32,7 @@ export interface TestResult {
 
 /**
  * Matriz de compatibilidade - combinações que fazem sentido semanticamente
+ * NOTA: Produtos e Vendedores são DIMENSÕES (X-axis), não métricas (Y-axis)
  */
 const COMPATIBILITY_MATRIX: Record<YAxisType, Record<XAxisType, boolean>> = {
   sales: {
@@ -52,23 +53,11 @@ const COMPATIBILITY_MATRIX: Record<YAxisType, Record<XAxisType, boolean>> = {
     seller: true,    // Clientes por vendedor responsável ✓
     office: true,    // Clientes por escritório ✓
   },
-  sellers: {
-    time: false,     // Vendedores ao longo do tempo ✗ (não tem data)
-    product: false,  // Vendedores por produto ✗ (não tem FK direto)
-    seller: false,   // Vendedores por vendedor ✗ (não faz sentido)
-    office: true,    // Vendedores por escritório ✓
-  },
   goals: {
     time: true,      // Metas ao longo do tempo ✓
     product: false,  // Metas por produto ✗ (não tem FK direto)
     seller: true,    // Metas individuais por vendedor ✓
     office: true,    // Metas por escritório ✓
-  },
-  products: {
-    time: false,     // Produtos ao longo do tempo ✗ (não tem data)
-    product: false,  // Produtos por produto ✗ (não faz sentido)
-    seller: false,   // Produtos por vendedor ✗ (não tem FK direto)
-    office: false,   // Produtos por escritório ✗ (não tem FK direto)
   },
 };
 
@@ -79,16 +68,15 @@ const VALID_AGGREGATIONS: Record<YAxisType, AggregationType[]> = {
   sales: ['sum', 'count', 'avg', 'min', 'max'],
   commissions: ['sum', 'count', 'avg', 'min', 'max'],
   clients: ['count', 'count_distinct'],
-  sellers: ['count', 'count_distinct'],
   goals: ['sum', 'count', 'avg', 'min', 'max'],
-  products: ['count', 'count_distinct'],
 };
 
 /**
- * Gera todos os casos de teste (144 combinações)
+ * Gera todos os casos de teste (96 combinações)
+ * 4 tipos Y-axis × 4 tipos X-axis × 6 agregações = 96 combinações
  */
 export function generateTestCases(): TestCase[] {
-  const yAxisTypes: YAxisType[] = ['sales', 'commissions', 'clients', 'sellers', 'goals', 'products'];
+  const yAxisTypes: YAxisType[] = ['sales', 'commissions', 'clients', 'goals'];
   const xAxisTypes: XAxisType[] = ['time', 'product', 'seller', 'office'];
   const aggregations: AggregationType[] = ['sum', 'count', 'count_distinct', 'avg', 'min', 'max'];
 
@@ -143,9 +131,7 @@ function getFieldForYAxis(yAxis: YAxisType, aggregation: AggregationType): strin
     sales: aggregation === 'count' ? 'id' : 'sale_value',
     commissions: aggregation === 'count' ? 'id' : 'commission_amount',
     clients: 'id',
-    sellers: 'id',
     goals: aggregation === 'count' ? 'id' : 'target_amount',
-    products: 'id',
   };
 
   return fieldMap[yAxis];

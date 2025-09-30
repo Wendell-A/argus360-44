@@ -10,7 +10,7 @@ export interface ValidationResult {
   warnings: string[];
 }
 
-export type YAxisType = 'sales' | 'commissions' | 'clients' | 'sellers' | 'goals' | 'products';
+export type YAxisType = 'sales' | 'commissions' | 'clients' | 'goals';
 export type XAxisType = 'time' | 'product' | 'seller' | 'office';
 export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min' | 'max';
 
@@ -36,23 +36,11 @@ const COMPATIBILITY_MATRIX: Record<string, Record<string, boolean>> = {
     seller: true,    // Clientes tem responsible_user_id
     office: true,    // Clientes tem office_id
   },
-  sellers: {
-    time: false,     // Perfis não tem campo de data significativo
-    product: false,  // Perfis não tem FK direto para produtos
-    seller: false,   // Vendedores por vendedor não faz sentido
-    office: true,    // Vendedores tem office_id via tenant_users
-  },
   goals: {
     time: true,      // Metas tem period_start/period_end
     product: false,  // Metas não tem FK direto para produtos
     seller: true,    // Metas individuais tem user_id
     office: true,    // Metas de escritório tem office_id
-  },
-  products: {
-    time: false,     // Produtos não tem campo de data significativo
-    product: false,  // Produtos por produto não faz sentido
-    seller: false,   // Produtos não tem FK direto para vendedores
-    office: false,   // Produtos não tem FK direto para escritórios
   },
 };
 
@@ -63,9 +51,7 @@ const VALID_AGGREGATIONS: Record<string, AggregationType[]> = {
   sales: ['sum', 'count', 'avg', 'min', 'max'],           // Valores monetários
   commissions: ['sum', 'count', 'avg', 'min', 'max'],     // Valores monetários
   clients: ['count', 'count_distinct'],                    // Apenas contagem
-  sellers: ['count', 'count_distinct'],                    // Apenas contagem
   goals: ['sum', 'count', 'avg', 'min', 'max'],           // Valores de meta
-  products: ['count', 'count_distinct'],                   // Apenas contagem
 };
 
 /**

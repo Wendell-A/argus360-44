@@ -64,9 +64,7 @@ const METRIC_TYPES = [
   { value: 'sales', label: 'Vendas' },
   { value: 'commissions', label: 'Comissões' },
   { value: 'clients', label: 'Clientes' },
-  { value: 'sellers', label: 'Vendedores' },
   { value: 'goals', label: 'Metas' },
-  { value: 'products', label: 'Produtos' },
 ];
 
 const LIST_TYPES = [
