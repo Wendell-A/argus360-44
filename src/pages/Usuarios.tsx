@@ -29,8 +29,11 @@ export default function Usuarios() {
   const { users: legacyUsers, deactivateUser, reactivateUser } = useUserManagement();
   const { data: optimizedUsers, isLoading } = useUserManagementOptimized(50, 0);
   
+  // Garantir que optimizedUsers é sempre um array válido
+  const optimizedUsersArray = Array.isArray(optimizedUsers) ? optimizedUsers : [];
+  
   // Usar dados otimizados quando disponíveis, senão fallback para legacy
-  const users = optimizedUsers?.map(user => ({
+  const users = optimizedUsersArray.length > 0 ? optimizedUsersArray.map(user => ({
     id: user.id,
     user_id: user.id, // UserCompleteData usa 'id' como user_id
     tenant_id: 'current-tenant', // Assumindo tenant atual
@@ -54,7 +57,7 @@ export default function Usuarios() {
     office: user.office,
     department: user.department,
     position: user.position
-  } as UserTenantAssociation)) || legacyUsers;
+  } as UserTenantAssociation)) : legacyUsers;
   const { offices = [] } = useOffices();
   
   const [searchTerm, setSearchTerm] = useState('');
