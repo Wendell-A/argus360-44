@@ -224,6 +224,11 @@ function getSelectFields(config: ChartConfig): string {
     case 'sales':
       let salesSelect = `${baseFields}, sale_value, sale_date, seller_id, product_id, office_id, status`;
       
+      // Se X-axis é produtos, incluir JOIN com consortium_products
+      if (xType === 'products') {
+        salesSelect += `, consortium_products(name)`;
+      }
+      
       // Se X-axis é clientes, incluir client_id e JOIN com clients
       if (xType === 'clients') {
         salesSelect += `, client_id, clients(name)`;
