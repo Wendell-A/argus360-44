@@ -15,36 +15,71 @@ export type XAxisType = 'time' | 'product' | 'seller' | 'office' | 'clients';
 export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min' | 'max';
 
 /**
- * Matriz de compatibilidade entre Y-axis e X-axis
+ * REGRA DE OURO: Uma combinação Y-axis × X-axis é válida se e somente se 
+ * a tabela de FATOS (Y-axis) possui uma Foreign Key direta para a dimensão (X-axis).
+ * 
+ * NUNCA buscamos dados das tabelas de cadastro (products, users). 
+ * SEMPRE buscamos das tabelas de FATOS e fazemos JOIN apenas para obter nomes.
+ * 
+ * Mapeamento de Foreign Keys nas Tabelas de FATOS:
+ * ================================================
+ * 
+ * SALES (Vendas):
+ *   - sale_date        → time dimension ✓
+ *   - product_id       → products ✓
+ *   - seller_id        → users/profiles ✓
+ *   - office_id        → offices ✓
+ *   - client_id        → clients ✓
+ * 
+ * COMMISSIONS (Comissões):
+ *   - due_date         → time dimension ✓
+ *   - sale_id          → sales → product_id (JOIN indireto, mas válido)
+ *   - recipient_id     → users/profiles (quando recipient_type='seller') ✓
+ *   - recipient_id     → offices (quando recipient_type='office') ✓
+ *   - sale_id          → sales → client_id (JOIN indireto, mas válido)
+ * 
+ * CLIENTS (Novos Clientes):
+ *   - created_at       → time dimension ✓
+ *   - responsible_user_id → users/profiles ✓
+ *   - office_id        → offices ✓
+ *   - NÃO TEM product_id ✗
+ *   - NÃO TEM client_id (não faz sentido) ✗
+ * 
+ * GOALS (Metas):
+ *   - period_start/end → time dimension ✓
+ *   - user_id          → users/profiles (vendedor da meta individual) ✓
+ *   - office_id        → offices (meta de escritório) ✓
+ *   - NÃO TEM product_id ✗
+ *   - NÃO TEM client_id ✗
  */
 const COMPATIBILITY_MATRIX: Record<string, Record<string, boolean>> = {
   sales: {
-    time: true,      // Vendas tem sale_date
-    product: true,   // Vendas tem product_id
-    seller: true,    // Vendas tem seller_id
-    office: true,    // Vendas tem office_id
-    clients: true,   // Vendas tem client_id - análise por cliente
+    time: true,      // ✅ FK: sale_date
+    product: true,   // ✅ FK: product_id (DIRETO!)
+    seller: true,    // ✅ FK: seller_id (DIRETO!)
+    office: true,    // ✅ FK: office_id
+    clients: true,   // ✅ FK: client_id
   },
   commissions: {
-    time: true,      // Comissões tem due_date
-    product: true,   // Comissões -> sale_id -> sales -> product_id
-    seller: true,    // Comissões tem recipient_id (quando recipient_type='seller')
-    office: true,    // Comissões tem recipient_id (quando recipient_type='office')
-    clients: true,   // Comissões -> sale_id -> sales -> client_id
+    time: true,      // ✅ FK: due_date
+    product: true,   // ✅ FK indireto: sale_id → sales.product_id (JOIN válido)
+    seller: true,    // ✅ FK: recipient_id (quando recipient_type='seller')
+    office: true,    // ✅ FK: recipient_id (quando recipient_type='office')
+    clients: true,   // ✅ FK indireto: sale_id → sales.client_id (JOIN válido)
   },
   clients: {
-    time: true,      // Clientes tem created_at
-    product: false,  // Clientes não tem FK direto para produtos
-    seller: true,    // Clientes tem responsible_user_id
-    office: true,    // Clientes tem office_id
-    clients: false,  // Não faz sentido agrupar clientes por clientes
+    time: true,      // ✅ FK: created_at
+    product: false,  // ❌ NÃO TEM product_id (tabela clients não tem FK para produtos)
+    seller: true,    // ✅ FK: responsible_user_id
+    office: true,    // ✅ FK: office_id
+    clients: false,  // ❌ Não faz sentido agrupar clientes por clientes
   },
   goals: {
-    time: true,      // Metas tem period_start/period_end
-    product: false,  // Metas não tem FK direto para produtos
-    seller: true,    // Metas individuais tem user_id
-    office: true,    // Metas de escritório tem office_id
-    clients: false,  // Metas não tem FK direto para clientes
+    time: true,      // ✅ FK: period_start/period_end
+    product: false,  // ❌ NÃO TEM product_id (tabela goals não tem FK para produtos)
+    seller: true,    // ✅ FK: user_id (É O VENDEDOR da meta individual!)
+    office: true,    // ✅ FK: office_id (meta de escritório)
+    clients: false,  // ❌ NÃO TEM client_id (metas não são por cliente)
   },
 };
 
@@ -88,11 +123,11 @@ export function validateChartConfig(config: ChartConfig): ValidationResult {
   const xAxis = config.xAxis as string;
   const aggregation = config.yAxis?.aggregation;
 
-  // Validar compatibilidade Y x X
+  // Validar compatibilidade Y x X baseado em Foreign Keys reais
   if (!COMPATIBILITY_MATRIX[yAxis]?.[xAxis]) {
     errors.push(
       `Combinação ${yAxis} × ${xAxis} não é compatível. ` +
-      `Não existe relacionamento direto entre essas entidades no banco de dados.`
+      `A tabela de fatos "${yAxis}" não possui Foreign Key para "${xAxis}".`
     );
   }
 
