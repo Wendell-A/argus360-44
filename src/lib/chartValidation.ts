@@ -1,7 +1,13 @@
 import { ChartConfig } from '@/hooks/useDashboardPersonalization';
+import { normalizeXAxis, normalizeDataType, type CanonicalDimension } from './dimensions';
 
 /**
  * Sistema de validação centralizado para configurações de gráficos
+ * 
+ * ATUALIZAÇÃO v2.3 (30/09/2025):
+ * - Integrado com sistema de normalização de dimensões
+ * - Suporte a aliases (plural/singular, PT/EN)
+ * - Matriz de compatibilidade usa dimensões canônicas (PLURAL)
  */
 
 export interface ValidationResult {
@@ -11,7 +17,7 @@ export interface ValidationResult {
 }
 
 export type YAxisType = 'sales' | 'commissions' | 'clients' | 'goals';
-export type XAxisType = 'time' | 'product' | 'seller' | 'office' | 'clients';
+export type XAxisType = CanonicalDimension;
 export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min' | 'max';
 
 /**
@@ -26,17 +32,17 @@ export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min'
  * 
  * SALES (Vendas):
  *   - sale_date        → time dimension ✓
- *   - product_id       → products ✓
- *   - seller_id        → users/profiles ✓
+ *   - product_id       → products ✓ (DIRETO!)
+ *   - seller_id        → users/profiles ✓ (DIRETO!)
  *   - office_id        → offices ✓
  *   - client_id        → clients ✓
  * 
  * COMMISSIONS (Comissões):
  *   - due_date         → time dimension ✓
- *   - sale_id          → sales → product_id (JOIN indireto, mas válido)
+ *   - sale_id          → sales → product_id (JOIN indireto via sales)
  *   - recipient_id     → users/profiles (quando recipient_type='seller') ✓
  *   - recipient_id     → offices (quando recipient_type='office') ✓
- *   - sale_id          → sales → client_id (JOIN indireto, mas válido)
+ *   - sale_id          → sales → client_id (JOIN indireto via sales)
  * 
  * CLIENTS (Novos Clientes):
  *   - created_at       → time dimension ✓
@@ -51,35 +57,37 @@ export type AggregationType = 'sum' | 'count' | 'count_distinct' | 'avg' | 'min'
  *   - office_id        → offices (meta de escritório) ✓
  *   - NÃO TEM product_id ✗
  *   - NÃO TEM client_id ✗
+ * 
+ * NOTA: Dimensões são normalizadas para PLURAL (products, sellers, offices, clients, time)
  */
 const COMPATIBILITY_MATRIX: Record<string, Record<string, boolean>> = {
   sales: {
-    time: true,      // ✅ FK: sale_date
-    product: true,   // ✅ FK: product_id (DIRETO!)
-    seller: true,    // ✅ FK: seller_id (DIRETO!)
-    office: true,    // ✅ FK: office_id
-    clients: true,   // ✅ FK: client_id
+    time: true,       // ✅ FK: sale_date
+    products: true,   // ✅ FK: product_id (DIRETO!)
+    sellers: true,    // ✅ FK: seller_id (DIRETO!)
+    offices: true,    // ✅ FK: office_id
+    clients: true,    // ✅ FK: client_id
   },
   commissions: {
-    time: true,      // ✅ FK: due_date
-    product: true,   // ✅ FK indireto: sale_id → sales.product_id (JOIN válido)
-    seller: true,    // ✅ FK: recipient_id (quando recipient_type='seller')
-    office: true,    // ✅ FK: recipient_id (quando recipient_type='office')
-    clients: true,   // ✅ FK indireto: sale_id → sales.client_id (JOIN válido)
+    time: true,       // ✅ FK: due_date
+    products: true,   // ✅ FK indireto: sale_id → sales.product_id (JOIN válido)
+    sellers: true,    // ✅ FK: recipient_id (quando recipient_type='seller')
+    offices: true,    // ✅ FK: recipient_id (quando recipient_type='office')
+    clients: true,    // ✅ FK indireto: sale_id → sales.client_id (JOIN válido)
   },
   clients: {
-    time: true,      // ✅ FK: created_at
-    product: false,  // ❌ NÃO TEM product_id (tabela clients não tem FK para produtos)
-    seller: true,    // ✅ FK: responsible_user_id
-    office: true,    // ✅ FK: office_id
-    clients: false,  // ❌ Não faz sentido agrupar clientes por clientes
+    time: true,       // ✅ FK: created_at
+    products: false,  // ❌ NÃO TEM product_id (tabela clients não tem FK para produtos)
+    sellers: true,    // ✅ FK: responsible_user_id
+    offices: true,    // ✅ FK: office_id
+    clients: false,   // ❌ Não faz sentido agrupar clientes por clientes
   },
   goals: {
-    time: true,      // ✅ FK: period_start/period_end
-    product: false,  // ❌ NÃO TEM product_id (tabela goals não tem FK para produtos)
-    seller: true,    // ✅ FK: user_id (É O VENDEDOR da meta individual!)
-    office: true,    // ✅ FK: office_id (meta de escritório)
-    clients: false,  // ❌ NÃO TEM client_id (metas não são por cliente)
+    time: true,       // ✅ FK: period_start/period_end
+    products: false,  // ❌ NÃO TEM product_id (tabela goals não tem FK para produtos)
+    sellers: true,    // ✅ FK: user_id (É O VENDEDOR da meta individual!)
+    offices: true,    // ✅ FK: office_id (meta de escritório)
+    clients: false,   // ❌ NÃO TEM client_id (metas não são por cliente)
   },
 };
 
@@ -119,8 +127,8 @@ export function validateChartConfig(config: ChartConfig): ValidationResult {
     return { isValid: false, errors, warnings };
   }
 
-  const yAxis = config.yAxis?.type as string;
-  const xAxis = config.xAxis as string;
+  const yAxis = normalizeDataType(config.yAxis?.type);
+  const xAxis = normalizeXAxis(config.xAxis);
   const aggregation = config.yAxis?.aggregation;
 
   // Validar compatibilidade Y x X baseado em Foreign Keys reais
@@ -140,7 +148,7 @@ export function validateChartConfig(config: ChartConfig): ValidationResult {
   }
 
   // Avisos específicos
-  if (yAxis === 'commissions' && xAxis === 'product') {
+  if (yAxis === 'commissions' && xAxis === 'products') {
     warnings.push(
       'Esta combinação requer JOIN através de sales. Performance pode ser impactada.'
     );
@@ -167,8 +175,11 @@ export function isValidCombination(
   xAxis: string,
   aggregation: AggregationType
 ): boolean {
-  const isCompatible = COMPATIBILITY_MATRIX[yAxis]?.[xAxis] ?? false;
-  const isValidAgg = VALID_AGGREGATIONS[yAxis]?.includes(aggregation) ?? false;
+  const normalizedYAxis = normalizeDataType(yAxis);
+  const normalizedXAxis = normalizeXAxis(xAxis);
+  
+  const isCompatible = COMPATIBILITY_MATRIX[normalizedYAxis]?.[normalizedXAxis] ?? false;
+  const isValidAgg = VALID_AGGREGATIONS[normalizedYAxis]?.includes(aggregation) ?? false;
   return isCompatible && isValidAgg;
 }
 
