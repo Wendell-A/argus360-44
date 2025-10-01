@@ -9,6 +9,7 @@ import { useActiveDashboardConfig, useDashboardConfigurations, useSaveDashboardC
 import { DashboardConfigModal } from './DashboardConfigModal';
 import { DynamicMetricCard } from './DynamicMetricCard';
 import { ConfigurableChart } from './ConfigurableChart';
+import { WidgetConfigModal } from './WidgetConfigModal';
 import { useDynamicListData } from '@/hooks/useDynamicListData';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -79,6 +80,34 @@ export function ConfigurableDashboard() {
       toast.error('Erro ao salvar configuração');
     } finally {
       // Delay para mostrar animação
+      setTimeout(() => setIsRefreshing(false), 800);
+    }
+  };
+
+  const handleListChange = async (newConfig: any) => {
+    if (!activeConfig) return;
+    
+    const updatedConfig = {
+      ...activeConfig,
+      widget_configs: {
+        ...activeConfig.widget_configs,
+        lists: activeConfig.widget_configs.lists?.map(list => 
+          list.id === newConfig.id ? newConfig : list
+        ) || [],
+      },
+    };
+
+    try {
+      setIsRefreshing(true);
+      await saveMutation.mutateAsync(updatedConfig);
+      await refetch();
+      toast.success('Configuração salva com sucesso!', {
+        description: 'Os dados foram atualizados',
+        duration: 2000,
+      });
+    } catch (error) {
+      toast.error('Erro ao salvar configuração');
+    } finally {
       setTimeout(() => setIsRefreshing(false), 800);
     }
   };
@@ -185,7 +214,12 @@ export function ConfigurableDashboard() {
       {activeConfig.widget_configs.lists && activeConfig.widget_configs.lists.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {activeConfig.widget_configs.lists.map((list) => (
-            <DynamicList key={list.id} config={list} />
+            <DynamicList 
+              key={list.id} 
+              config={list} 
+              onConfigChange={handleListChange}
+              canConfigure={canManageConfigs}
+            />
           ))}
         </div>
       )}
@@ -204,14 +238,32 @@ export function ConfigurableDashboard() {
 }
 
 // Componente auxiliar para renderizar listas dinâmicas
-function DynamicList({ config }: { config: any }) {
+function DynamicList({ 
+  config, 
+  onConfigChange, 
+  canConfigure 
+}: { 
+  config: any; 
+  onConfigChange?: (newConfig: any) => void;
+  canConfigure?: boolean;
+}) {
   const { data, isLoading } = useDynamicListData(config);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">{config.title}</CardTitle>
+          {canConfigure && onConfigChange && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsConfigModalOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -227,14 +279,32 @@ function DynamicList({ config }: { config: any }) {
   if (!data || data.length === 0) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">{config.title}</CardTitle>
+          {canConfigure && onConfigChange && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsConfigModalOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground text-center py-8">
             Nenhum dado disponível
           </p>
         </CardContent>
+        {isConfigModalOpen && onConfigChange && (
+          <WidgetConfigModal
+            open={isConfigModalOpen}
+            onOpenChange={setIsConfigModalOpen}
+            config={config}
+            onSave={onConfigChange}
+            widgetType="list"
+          />
+        )}
       </Card>
     );
   }
@@ -372,12 +442,31 @@ function DynamicList({ config }: { config: any }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">{config.title}</CardTitle>
+        {canConfigure && onConfigChange && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsConfigModalOpen(true)}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {renderListContent()}
       </CardContent>
+      
+      {isConfigModalOpen && onConfigChange && (
+        <WidgetConfigModal
+          open={isConfigModalOpen}
+          onOpenChange={setIsConfigModalOpen}
+          config={config}
+          onSave={onConfigChange}
+          widgetType="list"
+        />
+      )}
     </Card>
   );
 }
