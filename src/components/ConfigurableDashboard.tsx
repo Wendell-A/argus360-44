@@ -14,6 +14,8 @@ import { useDynamicListData } from '@/hooks/useDynamicListData';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useDashboardFilteredData } from '@/hooks/useDashboardFilteredData';
+import { useDashboardFiltersStore } from '@/stores/useDashboardFiltersStore';
 
 export function ConfigurableDashboard() {
   const [selectedConfig, setSelectedConfig] = useState<'A' | 'B' | 'C'>('A');
@@ -23,8 +25,13 @@ export function ConfigurableDashboard() {
   const { data: configurations } = useDashboardConfigurations();
   const { data: activeConfig, isLoading, refetch } = useActiveDashboardConfig(selectedConfig);
   const saveMutation = useSaveDashboardConfiguration();
+  
+  // Filtros do Dashboard
+  const { isActive: hasActiveFilters } = useDashboardFiltersStore();
+  const { data: filteredData, isLoading: isLoadingFiltered } = useDashboardFilteredData();
 
   const canManageConfigs = user && activeTenant && ['owner', 'admin'].includes(activeTenant.user_role || '');
+  const isLoadingData = isLoading || (hasActiveFilters && isLoadingFiltered);
 
   const handleMetricChange = async (newConfig: any) => {
     if (!activeConfig) return;
@@ -112,7 +119,7 @@ export function ConfigurableDashboard() {
     }
   };
 
-  if (isLoading) {
+  if (isLoadingData) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
@@ -194,6 +201,7 @@ export function ConfigurableDashboard() {
             key={metric.id} 
             config={metric} 
             onConfigChange={handleMetricChange}
+            filteredData={hasActiveFilters ? filteredData : undefined}
           />
         ))}
       </div>
@@ -206,6 +214,7 @@ export function ConfigurableDashboard() {
             config={chart} 
             onConfigChange={handleChartChange}
             isRefreshing={isRefreshing}
+            filteredData={hasActiveFilters ? filteredData : undefined}
           />
         ))}
       </div>
@@ -219,6 +228,7 @@ export function ConfigurableDashboard() {
               config={list} 
               onConfigChange={handleListChange}
               canConfigure={canManageConfigs}
+              filteredData={hasActiveFilters ? filteredData : undefined}
             />
           ))}
         </div>
@@ -241,14 +251,19 @@ export function ConfigurableDashboard() {
 function DynamicList({ 
   config, 
   onConfigChange, 
-  canConfigure 
+  canConfigure,
+  filteredData 
 }: { 
   config: any; 
   onConfigChange?: (newConfig: any) => void;
   canConfigure?: boolean;
+  filteredData?: any;
 }) {
-  const { data, isLoading } = useDynamicListData(config);
+  const { data: defaultData, isLoading } = useDynamicListData(config);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+
+  // Usar dados filtrados se disponíveis, senão usar dados padrão
+  const data = filteredData?.[config.type] || defaultData;
 
   if (isLoading) {
     return (

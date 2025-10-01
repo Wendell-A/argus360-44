@@ -26,9 +26,10 @@ interface ConfigurableChartProps {
   config: ChartConfig;
   onConfigChange?: (config: ChartConfig) => void;
   isRefreshing?: boolean;
+  filteredData?: any;
 }
 
-export function ConfigurableChart({ config, onConfigChange, isRefreshing = false }: ConfigurableChartProps) {
+export function ConfigurableChart({ config, onConfigChange, isRefreshing = false, filteredData }: ConfigurableChartProps) {
   const { user, activeTenant } = useAuth();
   const [configModalOpen, setConfigModalOpen] = useState(false);
   
@@ -37,7 +38,10 @@ export function ConfigurableChart({ config, onConfigChange, isRefreshing = false
   const validationMessage = getValidationMessage(config);
   
   // Só buscar dados se configuração for válida
-  const { data, isLoading } = useDynamicChartData(config);
+  const { data: defaultData, isLoading } = useDynamicChartData(config);
+
+  // Usar dados filtrados se disponíveis, senão dados padrão
+  const data = filteredData?.[config.type] || defaultData;
 
   // Verificar se usuário pode configurar (admin/owner)
   const canConfigure = user && activeTenant && onConfigChange && 

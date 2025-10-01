@@ -10,12 +10,16 @@ import { useAuth } from '@/contexts/AuthContext';
 interface DynamicMetricCardProps {
   config: MetricConfig;
   onConfigChange?: (config: MetricConfig) => void;
+  filteredData?: any;
 }
 
-export function DynamicMetricCard({ config, onConfigChange }: DynamicMetricCardProps) {
-  const { data, isLoading } = useDynamicMetricData(config);
+export function DynamicMetricCard({ config, onConfigChange, filteredData }: DynamicMetricCardProps) {
+  const { data: defaultData, isLoading } = useDynamicMetricData(config);
   const { user, activeTenant } = useAuth();
   const [configModalOpen, setConfigModalOpen] = useState(false);
+
+  // Usar dados filtrados se disponíveis, senão dados padrão
+  const data = filteredData?.[config.type] || defaultData;
 
   // Verificar se usuário pode configurar (admin/owner)
   const canConfigure = user && activeTenant && onConfigChange && 
