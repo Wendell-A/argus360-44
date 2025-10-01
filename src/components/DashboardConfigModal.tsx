@@ -232,6 +232,7 @@ export function DashboardConfigModal({ isOpen, onClose, configName, currentConfi
                               <SelectItem value="sellers">Vendedores</SelectItem>
                               <SelectItem value="goals">Metas</SelectItem>
                               <SelectItem value="products">Produtos</SelectItem>
+                              <SelectItem value="conversion_rate">Taxa de Conversão</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

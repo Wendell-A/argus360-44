@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useDashboardFilteredData } from '@/hooks/useDashboardFilteredData';
 import { useDashboardFiltersStore } from '@/stores/useDashboardFiltersStore';
+import { ConversionRateWidget } from './dashboard/ConversionRateWidget';
 
 export function ConfigurableDashboard() {
   const [selectedConfig, setSelectedConfig] = useState<'A' | 'B' | 'C'>('A');
@@ -202,14 +203,29 @@ export function ConfigurableDashboard() {
 
       {/* Cards de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {activeConfig.widget_configs.metrics.map((metric) => (
-          <DynamicMetricCard 
-            key={metric.id} 
-            config={metric} 
-            onConfigChange={handleMetricChange}
-            filteredData={hasActiveFilters ? filteredData : undefined}
-          />
-        ))}
+        {activeConfig.widget_configs.metrics.map((metric) => {
+          // Widget especial para Taxa de Conversão
+          if (metric.type === 'conversion_rate') {
+            return (
+              <div key={metric.id} className="col-span-1 md:col-span-2">
+                <ConversionRateWidget 
+                  startDate={undefined} 
+                  endDate={undefined} 
+                />
+              </div>
+            );
+          }
+          
+          // Widgets normais de métricas
+          return (
+            <DynamicMetricCard 
+              key={metric.id} 
+              config={metric} 
+              onConfigChange={handleMetricChange}
+              filteredData={hasActiveFilters ? filteredData : undefined}
+            />
+          );
+        })}
       </div>
 
       {/* Gráficos */}

@@ -16,7 +16,7 @@ export interface CommissionTypeConfig {
 
 export interface MetricConfig {
   id: string;
-  type: 'sales' | 'commissions' | 'clients' | 'sellers' | 'goals' | 'products';
+  type: 'sales' | 'commissions' | 'clients' | 'sellers' | 'goals' | 'products' | 'conversion_rate';
   title: string;
   aggregation?: 'sum' | 'count' | 'avg' | 'min' | 'max' | 'count_distinct';
   dynamicTitle?: boolean;
