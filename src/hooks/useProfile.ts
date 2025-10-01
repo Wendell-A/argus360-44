@@ -46,10 +46,17 @@ export const useProfile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
+      console.log('[useProfile] Buscando dados do perfil para usuário:', user.id);
+
       const { data, error } = await supabase
         .rpc('get_user_profile_complete', { user_uuid: user.id });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useProfile] Erro ao buscar perfil:', error);
+        throw error;
+      }
+
+      console.log('[useProfile] Dados recebidos:', data);
       return data as unknown as CompleteProfile;
     },
     staleTime: 300000, // 5 minutos
@@ -92,6 +99,8 @@ export const useProfile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
+      console.log('[useProfile] Iniciando upload de avatar para usuário:', user.id);
+
       // Validar arquivo
       if (!file.type.startsWith('image/')) {
         throw new Error('O arquivo deve ser uma imagem');
@@ -105,16 +114,23 @@ export const useProfile = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/avatar.${fileExt}`;
 
+      console.log('[useProfile] Fazendo upload para:', fileName);
+
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('[useProfile] Erro no upload:', uploadError);
+        throw uploadError;
+      }
 
       // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
+
+      console.log('[useProfile] URL pública gerada:', publicUrl);
 
       // Atualizar perfil com nova URL
       const { error: updateError } = await supabase
@@ -122,8 +138,12 @@ export const useProfile = () => {
         .update({ avatar_url: publicUrl })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('[useProfile] Erro ao atualizar perfil:', updateError);
+        throw updateError;
+      }
 
+      console.log('[useProfile] Avatar atualizado com sucesso');
       await refetch();
 
       toast({
@@ -131,6 +151,7 @@ export const useProfile = () => {
         description: 'Seu avatar foi atualizado com sucesso.',
       });
     } catch (error: any) {
+      console.error('[useProfile] Erro geral no upload:', error);
       toast({
         title: 'Erro ao fazer upload',
         description: error.message,

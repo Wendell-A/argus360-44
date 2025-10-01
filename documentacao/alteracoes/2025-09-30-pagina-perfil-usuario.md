@@ -1,5 +1,62 @@
 # Página de Perfil do Usuário - 30/09/2025
 
+## 🔧 Correções Aplicadas - 30/09/2025 às 21:45
+
+### Problemas Identificados e Resolvidos:
+
+1. **❌ Função RPC com Coluna Inexistente**
+   - **Problema**: A função `get_user_profile_complete` tentava acessar `tu.position_id` que não existe na tabela `tenant_users`
+   - **Solução**: Removida a referência a `position_id` da função RPC
+   - **Status**: ✅ Corrigido na migration `20250930224500`
+   - **Impacto**: Função RPC agora retorna dados corretamente sem erros
+
+2. **❌ Inicialização Incorreta de Campos no Frontend**
+   - **Problema**: Uso incorreto de `useState(() => {})` para inicializar campos que dependem de dados assíncronos
+   - **Solução**: Substituído por `useEffect` que monitora mudanças em `profileData` e atualiza os campos
+   - **Status**: ✅ Corrigido em `src/pages/Profile.tsx`
+   - **Impacto**: Nome e telefone agora aparecem corretamente quando os dados são carregados
+
+3. **❌ Falta de Logs para Debug**
+   - **Problema**: Dificuldade em identificar onde os processos falhavam
+   - **Solução**: Adicionados logs detalhados em `useProfile.ts`:
+     - `[useProfile] Buscando dados do perfil para usuário: {id}`
+     - `[useProfile] Dados recebidos: {data}`
+     - `[useProfile] Iniciando upload de avatar`
+     - `[useProfile] URL pública gerada: {url}`
+     - `[useProfile] Avatar atualizado com sucesso`
+   - **Status**: ✅ Logs implementados
+   - **Impacto**: Facilita identificação de problemas no console do navegador
+
+### ⚠️ Warnings de Segurança Pré-Existentes
+
+O linter do Supabase reportou **20 warnings de segurança** após a migration:
+- ℹ️ **IMPORTANTE**: Nenhum destes warnings foi causado pelas mudanças atuais
+- ℹ️ Todos são problemas pré-existentes no projeto
+- 📋 **Recomendação**: Revisar e corrigir estes warnings em momento oportuno
+- 🔗 Links para correção disponíveis nos logs da migration
+
+### 📝 Verificações Recomendadas
+
+Para confirmar que tudo está funcionando:
+
+1. **Teste o Fluxo Completo**:
+   - Faça login na aplicação
+   - Acesse a rota `/perfil`
+   - Verifique se o nome aparece nos campos
+   - Tente fazer upload de uma foto de perfil
+   - Abra o console do navegador (F12) para ver os logs detalhados
+
+2. **Verifique os Dados no Supabase**:
+   - Confirme que `full_name` está preenchido na tabela `profiles`
+   - Verifique se há registros em `tenant_users` vinculados ao seu usuário
+   - Confira as políticas RLS do bucket `avatars`
+
+3. **Console do Navegador**:
+   - Todos os logs começam com `[useProfile]` para fácil identificação
+   - Em caso de erro, os logs mostrarão exatamente onde ocorreu o problema
+
+---
+
 ## 📋 Resumo da Implementação
 
 Nova página de perfil completa (`/perfil`) que permite aos usuários visualizar e editar suas informações pessoais, gerenciar credenciais de acesso e visualizar dados da organização.

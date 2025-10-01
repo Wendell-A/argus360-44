@@ -5,7 +5,7 @@
  * Permite visualizar e editar informações pessoais, credenciais e dados da organização
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Save, Building2, Users, Briefcase, Mail, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,12 +37,12 @@ export default function Profile() {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   // Inicializar campos quando os dados carregarem
-  useState(() => {
+  useEffect(() => {
     if (profileData) {
       setFullName(profileData.full_name || '');
       setPhone(profileData.phone || '');
     }
-  });
+  }, [profileData]);
 
   const handleSaveProfile = () => {
     updateProfile({
