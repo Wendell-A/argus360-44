@@ -56,11 +56,11 @@ export function useDynamicMetricData(config: MetricConfig) {
     queryFn: async (): Promise<MetricData> => {
       if (!activeTenant?.tenant_id) throw new Error('No active tenant');
 
-      // Calcular período atual e anterior
+      // Calcular período atual (últimos 30 dias) e anterior (30 dias antes disso)
       const now = new Date();
-      const currentPeriodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const previousPeriodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const previousPeriodEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      const currentPeriodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Últimos 30 dias
+      const previousPeriodStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000); // 60 dias atrás
+      const previousPeriodEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 dias atrás
 
       const [currentValue, previousValue] = await Promise.all([
         getMetricValue(optimizedConfig, activeTenant.tenant_id, currentPeriodStart, now),

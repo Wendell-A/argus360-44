@@ -37,28 +37,51 @@ export function useDynamicListData(config: ListConfig) {
 }
 
 async function getRecentSales(tenantId: string, limit: number) {
-  const { data, error } = await supabase
+  // Etapa 1: Buscar vendas básicas
+  const { data: sales, error } = await supabase
     .from('sales')
-    .select(`
-      id,
-      sale_value,
-      sale_date,
-      status,
-      clients(name),
-      consortium_products(name),
-      profiles!sales_seller_id_fkey(full_name)
-    `)
+    .select('id, sale_value, sale_date, status, client_id, product_id, seller_id')
     .eq('tenant_id', tenantId)
     .order('sale_date', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
+  if (!sales || sales.length === 0) return [];
 
-  return (data || []).map(sale => ({
+  // Etapa 2: Buscar nomes relacionados
+  const clientIds = [...new Set(sales.map(s => s.client_id))];
+  const productIds = [...new Set(sales.map(s => s.product_id))];
+  const sellerIds = [...new Set(sales.map(s => s.seller_id))];
+
+  // Buscar clientes
+  const { data: clients } = await supabase
+    .from('clients')
+    .select('id, name')
+    .in('id', clientIds);
+
+  // Buscar produtos
+  const { data: products } = await supabase
+    .from('consortium_products')
+    .select('id, name')
+    .in('id', productIds);
+
+  // Buscar vendedores
+  const { data: sellers } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', sellerIds);
+
+  // Criar maps para lookup rápido
+  const clientMap = new Map(clients?.map(c => [c.id, c.name]) || []);
+  const productMap = new Map(products?.map(p => [p.id, p.name]) || []);
+  const sellerMap = new Map(sellers?.map(s => [s.id, s.full_name]) || []);
+
+  // Mapear resultados
+  return sales.map(sale => ({
     id: sale.id,
-    client_name: (sale.clients as any)?.name || 'N/A',
-    product_name: (sale.consortium_products as any)?.name || 'N/A',
-    seller_name: (sale.profiles as any)?.full_name || 'N/A',
+    client_name: clientMap.get(sale.client_id) || 'N/A',
+    product_name: productMap.get(sale.product_id) || 'N/A',
+    seller_name: sellerMap.get(sale.seller_id) || 'N/A',
     sale_value: sale.sale_value,
     sale_date: sale.sale_date,
     status: sale.status,
@@ -66,39 +89,43 @@ async function getRecentSales(tenantId: string, limit: number) {
 }
 
 async function getTopSellers(tenantId: string, limit: number) {
-  const { data, error } = await supabase
+  // Etapa 1: Buscar vendas aprovadas
+  const { data: sales, error } = await supabase
     .from('sales')
-    .select(`
-      seller_id,
-      sale_value,
-      profiles!sales_seller_id_fkey(full_name)
-    `)
+    .select('seller_id, sale_value')
     .eq('tenant_id', tenantId)
     .eq('status', 'approved');
 
   if (error) throw error;
+  if (!sales || sales.length === 0) return [];
 
-  // Agrupar por vendedor e somar valores
-  const sellerMap = new Map<string, { name: string; total: number; count: number }>();
-
-  (data || []).forEach(sale => {
+  // Etapa 2: Agrupar por vendedor
+  const sellerMap = new Map<string, { total: number; count: number }>();
+  
+  sales.forEach(sale => {
     const sellerId = sale.seller_id;
-    const sellerName = (sale.profiles as any)?.full_name || 'N/A';
-    
     if (!sellerMap.has(sellerId)) {
-      sellerMap.set(sellerId, { name: sellerName, total: 0, count: 0 });
+      sellerMap.set(sellerId, { total: 0, count: 0 });
     }
-    
     const seller = sellerMap.get(sellerId)!;
     seller.total += sale.sale_value || 0;
     seller.count += 1;
   });
 
+  // Etapa 3: Buscar nomes dos vendedores
+  const sellerIds = Array.from(sellerMap.keys());
+  const { data: sellers } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', sellerIds);
+
+  const sellerNameMap = new Map(sellers?.map(s => [s.id, s.full_name]) || []);
+
   // Converter para array e ordenar
   return Array.from(sellerMap.entries())
     .map(([id, data]) => ({
       seller_id: id,
-      seller_name: data.name,
+      seller_name: sellerNameMap.get(id) || 'N/A',
       total_sales: data.total,
       sale_count: data.count,
     }))
@@ -107,29 +134,44 @@ async function getTopSellers(tenantId: string, limit: number) {
 }
 
 async function getUpcomingTasks(tenantId: string, limit: number) {
-  const { data, error } = await supabase
+  // Etapa 1: Buscar tarefas pendentes
+  const { data: tasks, error } = await supabase
     .from('automated_tasks')
-    .select(`
-      id,
-      title,
-      due_date,
-      priority,
-      status,
-      clients(name),
-      profiles!automated_tasks_seller_id_fkey(full_name)
-    `)
+    .select('id, title, due_date, priority, status, client_id, seller_id')
     .eq('tenant_id', tenantId)
     .in('status', ['pending', 'in_progress'])
     .order('due_date', { ascending: true })
     .limit(limit);
 
   if (error) throw error;
+  if (!tasks || tasks.length === 0) return [];
 
-  return (data || []).map(task => ({
+  // Etapa 2: Buscar nomes relacionados
+  const clientIds = [...new Set(tasks.map(t => t.client_id).filter(Boolean))];
+  const sellerIds = [...new Set(tasks.map(t => t.seller_id).filter(Boolean))];
+
+  // Buscar clientes
+  const { data: clients } = await supabase
+    .from('clients')
+    .select('id, name')
+    .in('id', clientIds);
+
+  // Buscar vendedores
+  const { data: sellers } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', sellerIds);
+
+  // Criar maps para lookup rápido
+  const clientMap = new Map(clients?.map(c => [c.id, c.name]) || []);
+  const sellerMap = new Map(sellers?.map(s => [s.id, s.full_name]) || []);
+
+  // Mapear resultados
+  return tasks.map(task => ({
     id: task.id,
     title: task.title,
-    client_name: (task.clients as any)?.name || 'N/A',
-    seller_name: (task.profiles as any)?.full_name || 'N/A',
+    client_name: clientMap.get(task.client_id) || 'N/A',
+    seller_name: sellerMap.get(task.seller_id) || 'N/A',
     due_date: task.due_date,
     priority: task.priority,
     status: task.status,
