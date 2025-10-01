@@ -142,7 +142,7 @@ export default function AppSidebar() {
   }
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Header com informações do usuário - Modernizado e Centralizado */}
         <div className="p-4 border-b">
