@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 interface UserAvatarProps {
   avatarUrl?: string;
   fullName: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 export function UserAvatar({ avatarUrl, fullName, size = "md" }: UserAvatarProps) {
@@ -20,7 +20,8 @@ export function UserAvatar({ avatarUrl, fullName, size = "md" }: UserAvatarProps
   const sizeClasses = {
     sm: "h-6 w-6 text-xs",
     md: "h-8 w-8 text-sm",
-    lg: "h-10 w-10 text-base"
+    lg: "h-10 w-10 text-base",
+    xl: "h-16 w-16 text-lg"
   };
 
   return (

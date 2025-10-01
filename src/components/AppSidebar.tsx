@@ -26,7 +26,8 @@ import {
   FileSpreadsheet,
   Play,
   FileWarning,
-  User
+  User,
+  MapPin
 } from 'lucide-react';
 import {
   Sidebar,
@@ -143,64 +144,70 @@ export default function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
-        {/* Header com informações do usuário - Enhanced */}
-        <div className="p-4 border-b space-y-3">
-          <div className="flex items-start gap-3">
-            <UserAvatar 
-              avatarUrl={profileData?.avatar_url}
-              fullName={profileData?.full_name || profileData?.email || 'Usuário'}
-              size="lg" 
-            />
-            {state !== 'collapsed' && (
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {greeting.fullGreeting}
-                  </p>
-                  <NotificationBell />
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+        {/* Header com informações do usuário - Modernizado e Centralizado */}
+        <div className="p-4 border-b">
+          {state !== 'collapsed' ? (
+            // Estado Expandido - Layout Centralizado
+            <div className="flex flex-col items-center space-y-3 transition-all duration-500 ease-in-out">
+              <UserAvatar
+                avatarUrl={profileData?.avatar_url}
+                fullName={profileData?.full_name || 'Usuário'}
+                size="xl"
+              />
+              
+              <div className="text-center space-y-1 w-full">
+                <h3 className="text-base font-semibold text-foreground leading-tight">
+                  {greeting.fullGreeting}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-tight">
                   {greeting.message}
                 </p>
               </div>
-            )}
-            {state === 'collapsed' && <NotificationBell />}
-          </div>
-          
-          {/* Info Cards */}
-          {state !== 'collapsed' && (
-            <div className="space-y-1.5 pt-2 border-t border-border/50">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Empresa:</span>
-                <span className="font-medium text-foreground truncate flex-1">
-                  {organizationData?.tenant_name || "Não definida"}
-                </span>
-              </div>
+
+              <div className="h-px bg-border/50 w-3/4" />
               
-              {organizationData?.office_name && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Escritório:</span>
-                  <span className="font-medium text-foreground truncate flex-1">
-                    {organizationData.office_name}
-                  </span>
+              <div className="space-y-2 text-xs text-center w-full">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Building2 className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate font-medium text-foreground">{organizationData?.tenant_name || 'Sem empresa'}</span>
                 </div>
-              )}
-              
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Perfil:</span>
-                <span className="font-medium text-primary truncate flex-1">
-                  {getRoleName(organizationData?.role)}
-                </span>
+                
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate text-foreground">{organizationData?.office_name || 'Sem escritório'}</span>
+                </div>
+                
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Shield className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate text-primary font-medium">{getRoleName(organizationData?.role)}</span>
+                </div>
               </div>
+
+              <div className="h-px bg-border/50 w-3/4" />
+              
+              <NotificationBell />
+            </div>
+          ) : (
+            // Estado Colapsado - Apenas Avatar
+            <div className="flex flex-col items-center space-y-2 transition-all duration-500 ease-in-out">
+              <UserAvatar
+                avatarUrl={profileData?.avatar_url}
+                fullName={profileData?.full_name || 'Usuário'}
+                size="lg"
+              />
             </div>
           )}
         </div>
 
         {/* Menu de navegação */}
         <div className="flex-1">
+          {state !== 'collapsed' && (
+            <div className="h-px bg-border/50 mx-4 my-2" />
+          )}
+          
           {menuItems.map((section) => (
             <SidebarGroup key={section.group}>
-              <SidebarGroupLabel>{section.group}</SidebarGroupLabel>
+              {state !== 'collapsed' && <SidebarGroupLabel>{section.group}</SidebarGroupLabel>}
               <SidebarGroupContent>
                 <SidebarNav>
                   {section.items
@@ -210,10 +217,11 @@ export default function AppSidebar() {
                         <SidebarMenuButton
                           asChild
                           isActive={location.pathname === item.path}
+                          title={state === 'collapsed' ? item.name : undefined}
                         >
                           <Link to={item.path}>
                             <item.icon className="w-4 h-4" />
-                            <span>{item.name}</span>
+                            {state !== 'collapsed' && <span>{item.name}</span>}
                           </Link>
                         </SidebarMenuButton>
                       </SidebarItem>
@@ -226,11 +234,15 @@ export default function AppSidebar() {
 
         {/* Footer com logout */}
         <div className="p-4 border-t">
+          {state !== 'collapsed' && (
+            <div className="h-px bg-border/50 mb-2" />
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={handleSignOut}
             className="w-full justify-start"
+            title={state === 'collapsed' ? 'Sair' : undefined}
           >
             <LogOut className="w-4 h-4 mr-2" />
             {state !== 'collapsed' && <span>Sair</span>}
