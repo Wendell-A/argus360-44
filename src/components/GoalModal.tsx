@@ -80,9 +80,23 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
     const data: GoalInsert = {
       ...formData,
       target_amount: targetAmount,
-      office_id: formData.goal_type === 'office' ? formData.office_id : undefined,
-      user_id: formData.goal_type === 'individual' ? formData.user_id : undefined,
     };
+
+    // Apenas adicionar office_id se for meta de escritório
+    if (formData.goal_type === 'office') {
+      data.office_id = formData.office_id;
+    }
+
+    // Apenas adicionar user_id se for meta individual
+    if (formData.goal_type === 'individual') {
+      data.user_id = formData.user_id;
+    }
+
+    // Para metas de conversão, garantir que office_id e user_id sejam null
+    if (formData.goal_type === 'conversion') {
+      data.office_id = null;
+      data.user_id = null;
+    }
 
     onSave(data);
   };

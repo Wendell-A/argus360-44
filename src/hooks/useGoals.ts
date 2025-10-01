@@ -25,8 +25,8 @@ export type Goal = {
 };
 
 export type GoalInsert = {
-  office_id?: string;
-  user_id?: string;
+  office_id?: string | null;
+  user_id?: string | null;
   goal_type: 'office' | 'individual' | 'conversion';
   target_amount: number;
   period_start: string;
