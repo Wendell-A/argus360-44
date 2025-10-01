@@ -72,9 +72,14 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Para meta de conversão, garantir que target_amount seja inteiro
+    const targetAmount = formData.goal_type === 'conversion' 
+      ? Math.floor(Number(formData.target_amount))
+      : Number(formData.target_amount);
+    
     const data: GoalInsert = {
       ...formData,
-      target_amount: Number(formData.target_amount),
+      target_amount: targetAmount,
       office_id: formData.goal_type === 'office' ? formData.office_id : undefined,
       user_id: formData.goal_type === 'individual' ? formData.user_id : undefined,
     };
@@ -99,7 +104,7 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
               <Label htmlFor="goal_type">Tipo de Meta *</Label>
               <Select 
                 value={formData.goal_type} 
-                onValueChange={(value: 'office' | 'individual') => handleChange("goal_type", value)}
+                onValueChange={(value: 'office' | 'individual' | 'conversion') => handleChange("goal_type", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o tipo" />
@@ -107,6 +112,7 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
                 <SelectContent>
                   <SelectItem value="office">Meta do Escritório</SelectItem>
                   <SelectItem value="individual">Meta Individual</SelectItem>
+                  <SelectItem value="conversion">Contagem de Conversão</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -148,16 +154,23 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="target_amount">Valor da Meta *</Label>
+              <Label htmlFor="target_amount">
+                {formData.goal_type === 'conversion' ? 'Quantidade de Conversões *' : 'Valor da Meta *'}
+              </Label>
               <Input
                 id="target_amount"
                 type="number"
-                step="0.01"
-                placeholder="0.00"
+                step={formData.goal_type === 'conversion' ? '1' : '0.01'}
+                placeholder={formData.goal_type === 'conversion' ? '0' : '0.00'}
                 value={formData.target_amount}
                 onChange={(e) => handleChange("target_amount", e.target.value)}
                 required
               />
+              {formData.goal_type === 'conversion' && (
+                <p className="text-xs text-muted-foreground">
+                  Número de clientes que devem converter do início ao fim do funil
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

@@ -9,7 +9,7 @@ export type Goal = {
   tenant_id: string;
   office_id?: string;
   user_id?: string;
-  goal_type: 'office' | 'individual';
+  goal_type: 'office' | 'individual' | 'conversion';
   target_amount: number;
   current_amount: number;
   period_start: string;
@@ -27,7 +27,7 @@ export type Goal = {
 export type GoalInsert = {
   office_id?: string;
   user_id?: string;
-  goal_type: 'office' | 'individual';
+  goal_type: 'office' | 'individual' | 'conversion';
   target_amount: number;
   period_start: string;
   period_end: string;
@@ -39,6 +39,7 @@ export type GoalStats = {
   totalGoals: number;
   officeGoals: number;
   individualGoals: number;
+  conversionGoals: number;
   completedGoals: number;
   averageProgress: number;
 };
@@ -250,6 +251,7 @@ export const useGoalStats = () => {
         totalGoals: goals.length,
         officeGoals: goals.filter(g => g.goal_type === 'office').length,
         individualGoals: goals.filter(g => g.goal_type === 'individual').length,
+        conversionGoals: goals.filter(g => g.goal_type === 'conversion').length,
         completedGoals: goals.filter(g => g.current_amount >= g.target_amount).length,
         averageProgress: goals.length > 0 ? 
           goals.reduce((sum, g) => sum + (g.current_amount / g.target_amount), 0) / goals.length * 100 : 0,
