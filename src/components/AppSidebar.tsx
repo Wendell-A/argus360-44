@@ -1,8 +1,9 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useProfile } from '@/hooks/useProfile';
 import { useUserMenuConfig } from '@/hooks/useUserMenuConfig';
+import { useGreeting } from '@/hooks/useGreeting';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   Home,
@@ -53,12 +54,27 @@ const SidebarNav = ({ children, ...props }: { children: React.ReactNode; [key: s
 );
 
 export default function AppSidebar() {
-  const { signOut, activeTenant, user } = useAuth();
-  const { currentUser, isLoading: userLoading } = useCurrentUser();
+  const { signOut } = useAuth();
+  const { profileData, organizationData, isLoading: profileLoading } = useProfile();
   const { data: menuConfig, isLoading: configLoading } = useUserMenuConfig();
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
+  
+  const firstName = profileData?.full_name?.split(' ')[0] || 'usuário';
+  const greeting = useGreeting(firstName);
+  
+  // Mapear role para nome legível
+  const getRoleName = (role?: string) => {
+    const roleMap: Record<string, string> = {
+      'owner': 'Proprietário',
+      'admin': 'Administrador',
+      'manager': 'Gerente',
+      'user': 'Usuário',
+      'viewer': 'Visualizador'
+    };
+    return role ? roleMap[role] || role : 'Usuário';
+  };
 
   const handleSignOut = async () => {
     try {
@@ -110,7 +126,7 @@ export default function AppSidebar() {
     }
   ];
 
-  if (userLoading || configLoading) {
+  if (profileLoading || configLoading) {
     return (
       <Sidebar>
         <SidebarContent>
@@ -127,31 +143,57 @@ export default function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
-        {/* Header com informações do usuário */}
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-3">
+        {/* Header com informações do usuário - Enhanced */}
+        <div className="p-4 border-b space-y-3">
+          <div className="flex items-start gap-3">
             <UserAvatar 
-              avatarUrl={currentUser?.avatar_url}
-              fullName={currentUser?.full_name || user?.email || 'Usuário'}
-              size="md" 
+              avatarUrl={profileData?.avatar_url}
+              fullName={profileData?.full_name || profileData?.email || 'Usuário'}
+              size="lg" 
             />
             {state !== 'collapsed' && (
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">
-                  {currentUser?.full_name || user?.email || 'Usuário'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {activeTenant?.tenant_name || 'Empresa'}
-                </p>
-                {currentUser?.office && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {currentUser.office.name}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {greeting.fullGreeting}
                   </p>
-                )}
+                  <NotificationBell />
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                  {greeting.message}
+                </p>
               </div>
             )}
-            <NotificationBell />
+            {state === 'collapsed' && <NotificationBell />}
           </div>
+          
+          {/* Info Cards */}
+          {state !== 'collapsed' && (
+            <div className="space-y-1.5 pt-2 border-t border-border/50">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Empresa:</span>
+                <span className="font-medium text-foreground truncate flex-1">
+                  {organizationData?.tenant_name || "Não definida"}
+                </span>
+              </div>
+              
+              {organizationData?.office_name && (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">Escritório:</span>
+                  <span className="font-medium text-foreground truncate flex-1">
+                    {organizationData.office_name}
+                  </span>
+                </div>
+              )}
+              
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Perfil:</span>
+                <span className="font-medium text-primary truncate flex-1">
+                  {getRoleName(organizationData?.role)}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Menu de navegação */}
