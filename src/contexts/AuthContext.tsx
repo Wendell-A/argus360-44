@@ -124,6 +124,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           setTenants([]);
           setActiveTenant(null);
+          setUserData(null);
+          setShowLgpdModal(false);
         }
         
         setLoading(false);
