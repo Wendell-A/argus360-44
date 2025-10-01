@@ -128,6 +128,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_automated_tasks_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_masked"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_automated_tasks_template_id"
             columns: ["template_id"]
             isOneToOne: false
@@ -195,6 +202,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_funnel_position_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_masked"
             referencedColumns: ["id"]
           },
           {
@@ -270,6 +284,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_interactions_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_masked"
             referencedColumns: ["id"]
           },
         ]
@@ -1426,6 +1447,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "proposals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_masked"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "proposals_office_id_fkey"
             columns: ["office_id"]
             isOneToOne: false
@@ -1625,6 +1653,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_masked"
             referencedColumns: ["id"]
           },
           {
@@ -2612,6 +2647,93 @@ export type Database = {
       }
     }
     Views: {
+      clients_masked: {
+        Row: {
+          address: Json | null
+          birth_date: string | null
+          classification: string | null
+          created_at: string | null
+          document: string | null
+          email: string | null
+          id: string | null
+          monthly_income: number | null
+          name: string | null
+          notes: string | null
+          occupation: string | null
+          office_id: string | null
+          phone: string | null
+          responsible_user_id: string | null
+          secondary_phone: string | null
+          settings: Json | null
+          source: string | null
+          status: string | null
+          tenant_id: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: Json | null
+          birth_date?: string | null
+          classification?: string | null
+          created_at?: string | null
+          document?: never
+          email?: never
+          id?: string | null
+          monthly_income?: number | null
+          name?: string | null
+          notes?: string | null
+          occupation?: string | null
+          office_id?: string | null
+          phone?: never
+          responsible_user_id?: string | null
+          secondary_phone?: never
+          settings?: Json | null
+          source?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: Json | null
+          birth_date?: string | null
+          classification?: string | null
+          created_at?: string | null
+          document?: never
+          email?: never
+          id?: string | null
+          monthly_income?: number | null
+          name?: string | null
+          notes?: string | null
+          occupation?: string | null
+          office_id?: string | null
+          phone?: never
+          responsible_user_id?: string | null
+          secondary_phone?: never
+          settings?: Json | null
+          source?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_details_view: {
         Row: {
           base_amount: number | null
@@ -2657,6 +2779,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_masked"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sales_office_id_fkey"
             columns: ["office_id"]
             isOneToOne: false
@@ -2697,6 +2826,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_masked"
             referencedColumns: ["id"]
           },
           {
@@ -3136,6 +3272,18 @@ export type Database = {
           p_table_name: string
         }
         Returns: undefined
+      }
+      mask_document: {
+        Args: { doc: string }
+        Returns: string
+      }
+      mask_email: {
+        Args: { email: string }
+        Returns: string
+      }
+      mask_phone: {
+        Args: { phone: string }
+        Returns: string
       }
       migrate_role_permissions_to_granular: {
         Args: Record<PropertyKey, never>

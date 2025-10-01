@@ -18,8 +18,9 @@ export function useClients() {
         throw new Error('No tenant selected');
       }
 
+      // Usa a view mascarada para listagens (LGPD compliant)
       const { data, error } = await supabase
-        .from('clients')
+        .from('clients_masked')
         .select('*')
         .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
@@ -32,6 +33,34 @@ export function useClients() {
 
   return {
     clients: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
+
+// Hook para buscar um cliente específico com dados completos (sem máscara)
+// Usado para edição e visualização detalhada
+export function useClientById(clientId: string | undefined) {
+  const query = useQuery({
+    queryKey: ['client', clientId],
+    queryFn: async () => {
+      if (!clientId) throw new Error('No client ID provided');
+
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+
+      if (error) throw error;
+      return data as Client;
+    },
+    enabled: !!clientId,
+  });
+
+  return {
+    client: query.data,
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,
