@@ -43,6 +43,7 @@ const formSchema = z.object({
   category_id: z.string().min(1, 'Selecione uma categoria'),
   order_index: z.coerce.number().min(0, 'Ordem deve ser maior ou igual a 0'),
   is_active: z.boolean(),
+  is_public: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -67,6 +68,7 @@ export function VideoFormModal({ open, onClose, video }: VideoFormModalProps) {
       category_id: '',
       order_index: 0,
       is_active: true,
+      is_public: false,
     },
   });
 
@@ -79,6 +81,7 @@ export function VideoFormModal({ open, onClose, video }: VideoFormModalProps) {
         category_id: video.category_id,
         order_index: video.order_index,
         is_active: video.is_active,
+        is_public: video.is_public,
       });
     } else {
       form.reset({
@@ -88,6 +91,7 @@ export function VideoFormModal({ open, onClose, video }: VideoFormModalProps) {
         category_id: '',
         order_index: 0,
         is_active: true,
+        is_public: false,
       });
     }
   }, [video, form]);
@@ -227,6 +231,27 @@ export function VideoFormModal({ open, onClose, video }: VideoFormModalProps) {
                     <FormLabel className="text-base">Vídeo Ativo</FormLabel>
                     <div className="text-sm text-muted-foreground">
                       Vídeos inativos não serão exibidos para os usuários
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_public"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Vídeo Público para Todos</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Vídeos públicos serão visíveis para todos os tenants
                     </div>
                   </div>
                   <FormControl>

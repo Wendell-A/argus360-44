@@ -24,6 +24,7 @@ export interface TrainingVideo {
   duration_seconds: number | null;
   order_index: number;
   is_active: boolean;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }

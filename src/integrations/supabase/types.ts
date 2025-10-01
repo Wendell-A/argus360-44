@@ -2457,6 +2457,7 @@ export type Database = {
           duration_seconds: number | null
           id: string
           is_active: boolean
+          is_public: boolean
           order_index: number
           tenant_id: string | null
           thumbnail_url: string | null
@@ -2471,6 +2472,7 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           is_active?: boolean
+          is_public?: boolean
           order_index?: number
           tenant_id?: string | null
           thumbnail_url?: string | null
@@ -2485,6 +2487,7 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           is_active?: boolean
+          is_public?: boolean
           order_index?: number
           tenant_id?: string | null
           thumbnail_url?: string | null
