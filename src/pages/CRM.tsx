@@ -4,21 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Target, Calendar, TrendingUp } from 'lucide-react';
+import { Users, Target, Calendar, TrendingUp, Settings } from 'lucide-react';
 import { ClientInteractionHistory } from '@/components/crm/ClientInteractionHistory';
 import { SalesFunnelBoardSecure } from '@/components/crm/SalesFunnelBoardSecure';
 import { UpcomingTasks } from '@/components/crm/UpcomingTasks';
 import { TaskKanban } from '@/components/crm/TaskKanban';
 import { BirthdayClients } from '@/components/crm/BirthdayClients';
+import { FunnelStageConfigModal } from '@/components/crm/FunnelStageConfigModal';
 import { useSalesFunnelStages, useClientFunnelPositions } from '@/hooks/useSalesFunnel';
 import { useContextualInteractions } from '@/hooks/useContextualInteractions';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CRM() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedHistoryClientId, setSelectedHistoryClientId] = useState<string | null>(null);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const { stages, isLoading: stagesLoading } = useSalesFunnelStages();
   const { positions, isLoading: positionsLoading } = useClientFunnelPositions();
   const { data: interactions = [] } = useContextualInteractions();
+  const { activeTenant } = useAuth();
+  
+  // Verificar se usuário pode configurar (admin/owner)
+  const canConfigure = activeTenant && ['owner', 'admin'].includes(activeTenant.user_role || '');
 
   // Calcular métricas
   const totalClients = positions.length;
@@ -44,11 +51,23 @@ export default function CRM() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">CRM - Funil de Vendas</h1>
           <p className="text-muted-foreground">Gerencie seus clientes e acompanhe o pipeline de vendas</p>
         </div>
+        {canConfigure && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsConfigModalOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Configurar Conversão
+          </Button>
+        )}
       </div>
 
       {/* Métricas do Dashboard */}
@@ -126,6 +145,15 @@ export default function CRM() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Configuração do Funil */}
+      {canConfigure && (
+        <FunnelStageConfigModal
+          open={isConfigModalOpen}
+          onOpenChange={setIsConfigModalOpen}
+          stages={stages}
+        />
+      )}
     </div>
   );
 }
