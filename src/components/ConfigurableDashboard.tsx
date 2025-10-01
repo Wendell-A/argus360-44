@@ -269,7 +269,7 @@ function DynamicList({
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
   // Usar dados filtrados se disponíveis, senão usar dados padrão
-  const data = filteredData?.[config.type] || defaultData;
+  const data = filteredData?.lists?.[config.type] || defaultData;
 
   if (isLoading) {
     return (

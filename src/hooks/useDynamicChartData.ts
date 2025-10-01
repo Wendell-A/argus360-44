@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ChartConfig, AggregationFilter } from './useDashboardPersonalization';
 import { applyDynamicTitle, generateChartTitle } from '@/lib/dynamicTitles';
 import { normalizeXAxis, normalizeDataType } from '@/lib/dimensions';
+import { useDashboardFiltersStore } from '@/stores/useDashboardFiltersStore';
 
 // Cache inteligente por tipo de dado (gráficos)
 const getStaleTimeByType = (dataType: string): number => {
@@ -37,8 +38,24 @@ interface ChartDataPoint {
   value: number;
 }
 
+function getDateFieldByType(type: string): string | null {
+  switch (type) {
+    case 'sales':
+      return 'sale_date';
+    case 'commissions':
+      return 'due_date';
+    case 'clients':
+      return 'created_at';
+    case 'goals':
+      return 'created_at';
+    default:
+      return null;
+  }
+}
+
 export function useDynamicChartData(config: ChartConfig) {
   const { activeTenant } = useAuth();
+  const { filters, isActive } = useDashboardFiltersStore();
   
   // Normalizar xAxis para evitar conflitos plural/singular
   const normalizedXAxis = normalizeXAxis(config.xAxis);
@@ -49,6 +66,22 @@ export function useDynamicChartData(config: ChartConfig) {
     xAxis: normalizedXAxis,
   };
 
+  // Converter year/month/start-end em datas para filtros globais
+  let globalStart: string | null = filters.startDate?.toISOString().split('T')[0] || null;
+  let globalEnd: string | null = filters.endDate?.toISOString().split('T')[0] || null;
+  if (isActive && filters.year && !filters.startDate && !filters.endDate) {
+    if (filters.month) {
+      const y = filters.year;
+      const m = filters.month;
+      const last = new Date(y, m, 0).getDate();
+      globalStart = `${y}-${String(m).padStart(2, '0')}-01`;
+      globalEnd = `${y}-${String(m).padStart(2, '0')}-${last}`;
+    } else {
+      globalStart = `${filters.year}-01-01`;
+      globalEnd = `${filters.year}-12-31`;
+    }
+  }
+
   return useQuery({
     queryKey: [
       'dynamic-chart', 
@@ -58,12 +91,23 @@ export function useDynamicChartData(config: ChartConfig) {
       normalizedXAxis,
       optimizedConfig.aggregationFilters,
       optimizedConfig.commissionConfig,
-      activeTenant?.tenant_id
+      activeTenant?.tenant_id,
+      isActive,
+      globalStart,
+      globalEnd,
+      filters.officeIds,
+      filters.productIds,
     ],
     queryFn: async (): Promise<ChartDataPoint[]> => {
       if (!activeTenant?.tenant_id) throw new Error('No active tenant');
 
-      return await getChartData(optimizedConfig, activeTenant.tenant_id);
+      return await getChartData(optimizedConfig, activeTenant.tenant_id, {
+        isActive,
+        start: globalStart,
+        end: globalEnd,
+        officeIds: filters.officeIds,
+        productIds: filters.productIds,
+      });
     },
     enabled: !!activeTenant?.tenant_id,
     staleTime: getStaleTimeByType(optimizedConfig.yAxis.type), // Cache inteligente por tipo
@@ -71,7 +115,7 @@ export function useDynamicChartData(config: ChartConfig) {
   });
 }
 
-async function getChartData(config: ChartConfig, tenantId: string): Promise<ChartDataPoint[]> {
+async function getChartData(config: ChartConfig, tenantId: string, globalFilters?: { isActive: boolean; start: string | null; end: string | null; officeIds: string[]; productIds: string[]; }): Promise<ChartDataPoint[]> {
   const selectFields = getSelectFields(config);
   let query;
 
@@ -90,7 +134,7 @@ async function getChartData(config: ChartConfig, tenantId: string): Promise<Char
       
       // Aplicar filtros de comissão se especificados
       if (config.commissionConfig) {
-        const types = [];
+        const types = [] as string[];
         if (config.commissionConfig.includeOffice) types.push('office');
         if (config.commissionConfig.includeSeller) types.push('seller');
         if (types.length > 0) {
@@ -123,6 +167,24 @@ async function getChartData(config: ChartConfig, tenantId: string): Promise<Char
       query = supabase.from('sales')
         .select(selectFields)
         .eq('tenant_id', tenantId);
+  }
+
+  // Aplicar filtros globais (ano/mês/período e ids) quando ativos
+  if (globalFilters?.isActive) {
+    const dateField = getDateFieldByType(config.yAxis.type);
+    if (dateField && globalFilters.start && globalFilters.end) {
+      query = query.gte(dateField, globalFilters.start).lte(dateField, globalFilters.end);
+    }
+
+    // Filtros por produtos/escritórios apenas quando aplicáveis
+    if (config.yAxis.type === 'sales') {
+      if (globalFilters.productIds?.length) {
+        query = query.in('product_id', globalFilters.productIds);
+      }
+      if (globalFilters.officeIds?.length) {
+        query = query.in('office_id', globalFilters.officeIds);
+      }
+    }
   }
 
   const { data, error } = await query;

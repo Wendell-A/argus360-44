@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetricConfig } from './useDashboardPersonalization';
 import { optimizeMetricConfig } from '@/lib/dynamicTitles';
+import { useDashboardFiltersStore } from '@/stores/useDashboardFiltersStore';
 
 // Cache inteligente por tipo de dado
 const getStaleTimeByType = (type: string): number => {
@@ -39,9 +40,26 @@ interface MetricData {
 
 export function useDynamicMetricData(config: MetricConfig) {
   const { activeTenant } = useAuth();
+  const { filters, isActive } = useDashboardFiltersStore();
   
   // Otimizar configuração para performance e títulos dinâmicos
   const optimizedConfig = optimizeMetricConfig(config);
+
+  // Converter filtros globais em datas
+  let globalStart: string | null = filters.startDate?.toISOString().split('T')[0] || null;
+  let globalEnd: string | null = filters.endDate?.toISOString().split('T')[0] || null;
+  if (isActive && filters.year && !filters.startDate && !filters.endDate) {
+    if (filters.month) {
+      const y = filters.year;
+      const m = filters.month;
+      const last = new Date(y, m, 0).getDate();
+      globalStart = `${y}-${String(m).padStart(2, '0')}-01`;
+      globalEnd = `${y}-${String(m).padStart(2, '0')}-${last}`;
+    } else {
+      globalStart = `${filters.year}-01-01`;
+      globalEnd = `${filters.year}-12-31`;
+    }
+  }
 
   return useQuery({
     queryKey: [
@@ -51,20 +69,36 @@ export function useDynamicMetricData(config: MetricConfig) {
       optimizedConfig.aggregation, 
       optimizedConfig.commissionConfig,
       optimizedConfig.aggregationFilters,
-      activeTenant?.tenant_id
+      activeTenant?.tenant_id,
+      isActive,
+      globalStart,
+      globalEnd,
+      filters.officeIds,
+      filters.productIds,
     ],
     queryFn: async (): Promise<MetricData> => {
       if (!activeTenant?.tenant_id) throw new Error('No active tenant');
 
-      // Calcular período atual (últimos 30 dias) e anterior (30 dias antes disso)
-      const now = new Date();
-      const currentPeriodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Últimos 30 dias
-      const previousPeriodStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000); // 60 dias atrás
-      const previousPeriodEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 dias atrás
+      // Calcular período base: usar filtros globais quando ativos, senão últimos 30 dias
+      let now = new Date();
+      let currentPeriodStart: Date;
+      let previousPeriodStart: Date;
+      let previousPeriodEnd: Date;
+
+      if (isActive && globalStart && globalEnd) {
+        currentPeriodStart = new Date(globalStart);
+        previousPeriodEnd = new Date(globalStart);
+        previousPeriodStart = new Date(new Date(globalStart).getTime() - (new Date(globalEnd).getTime() - new Date(globalStart).getTime()));
+        now = new Date(globalEnd);
+      } else {
+        currentPeriodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        previousPeriodStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        previousPeriodEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
 
       const [currentValue, previousValue] = await Promise.all([
-        getMetricValue(optimizedConfig, activeTenant.tenant_id, currentPeriodStart, now),
-        getMetricValue(optimizedConfig, activeTenant.tenant_id, previousPeriodStart, previousPeriodEnd)
+        getMetricValue(optimizedConfig, activeTenant.tenant_id, currentPeriodStart, now, { isActive, officeIds: filters.officeIds, productIds: filters.productIds }),
+        getMetricValue(optimizedConfig, activeTenant.tenant_id, previousPeriodStart!, previousPeriodEnd!, { isActive, officeIds: filters.officeIds, productIds: filters.productIds })
       ]);
 
       const change = previousValue > 0 ? ((currentValue - previousValue) / previousValue) * 100 : 0;
