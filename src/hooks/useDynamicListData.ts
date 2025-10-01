@@ -2,9 +2,32 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ListConfig } from './useDashboardPersonalization';
+import { useDashboardFiltersStore } from '@/stores/useDashboardFiltersStore';
 
 export function useDynamicListData(config: ListConfig) {
   const { activeTenant } = useAuth();
+  const { filters, isActive } = useDashboardFiltersStore();
+
+  // Converter year/month em datas globais
+  const globalStart = filters.year && filters.month
+    ? new Date(filters.year, filters.month - 1, 1)
+    : filters.startDate
+    ? new Date(filters.startDate)
+    : null;
+
+  const globalEnd = filters.year && filters.month
+    ? new Date(filters.year, filters.month, 0)
+    : filters.endDate
+    ? new Date(filters.endDate)
+    : null;
+
+  const globalFilters = isActive ? {
+    isActive: true,
+    startDate: globalStart,
+    endDate: globalEnd,
+    officeIds: filters.officeIds || [],
+    productIds: filters.productIds || [],
+  } : null;
 
   return useQuery({
     queryKey: [
@@ -13,19 +36,24 @@ export function useDynamicListData(config: ListConfig) {
       config.type,
       config.limit,
       activeTenant?.tenant_id,
+      isActive,
+      globalStart?.toISOString(),
+      globalEnd?.toISOString(),
+      filters.officeIds,
+      filters.productIds,
     ],
     queryFn: async () => {
       if (!activeTenant?.tenant_id) throw new Error('No active tenant');
 
       switch (config.type) {
         case 'recent_sales':
-          return await getRecentSales(activeTenant.tenant_id, config.limit);
+          return await getRecentSales(activeTenant.tenant_id, config.limit, globalFilters);
         case 'top_sellers':
-          return await getTopSellers(activeTenant.tenant_id, config.limit);
+          return await getTopSellers(activeTenant.tenant_id, config.limit, globalFilters);
         case 'upcoming_tasks':
-          return await getUpcomingTasks(activeTenant.tenant_id, config.limit);
+          return await getUpcomingTasks(activeTenant.tenant_id, config.limit, globalFilters);
         case 'commission_breakdown':
-          return await getCommissionBreakdown(activeTenant.tenant_id, config.limit);
+          return await getCommissionBreakdown(activeTenant.tenant_id, config.limit, globalFilters);
         default:
           return [];
       }
@@ -36,12 +64,34 @@ export function useDynamicListData(config: ListConfig) {
   });
 }
 
-async function getRecentSales(tenantId: string, limit: number) {
+async function getRecentSales(
+  tenantId: string, 
+  limit: number, 
+  globalFilters?: { isActive: boolean; startDate: Date | null; endDate: Date | null; officeIds: string[]; productIds: string[]; } | null
+) {
   // Etapa 1: Buscar vendas básicas
-  const { data: sales, error } = await supabase
+  let query = supabase
     .from('sales')
     .select('id, sale_value, sale_date, status, client_id, product_id, seller_id')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', tenantId);
+
+  // Aplicar filtros globais
+  if (globalFilters?.isActive) {
+    if (globalFilters.startDate) {
+      query = query.gte('sale_date', globalFilters.startDate.toISOString().split('T')[0]);
+    }
+    if (globalFilters.endDate) {
+      query = query.lte('sale_date', globalFilters.endDate.toISOString().split('T')[0]);
+    }
+    if (globalFilters.productIds?.length) {
+      query = query.in('product_id', globalFilters.productIds);
+    }
+    if (globalFilters.officeIds?.length) {
+      query = query.in('office_id', globalFilters.officeIds);
+    }
+  }
+
+  const { data: sales, error } = await query
     .order('sale_date', { ascending: false })
     .limit(limit);
 
@@ -88,13 +138,35 @@ async function getRecentSales(tenantId: string, limit: number) {
   }));
 }
 
-async function getTopSellers(tenantId: string, limit: number) {
+async function getTopSellers(
+  tenantId: string, 
+  limit: number,
+  globalFilters?: { isActive: boolean; startDate: Date | null; endDate: Date | null; officeIds: string[]; productIds: string[]; } | null
+) {
   // Etapa 1: Buscar vendas aprovadas
-  const { data: sales, error } = await supabase
+  let query = supabase
     .from('sales')
-    .select('seller_id, sale_value')
+    .select('seller_id, sale_value, sale_date')
     .eq('tenant_id', tenantId)
     .eq('status', 'approved');
+
+  // Aplicar filtros globais
+  if (globalFilters?.isActive) {
+    if (globalFilters.startDate) {
+      query = query.gte('sale_date', globalFilters.startDate.toISOString().split('T')[0]);
+    }
+    if (globalFilters.endDate) {
+      query = query.lte('sale_date', globalFilters.endDate.toISOString().split('T')[0]);
+    }
+    if (globalFilters.productIds?.length) {
+      query = query.in('product_id', globalFilters.productIds);
+    }
+    if (globalFilters.officeIds?.length) {
+      query = query.in('office_id', globalFilters.officeIds);
+    }
+  }
+
+  const { data: sales, error } = await query;
 
   if (error) throw error;
   if (!sales || sales.length === 0) return [];
@@ -133,13 +205,29 @@ async function getTopSellers(tenantId: string, limit: number) {
     .slice(0, limit);
 }
 
-async function getUpcomingTasks(tenantId: string, limit: number) {
+async function getUpcomingTasks(
+  tenantId: string, 
+  limit: number,
+  globalFilters?: { isActive: boolean; startDate: Date | null; endDate: Date | null; officeIds: string[]; productIds: string[]; } | null
+) {
   // Etapa 1: Buscar tarefas pendentes
-  const { data: tasks, error } = await supabase
+  let query = supabase
     .from('automated_tasks')
     .select('id, title, due_date, priority, status, client_id, seller_id')
     .eq('tenant_id', tenantId)
-    .in('status', ['pending', 'in_progress'])
+    .in('status', ['pending', 'in_progress']);
+
+  // Aplicar filtros globais de data
+  if (globalFilters?.isActive) {
+    if (globalFilters.startDate) {
+      query = query.gte('due_date', globalFilters.startDate.toISOString().split('T')[0]);
+    }
+    if (globalFilters.endDate) {
+      query = query.lte('due_date', globalFilters.endDate.toISOString().split('T')[0]);
+    }
+  }
+
+  const { data: tasks, error } = await query
     .order('due_date', { ascending: true })
     .limit(limit);
 
@@ -178,15 +266,31 @@ async function getUpcomingTasks(tenantId: string, limit: number) {
   }));
 }
 
-async function getCommissionBreakdown(tenantId: string, limit: number) {
+async function getCommissionBreakdown(
+  tenantId: string, 
+  limit: number,
+  globalFilters?: { isActive: boolean; startDate: Date | null; endDate: Date | null; officeIds: string[]; productIds: string[]; } | null
+) {
   // CRITICAL FIX: commissions.recipient_id não tem FK para profiles/offices
   // Implementar busca em duas etapas (igual useDynamicChartData.ts)
   
   // Etapa 1: Buscar comissões básicas
-  const { data: commissions, error } = await supabase
+  let query = supabase
     .from('commissions')
     .select('id, commission_amount, commission_type, status, due_date, recipient_id, recipient_type')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', tenantId);
+
+  // Aplicar filtros globais de data
+  if (globalFilters?.isActive) {
+    if (globalFilters.startDate) {
+      query = query.gte('due_date', globalFilters.startDate.toISOString().split('T')[0]);
+    }
+    if (globalFilters.endDate) {
+      query = query.lte('due_date', globalFilters.endDate.toISOString().split('T')[0]);
+    }
+  }
+
+  const { data: commissions, error } = await query
     .order('due_date', { ascending: false })
     .limit(limit);
 

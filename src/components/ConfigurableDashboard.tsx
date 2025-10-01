@@ -268,8 +268,8 @@ function DynamicList({
   const { data: defaultData, isLoading } = useDynamicListData(config);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-  // Usar dados filtrados se disponíveis, senão usar dados padrão
-  const data = filteredData?.lists?.[config.type] || defaultData;
+  // Usar dados do hook diretamente (filtros já aplicados internamente)
+  const data = defaultData;
 
   if (isLoading) {
     return (
