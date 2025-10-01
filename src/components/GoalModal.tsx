@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,7 +94,7 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
 
     // Para metas de conversão, garantir que office_id e user_id sejam null
     if (formData.goal_type === 'conversion') {
-      data.office_id = null;
+      data.office_id = formData.office_id;
       data.user_id = null;
     }
 
@@ -110,6 +110,9 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{goal ? "Editar Meta" : "Nova Meta"}</DialogTitle>
+          <DialogDescription>
+            Preencha os campos obrigatórios para criar ou editar uma meta.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -131,7 +134,7 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
               </Select>
             </div>
 
-            {formData.goal_type === 'office' && (
+            {(formData.goal_type === 'office' || formData.goal_type === 'conversion') && (
               <div className="space-y-2">
                 <Label htmlFor="office_id">Escritório *</Label>
                 <Select value={formData.office_id || ''} onValueChange={(value) => handleChange("office_id", value)}>
@@ -146,6 +149,9 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.goal_type === 'conversion' && (
+                  <p className="text-xs text-muted-foreground">As conversões serão contabilizadas apenas para este escritório.</p>
+                )}
               </div>
             )}
 
