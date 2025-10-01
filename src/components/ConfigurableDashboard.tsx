@@ -30,6 +30,12 @@ export function ConfigurableDashboard() {
   const { isActive: hasActiveFilters } = useDashboardFiltersStore();
   const { data: filteredData, isLoading: isLoadingFiltered } = useDashboardFilteredData();
 
+  console.log('📊 [ConfigurableDashboard] Estado dos filtros:', {
+    hasActiveFilters,
+    isLoadingFiltered,
+    filteredData: filteredData ? 'Dados presentes' : 'null',
+  });
+
   const canManageConfigs = user && activeTenant && ['owner', 'admin'].includes(activeTenant.user_role || '');
   const isLoadingData = isLoading || (hasActiveFilters && isLoadingFiltered);
 

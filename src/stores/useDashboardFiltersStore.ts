@@ -65,11 +65,20 @@ export const useDashboardFiltersStore = create<DashboardFiltersStore>((set, get)
     isActive: false,
   }),
 
-  applyFilters: () => set({ isActive: true }),
+  applyFilters: () => {
+    const hasFilters = get().hasActiveFilters();
+    console.log('🎯 [useDashboardFiltersStore] applyFilters chamado, hasFilters:', hasFilters);
+    if (hasFilters) {
+      set({ isActive: true });
+      console.log('✅ [useDashboardFiltersStore] Filtros ativados');
+    } else {
+      console.log('⚠️ [useDashboardFiltersStore] Nenhum filtro definido, mantendo isActive: false');
+    }
+  },
 
   hasActiveFilters: () => {
     const { filters } = get();
-    return !!(
+    const hasFilters = !!(
       filters.year ||
       filters.month ||
       filters.startDate ||
@@ -77,5 +86,7 @@ export const useDashboardFiltersStore = create<DashboardFiltersStore>((set, get)
       filters.officeIds.length > 0 ||
       filters.productIds.length > 0
     );
+    console.log('🔍 [useDashboardFiltersStore] hasActiveFilters:', hasFilters, filters);
+    return hasFilters;
   },
 }));
