@@ -7,10 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 interface ConversionRateWidgetProps {
   startDate?: string;
   endDate?: string;
+  officeId?: string;
 }
 
-export function ConversionRateWidget({ startDate, endDate }: ConversionRateWidgetProps) {
-  const { data, isLoading, error } = useConversionRateSummary({ startDate, endDate });
+export function ConversionRateWidget({ startDate, endDate, officeId }: ConversionRateWidgetProps) {
+  const { data, isLoading, error } = useConversionRateSummary({ startDate, endDate, officeId });
 
   if (isLoading) {
     return (
@@ -40,8 +41,16 @@ export function ConversionRateWidget({ startDate, endDate }: ConversionRateWidge
         <CardContent>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Erro ao carregar dados de conversão. Verifique se as etapas do funil estão configuradas.
+            <AlertDescription className="space-y-2">
+              <p className="font-semibold">Erro ao carregar dados de conversão</p>
+              <p className="text-sm">
+                Para usar este widget, certifique-se de:
+              </p>
+              <ul className="text-sm list-disc list-inside space-y-1 ml-2">
+                <li>Configurar as etapas <strong>inicial</strong> e <strong>final</strong> do funil em <strong>/crm</strong></li>
+                <li>Criar uma meta de conversão ativa para o escritório no período em <strong>/metas</strong></li>
+                <li>Selecionar um escritório válido nos filtros do dashboard</li>
+              </ul>
             </AlertDescription>
           </Alert>
         </CardContent>

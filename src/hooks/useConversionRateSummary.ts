@@ -13,11 +13,13 @@ export type ConversionRateSummary = {
 interface UseConversionRateSummaryParams {
   startDate?: string;
   endDate?: string;
+  officeId?: string;
 }
 
 export const useConversionRateSummary = ({ 
   startDate, 
-  endDate 
+  endDate,
+  officeId 
 }: UseConversionRateSummaryParams = {}) => {
   const { activeTenant } = useAuth();
 
@@ -38,20 +40,32 @@ export const useConversionRateSummary = ({
     : getDefaultDates();
 
   return useQuery({
-    queryKey: ['conversion-rate-summary', activeTenant?.tenant_id, dates.start, dates.end],
+    queryKey: ['conversion-rate-summary', activeTenant?.tenant_id, officeId, dates.start, dates.end],
     queryFn: async (): Promise<ConversionRateSummary> => {
       if (!activeTenant?.tenant_id) {
         throw new Error('No tenant selected');
       }
 
+      if (!officeId) {
+        throw new Error('Office ID is required for conversion rate summary');
+      }
+
+      console.debug('[useConversionRateSummary] Fetching data', {
+        tenant: activeTenant.tenant_id,
+        officeId,
+        start: dates.start,
+        end: dates.end,
+      });
+
       const { data, error } = await supabase.rpc('get_conversion_rate_summary', {
         p_tenant_id: activeTenant.tenant_id,
+        p_office_id: officeId,
         p_start_date: dates.start,
         p_end_date: dates.end,
       });
 
       if (error) {
-        console.error('Error fetching conversion rate summary:', error);
+        console.error('[useConversionRateSummary] RPC error:', error);
         throw error;
       }
 
@@ -77,7 +91,7 @@ export const useConversionRateSummary = ({
         progress_percentage: result.progress_percentage || 0,
       };
     },
-    enabled: !!activeTenant?.tenant_id,
+    enabled: !!activeTenant?.tenant_id && !!officeId,
     staleTime: 2 * 60 * 1000, // Cache por 2 minutos
     refetchOnWindowFocus: false,
   });

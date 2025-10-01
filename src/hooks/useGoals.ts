@@ -155,26 +155,56 @@ export const useCreateGoal = () => {
         throw new Error('No tenant selected');
       }
 
+      const payload = {
+        ...goal,
+        tenant_id: activeTenant.tenant_id,
+        created_by: user?.id,
+      };
+
+      // Log sanitizado (sem dados sensíveis)
+      console.info('[useCreateGoal] Creating goal', {
+        goal_type: payload.goal_type,
+        target_amount: payload.target_amount,
+        period_start: payload.period_start,
+        period_end: payload.period_end,
+        has_office_id: !!payload.office_id,
+        has_user_id: !!payload.user_id,
+      });
+
       const { data, error } = await supabase
         .from('goals')
-        .insert({
-          ...goal,
-          tenant_id: activeTenant.tenant_id,
-          created_by: user?.id,
-        })
+        .insert(payload)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useCreateGoal] Insert error', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+        });
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       toast.success('Meta criada com sucesso!');
     },
-    onError: (error) => {
-      console.error('Error creating goal:', error);
-      toast.error('Erro ao criar meta');
+    onError: (error: any) => {
+      console.error('[useCreateGoal] Mutation error', error);
+      
+      // Mapear erro 23514 (CHECK constraint violation) para mensagem amigável
+      if (error?.code === '23514') {
+        toast.error('Tipo de meta inválido. Verifique se todos os campos obrigatórios estão preenchidos.');
+      } else if (error?.message?.includes('office_id')) {
+        toast.error('É obrigatório selecionar um escritório para este tipo de meta.');
+      } else if (error?.message?.includes('user_id')) {
+        toast.error('É obrigatório selecionar um vendedor para metas individuais.');
+      } else {
+        toast.error('Erro ao criar meta. Verifique os dados e tente novamente.');
+      }
     },
   });
 };

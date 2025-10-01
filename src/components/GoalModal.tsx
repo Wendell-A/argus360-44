@@ -12,6 +12,7 @@ import { Goal, GoalInsert } from "@/hooks/useGoals";
 import { useGoalCommissionPreview } from "@/hooks/useGoalCommissionPreview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calculator, TrendingUp, Target } from "lucide-react";
+import { toast } from "sonner";
 
 interface GoalModalProps {
   open: boolean;
@@ -72,28 +73,59 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Para meta de conversão, garantir que target_amount seja inteiro
-    const targetAmount = formData.goal_type === 'conversion' 
-      ? Math.floor(Number(formData.target_amount))
-      : Number(formData.target_amount);
-    
-    const data: GoalInsert = {
-      ...formData,
+    // Validações client-side
+    const validations = [];
+
+    // Validar office_id para metas office e conversion
+    if ((formData.goal_type === 'office' || formData.goal_type === 'conversion') && !formData.office_id) {
+      validations.push('Escritório é obrigatório para este tipo de meta');
+    }
+
+    // Validar user_id para metas individuais
+    if (formData.goal_type === 'individual' && !formData.user_id) {
+      validations.push('Vendedor é obrigatório para metas individuais');
+    }
+
+    // Validar target_amount (deve ser >= 0 e inteiro para conversão)
+    const targetAmount = parseFloat(String(formData.target_amount));
+    if (isNaN(targetAmount) || targetAmount < 0) {
+      validations.push('Valor da meta deve ser maior ou igual a zero');
+    }
+    if (formData.goal_type === 'conversion' && !Number.isInteger(targetAmount)) {
+      validations.push('Valor da meta de conversão deve ser um número inteiro');
+    }
+
+    // Validar período
+    if (formData.period_start > formData.period_end) {
+      validations.push('Data inicial deve ser menor ou igual à data final');
+    }
+
+    // Se houver erros de validação, mostrar e impedir submit
+    if (validations.length > 0) {
+      console.warn('[GoalModal] Validation failed', {
+        goal_type: formData.goal_type,
+        errors: validations,
+      });
+      toast.error(validations[0]); // Mostrar primeiro erro
+      return;
+    }
+
+    const data: any = {
+      goal_type: formData.goal_type,
       target_amount: targetAmount,
+      period_start: formData.period_start,
+      period_end: formData.period_end,
+      status: formData.status,
+      description: formData.description || undefined,
     };
 
-    // Apenas adicionar office_id se for meta de escritório
     if (formData.goal_type === 'office') {
       data.office_id = formData.office_id;
-    }
-
-    // Apenas adicionar user_id se for meta individual
-    if (formData.goal_type === 'individual') {
+      data.user_id = null;
+    } else if (formData.goal_type === 'individual') {
       data.user_id = formData.user_id;
-    }
-
-    // Para metas de conversão, garantir que office_id e user_id sejam null
-    if (formData.goal_type === 'conversion') {
+      data.office_id = null;
+    } else if (formData.goal_type === 'conversion') {
       data.office_id = formData.office_id;
       data.user_id = null;
     }

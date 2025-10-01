@@ -3135,7 +3135,12 @@ export type Database = {
         }[]
       }
       get_conversion_rate_summary: {
-        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string }
+        Args: {
+          p_end_date: string
+          p_office_id: string
+          p_start_date: string
+          p_tenant_id: string
+        }
         Returns: {
           conversion_goal: number
           conversion_rate: number
