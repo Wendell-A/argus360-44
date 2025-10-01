@@ -1694,6 +1694,8 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_final_stage: boolean
+          is_initial_stage: boolean
           name: string
           order_index: number
           tenant_id: string
@@ -1707,6 +1709,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_final_stage?: boolean
+          is_initial_stage?: boolean
           name: string
           order_index: number
           tenant_id: string
@@ -1720,6 +1724,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_final_stage?: boolean
+          is_initial_stage?: boolean
           name?: string
           order_index?: number
           tenant_id?: string
