@@ -3168,6 +3168,16 @@ export type Database = {
         }
         Returns: Json
       }
+      get_filtered_dashboard_data: {
+        Args: {
+          p_end_date?: string
+          p_office_ids?: string[]
+          p_product_ids?: string[]
+          p_start_date?: string
+          p_tenant_id: string
+        }
+        Returns: Json
+      }
       get_query_performance_metrics: {
         Args: { tenant_uuid: string }
         Returns: {
