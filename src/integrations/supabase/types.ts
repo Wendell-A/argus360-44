@@ -3134,6 +3134,16 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_conversion_rate_summary: {
+        Args: { p_end_date: string; p_start_date: string; p_tenant_id: string }
+        Returns: {
+          conversion_goal: number
+          conversion_rate: number
+          current_conversions: number
+          progress_percentage: number
+          total_entered: number
+        }[]
+      }
       get_crm_complete_optimized: {
         Args: { limit_param?: number; tenant_uuid: string }
         Returns: {
