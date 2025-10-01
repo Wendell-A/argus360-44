@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { LgpdConsentModal } from '@/components/auth/LgpdConsentModal';
 
 interface Tenant {
   tenant_id: string;
@@ -20,6 +21,8 @@ interface UserData {
   full_name?: string;
   avatar_url?: string;
   tenants?: Tenant[];
+  lgpd_accepted_at?: string;
+  lgpd_version_accepted?: string;
 }
 
 interface SetupResult {
@@ -49,10 +52,12 @@ interface AuthContextType {
   loading: boolean;
   tenants: Tenant[];
   activeTenant: Tenant | null;
+  showLgpdModal: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string, tenantName: string, officeData?: OfficeData) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   setActiveTenant: (tenant: Tenant) => void;
+  acceptLgpdTerms: (version: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,6 +76,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [activeTenant, setActiveTenant] = useState<Tenant | null>(null);
+  const [showLgpdModal, setShowLgpdModal] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   const loadUserData = async () => {
     try {
@@ -81,14 +88,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const userData = data as unknown as UserData;
+      const userDataResponse = data as unknown as UserData;
       
-      if (userData?.authenticated && userData?.tenants) {
-        setTenants(userData.tenants);
-        // Set first active tenant as default
-        const firstActiveTenant = userData.tenants.find((t: Tenant) => t.active);
-        if (firstActiveTenant && !activeTenant) {
-          setActiveTenant(firstActiveTenant);
+      if (userDataResponse?.authenticated) {
+        setUserData(userDataResponse);
+        
+        // Verificar se precisa mostrar modal LGPD
+        setShowLgpdModal(!userDataResponse.lgpd_accepted_at);
+        
+        if (userDataResponse.tenants) {
+          setTenants(userDataResponse.tenants);
+          // Set first active tenant as default
+          const firstActiveTenant = userDataResponse.tenants.find((t: Tenant) => t.active);
+          if (firstActiveTenant && !activeTenant) {
+            setActiveTenant(firstActiveTenant);
+          }
         }
       }
     } catch (error) {
@@ -259,7 +273,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
     setTenants([]);
     setActiveTenant(null);
+    setUserData(null);
+    setShowLgpdModal(false);
     toast.success('Logout realizado com sucesso!');
+  };
+
+  const acceptLgpdTerms = async (version: string) => {
+    const { error } = await supabase.rpc('accept_lgpd_terms', {
+      terms_version: version
+    });
+
+    if (error) {
+      console.error('Erro ao aceitar termos LGPD:', error);
+      throw error;
+    }
+
+    // Atualizar estado local
+    setUserData(prev => prev ? {
+      ...prev,
+      lgpd_accepted_at: new Date().toISOString(),
+      lgpd_version_accepted: version,
+    } : null);
+    
+    setShowLgpdModal(false);
   };
 
   return (
@@ -270,13 +306,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         tenants,
         activeTenant,
+        showLgpdModal,
         signIn,
         signUp,
         signOut,
         setActiveTenant,
+        acceptLgpdTerms,
       }}
     >
       {children}
+      {showLgpdModal && user && <LgpdConsentModal onAccept={acceptLgpdTerms} />}
     </AuthContext.Provider>
   );
 };

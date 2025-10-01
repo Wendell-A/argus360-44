@@ -1308,6 +1308,8 @@ export type Database = {
           hire_date: string | null
           id: string
           last_access: string | null
+          lgpd_accepted_at: string | null
+          lgpd_version_accepted: string | null
           phone: string | null
           position: string | null
           position_id: string | null
@@ -1325,6 +1327,8 @@ export type Database = {
           hire_date?: string | null
           id: string
           last_access?: string | null
+          lgpd_accepted_at?: string | null
+          lgpd_version_accepted?: string | null
           phone?: string | null
           position?: string | null
           position_id?: string | null
@@ -1342,6 +1346,8 @@ export type Database = {
           hire_date?: string | null
           id?: string
           last_access?: string | null
+          lgpd_accepted_at?: string | null
+          lgpd_version_accepted?: string | null
           phone?: string | null
           position?: string | null
           position_id?: string | null
@@ -2719,6 +2725,10 @@ export type Database = {
           user_id: string
         }
         Returns: Json
+      }
+      accept_lgpd_terms: {
+        Args: { terms_version: string }
+        Returns: boolean
       }
       accept_public_invitation: {
         Args: {
