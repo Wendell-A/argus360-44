@@ -120,16 +120,15 @@ export function DashboardFilterModal({
                 <div className="space-y-2">
                   <Label htmlFor="year">Ano</Label>
                   <Select
-                    value={filters.year?.toString() || ''}
+                    value={filters.year?.toString() || undefined}
                     onValueChange={(value) =>
                       setYear(value ? parseInt(value) : null)
                     }
                   >
                     <SelectTrigger id="year">
-                      <SelectValue placeholder="Selecione o ano" />
+                      <SelectValue placeholder="Todos os anos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos</SelectItem>
                       {years.map((year) => (
                         <SelectItem key={year} value={year.toString()}>
                           {year}
@@ -142,16 +141,15 @@ export function DashboardFilterModal({
                 <div className="space-y-2">
                   <Label htmlFor="month">Mês</Label>
                   <Select
-                    value={filters.month?.toString() || ''}
+                    value={filters.month?.toString() || undefined}
                     onValueChange={(value) =>
                       setMonth(value ? parseInt(value) : null)
                     }
                   >
                     <SelectTrigger id="month">
-                      <SelectValue placeholder="Selecione o mês" />
+                      <SelectValue placeholder="Todos os meses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos</SelectItem>
                       {months.map((month) => (
                         <SelectItem key={month.value} value={month.value.toString()}>
                           {month.label}
