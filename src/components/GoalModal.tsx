@@ -82,16 +82,19 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
       target_amount: targetAmount,
     };
 
-    // Definir office_id e user_id baseado no tipo de meta
+    // Apenas adicionar office_id se for meta de escritório
     if (formData.goal_type === 'office') {
       data.office_id = formData.office_id;
-      data.user_id = null;
-    } else if (formData.goal_type === 'individual') {
+    }
+
+    // Apenas adicionar user_id se for meta individual
+    if (formData.goal_type === 'individual') {
       data.user_id = formData.user_id;
+    }
+
+    // Para metas de conversão, garantir que office_id e user_id sejam null
+    if (formData.goal_type === 'conversion') {
       data.office_id = null;
-    } else if (formData.goal_type === 'conversion') {
-      // Metas de conversão precisam de escritório para filtrar conversões
-      data.office_id = formData.office_id;
       data.user_id = null;
     }
 
@@ -128,7 +131,7 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
               </Select>
             </div>
 
-            {(formData.goal_type === 'office' || formData.goal_type === 'conversion') && (
+            {formData.goal_type === 'office' && (
               <div className="space-y-2">
                 <Label htmlFor="office_id">Escritório *</Label>
                 <Select value={formData.office_id || ''} onValueChange={(value) => handleChange("office_id", value)}>
@@ -143,11 +146,6 @@ export default function GoalModal({ open, onOpenChange, goal, onSave, isLoading 
                     ))}
                   </SelectContent>
                 </Select>
-                {formData.goal_type === 'conversion' && (
-                  <p className="text-xs text-muted-foreground">
-                    As conversões serão contabilizadas apenas para este escritório
-                  </p>
-                )}
               </div>
             )}
 
