@@ -78,11 +78,13 @@ export function DashboardFilterModal({
   ];
 
   const handleApply = () => {
+    console.log('🎯 [DashboardFilterModal] handleApply chamado com filtros:', filters);
     onApply();
     onClose();
   };
 
   const handleReset = () => {
+    console.log('🔄 [DashboardFilterModal] handleReset chamado');
     resetFilters();
     onClose();
   };

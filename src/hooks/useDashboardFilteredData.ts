@@ -7,6 +7,18 @@ export function useDashboardFilteredData() {
   const { activeTenant } = useAuth();
   const { filters, isActive } = useDashboardFiltersStore();
 
+  console.log('🔍 [useDashboardFilteredData] Hook chamado com:', {
+    isActive,
+    filters: {
+      year: filters.year,
+      month: filters.month,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      officeIds: filters.officeIds,
+      productIds: filters.productIds,
+    },
+  });
+
   return useQuery({
     queryKey: [
       'dashboard-filtered-data',
@@ -20,6 +32,8 @@ export function useDashboardFilteredData() {
       isActive,
     ],
     queryFn: async () => {
+      console.log('🚀 [useDashboardFilteredData] queryFn executado');
+      
       if (!activeTenant?.tenant_id) {
         throw new Error('Tenant não encontrado');
       }
@@ -30,12 +44,22 @@ export function useDashboardFilteredData() {
         return null;
       }
 
+      console.log('🔍 [useDashboardFilteredData] Filtros recebidos:', {
+        year: filters.year,
+        month: filters.month,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      });
+
       // Converter year/month para start_date/end_date
       let startDate = filters.startDate?.toISOString().split('T')[0] || null;
       let endDate = filters.endDate?.toISOString().split('T')[0] || null;
 
+      console.log('🔍 [useDashboardFilteredData] Antes da conversão:', { startDate, endDate });
+
       // Se year está definido mas não há startDate/endDate customizados
       if (filters.year && !filters.startDate && !filters.endDate) {
+        console.log('🔍 [useDashboardFilteredData] Convertendo year/month...');
         if (filters.month) {
           // Ano e mês específicos
           const year = filters.year;
@@ -43,10 +67,12 @@ export function useDashboardFilteredData() {
           startDate = `${year}-${String(month).padStart(2, '0')}-01`;
           const lastDay = new Date(year, month, 0).getDate();
           endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+          console.log('🔍 [useDashboardFilteredData] Convertido year+month:', { startDate, endDate, year, month });
         } else {
           // Apenas ano
           startDate = `${filters.year}-01-01`;
           endDate = `${filters.year}-12-31`;
+          console.log('🔍 [useDashboardFilteredData] Convertido apenas year:', { startDate, endDate });
         }
       }
 
