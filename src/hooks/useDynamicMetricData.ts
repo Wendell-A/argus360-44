@@ -119,7 +119,8 @@ async function getMetricValue(
   config: MetricConfig, 
   tenantId: string, 
   startDate: Date, 
-  endDate: Date
+  endDate: Date,
+  globalFilters?: { isActive: boolean; officeIds: string[]; productIds: string[]; }
 ): Promise<number> {
   let query;
   const selectField = getSelectField(config);
@@ -140,7 +141,7 @@ async function getMetricValue(
       
       // Aplicar filtros de comissão se especificados
       if (config.commissionConfig) {
-        const types = [];
+        const types = [] as string[];
         if (config.commissionConfig.includeOffice) types.push('office');
         if (config.commissionConfig.includeSeller) types.push('seller');
         if (types.length > 0) {
@@ -180,6 +181,18 @@ async function getMetricValue(
     query = query
       .gte(dateField, startDate.toISOString().split('T')[0])
       .lte(dateField, endDate.toISOString().split('T')[0]);
+  }
+
+  // Aplicar filtros globais quando ativos
+  if (globalFilters?.isActive) {
+    if (config.type === 'sales') {
+      if (globalFilters.productIds?.length) {
+        query = query.in('product_id', globalFilters.productIds);
+      }
+      if (globalFilters.officeIds?.length) {
+        query = query.in('office_id', globalFilters.officeIds);
+      }
+    }
   }
 
   // Aplicar filtros específicos da configuração
