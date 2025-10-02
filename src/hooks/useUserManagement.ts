@@ -85,22 +85,8 @@ export const useUserManagement = () => {
 
       const userIds = data.map(item => item.user_id);
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          email,
-          full_name,
-          phone,
-          avatar_url,
-          department,
-          position,
-          position_id,
-          hire_date,
-          last_access,
-          settings,
-          created_at,
-          updated_at
-        `)
+        .from('profiles_masked')
+        .select('id, email, full_name, phone, avatar_url, department, position, position_id, hire_date, created_at, updated_at, data_masked')
         .in('id', userIds);
 
       if (profilesError) {
@@ -133,8 +119,8 @@ export const useUserManagement = () => {
             position: profile?.position,
             position_id: profile?.position_id,
             hire_date: profile?.hire_date,
-            last_access: profile?.last_access,
-            settings: profile?.settings,
+            last_access: undefined, // Não disponível na view mascarada
+            settings: undefined, // Não disponível na view mascarada
             created_at: profile?.created_at || item.created_at,
             updated_at: profile?.updated_at || item.updated_at,
           }

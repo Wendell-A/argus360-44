@@ -83,7 +83,7 @@ export const useSellerCommissionsEnhanced = (filters?: CommissionFilters) => {
       const productIds = [...new Set(commissions.map(c => c.product_id))];
 
       const [sellersData, productsData] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, email').in('id', sellerIds),
+        supabase.from('profiles_masked').select('id, full_name, email, data_masked').in('id', sellerIds),
         supabase.from('consortium_products').select('id, name, category').in('id', productIds)
       ]);
 

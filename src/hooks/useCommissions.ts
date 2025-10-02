@@ -124,8 +124,8 @@ export const useCommissions = (filters: CommissionFilters = {}) => {
       let sellersData = [];
       if (allUserIds.length > 0) {
         const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
+          .from('profiles_masked')
+          .select('id, full_name, email, data_masked')
           .in('id', allUserIds);
         sellersData = profiles || [];
       }

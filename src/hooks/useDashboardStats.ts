@@ -165,8 +165,8 @@ export const useDashboardStats = () => {
         .in('id', clientIds);
 
       const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, full_name')
+        .from('profiles_masked')
+        .select('id, full_name, data_masked')
         .in('id', vendedorIds);
 
       const clientsMap = new Map(clientsData?.map(c => [c.id, c]) || []);

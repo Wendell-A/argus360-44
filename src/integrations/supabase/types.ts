@@ -899,6 +899,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "goals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "goals_office_id_fkey"
             columns: ["office_id"]
             isOneToOne: false
@@ -917,6 +924,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
             referencedColumns: ["id"]
           },
         ]
@@ -2002,6 +2016,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_support_comments_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
+            referencedColumns: ["id"]
+          },
         ]
       }
       support_tickets: {
@@ -2065,6 +2086,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_support_tickets_assigned"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_support_tickets_tenant"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -2076,6 +2104,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_support_tickets_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_masked"
             referencedColumns: ["id"]
           },
         ]
@@ -2840,6 +2875,75 @@ export type Database = {
           },
         ]
       }
+      profiles_masked: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          data_masked: boolean | null
+          department: string | null
+          department_id: string | null
+          email: string | null
+          full_name: string | null
+          hierarchical_level: number | null
+          hire_date: string | null
+          id: string | null
+          phone: string | null
+          position: string | null
+          position_id: string | null
+          settings: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          data_masked?: never
+          department?: string | null
+          department_id?: string | null
+          email?: never
+          full_name?: string | null
+          hierarchical_level?: number | null
+          hire_date?: string | null
+          id?: string | null
+          phone?: never
+          position?: string | null
+          position_id?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          data_masked?: never
+          department?: string | null
+          department_id?: string | null
+          email?: never
+          full_name?: string | null
+          hierarchical_level?: number | null
+          hire_date?: string | null
+          id?: string | null
+          phone?: never
+          position?: string | null
+          position_id?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals_with_client_info: {
         Row: {
           client_email: string | null
@@ -2883,6 +2987,56 @@ export type Database = {
           },
           {
             foreignKeyName: "proposals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_users_masked: {
+        Row: {
+          active: boolean | null
+          avatar_url: string | null
+          created_at: string | null
+          data_masked: boolean | null
+          department_id: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          joined_at: string | null
+          office_id: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          team_id: string | null
+          tenant_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_users_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_users_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_users_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_users_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
