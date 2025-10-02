@@ -142,11 +142,12 @@ export const useCachedSales = (
         async () => {
           console.log('🔄 Fetching sales data from database...', filters);
           
-          // Usar função contextual para vendas
+          // Usar RPC otimizada (elimina N+1 queries)
           const { data, error } = await supabase
-            .rpc('get_contextual_sales', {
-              user_uuid: user.id,
-              tenant_uuid: activeTenant.tenant_id
+            .rpc('get_sales_complete_optimized', {
+              tenant_uuid: activeTenant.tenant_id,
+              limit_param: filters.limit || 50,
+              offset_param: filters.offset || 0
             });
 
           if (error) {
@@ -154,66 +155,37 @@ export const useCachedSales = (
             throw error;
           }
 
-          let sales = data || [];
+          let salesData = data || [];
           
-          // Aplicar filtros se especificados
+          // Aplicar filtros se especificados (já vem com paginação da RPC)
           if (filters.status) {
-            sales = sales.filter((sale: any) => sale.status === filters.status);
+            salesData = salesData.filter((row: any) => row.sale_data.status === filters.status);
           }
           
           if (filters.period_start) {
-            sales = sales.filter((sale: any) => sale.sale_date >= filters.period_start);
+            salesData = salesData.filter((row: any) => row.sale_data.sale_date >= filters.period_start);
           }
           
           if (filters.period_end) {
-            sales = sales.filter((sale: any) => sale.sale_date <= filters.period_end);
+            salesData = salesData.filter((row: any) => row.sale_data.sale_date <= filters.period_end);
           }
           
           if (filters.office_id) {
-            sales = sales.filter((sale: any) => sale.office_id === filters.office_id);
+            salesData = salesData.filter((row: any) => row.office_data.id === filters.office_id);
           }
           
           if (filters.seller_id) {
-            sales = sales.filter((sale: any) => sale.seller_id === filters.seller_id);
+            salesData = salesData.filter((row: any) => row.seller_data.id === filters.seller_id);
           }
 
-          // Aplicar paginação
-          const totalCount = sales.length;
-          const offset = filters.offset || 0;
-          const limit = filters.limit || 50;
-          
-          if (limit > 0) {
-            sales = sales.slice(offset, offset + limit);
-          }
-
-          // Buscar dados relacionados para evitar N+1 queries
-          const clientIds = [...new Set(sales.map((s: any) => s.client_id))];
-          const sellerIds = [...new Set(sales.map((s: any) => s.seller_id))];
-
-          const [clientsData, sellersData] = await Promise.all([
-            clientIds.length > 0 ? supabase
-              .from('clients')
-              .select('id, name')
-              .in('id', clientIds) : Promise.resolve({ data: [] }),
-            
-            sellerIds.length > 0 ? supabase
-              .from('profiles')
-              .select('id, full_name')
-              .in('id', sellerIds) : Promise.resolve({ data: [] })
-          ]);
-
-          const clientsMap = new Map(
-            (clientsData.data || []).map(c => [c.id, c.name])
-          );
-          const sellersMap = new Map(
-            (sellersData.data || []).map(s => [s.id, s.full_name])
-          );
-
-          // Enriquecer dados das vendas
-          const enrichedSales: CachedSaleData[] = sales.map((sale: any) => ({
-            ...sale,
-            client_name: clientsMap.get(sale.client_id) || 'N/A',
-            seller_name: sellersMap.get(sale.seller_id) || 'N/A'
+          // Transformar dados para estrutura esperada (já vem com dados relacionados!)
+          const enrichedSales: CachedSaleData[] = salesData.map((row: any) => ({
+            ...row.sale_data,
+            client_name: row.client_data?.name || 'N/A',
+            seller_name: row.seller_data?.full_name || 'N/A',
+            product_name: row.product_data?.name || 'N/A',
+            office_name: row.office_data?.name || 'N/A',
+            tenant_id: activeTenant.tenant_id
           }));
 
           const totalValue = enrichedSales.reduce(
@@ -223,7 +195,7 @@ export const useCachedSales = (
 
           const response: Omit<SalesListResponse, 'cache_info'> = {
             sales: enrichedSales,
-            total_count: totalCount,
+            total_count: enrichedSales.length,
             total_value: totalValue
           };
 
@@ -294,11 +266,12 @@ export const useCachedCommissions = (
         async () => {
           console.log('🔄 Fetching commissions data from database...', filters);
           
-          // Usar função contextual para comissões
+          // Usar RPC otimizada (elimina N+1 queries)
           const { data, error } = await supabase
-            .rpc('get_contextual_commissions', {
-              user_uuid: user.id,
-              tenant_uuid: activeTenant.tenant_id
+            .rpc('get_commissions_complete_optimized', {
+              tenant_uuid: activeTenant.tenant_id,
+              limit_param: filters.limit || 50,
+              offset_param: filters.offset || 0
             });
 
           if (error) {
@@ -306,24 +279,32 @@ export const useCachedCommissions = (
             throw error;
           }
 
-          let commissions = data || [];
+          let commissionsData = data || [];
           
-          // Aplicar filtros
+          // Aplicar filtros (já vem com paginação da RPC)
           if (filters.status) {
-            commissions = commissions.filter((c: any) => c.status === filters.status);
+            commissionsData = commissionsData.filter((row: any) => row.commission_data.status === filters.status);
           }
           
           if (filters.recipient_type) {
-            commissions = commissions.filter((c: any) => c.recipient_type === filters.recipient_type);
+            commissionsData = commissionsData.filter((row: any) => row.commission_data.recipient_type === filters.recipient_type);
           }
 
           if (filters.period_start) {
-            commissions = commissions.filter((c: any) => c.due_date >= filters.period_start);
+            commissionsData = commissionsData.filter((row: any) => row.commission_data.due_date >= filters.period_start);
           }
           
           if (filters.period_end) {
-            commissions = commissions.filter((c: any) => c.due_date <= filters.period_end);
+            commissionsData = commissionsData.filter((row: any) => row.commission_data.due_date <= filters.period_end);
           }
+
+          // Transformar dados para estrutura esperada (já vem com dados relacionados!)
+          const commissions: CachedCommissionData[] = commissionsData.map((row: any) => ({
+            ...row.commission_data,
+            sale_client_name: row.sale_data?.client_name || 'N/A',
+            recipient_name: row.recipient_data?.name || 'N/A',
+            tenant_id: activeTenant.tenant_id
+          }));
 
           // Calcular totais
           const totalAmount = commissions.reduce(
@@ -339,18 +320,9 @@ export const useCachedCommissions = (
             .filter((c: any) => c.status === 'paid')
             .reduce((sum: number, comm: any) => sum + (comm.commission_amount || 0), 0);
 
-          // Aplicar paginação
-          const totalCount = commissions.length;
-          const offset = filters.offset || 0;
-          const limit = filters.limit || 50;
-          
-          if (limit > 0) {
-            commissions = commissions.slice(offset, offset + limit);
-          }
-
           const response: Omit<CommissionsListResponse, 'cache_info'> = {
-            commissions: commissions as CachedCommissionData[],
-            total_count: totalCount,
+            commissions,
+            total_count: commissions.length,
             total_amount: totalAmount,
             pending_amount: pendingAmount,
             paid_amount: paidAmount

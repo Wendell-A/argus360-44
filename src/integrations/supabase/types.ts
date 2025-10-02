@@ -2981,6 +2981,20 @@ export type Database = {
         Args: { p_client_id: string; p_tenant_id?: string; p_user_id?: string }
         Returns: Json
       }
+      get_commissions_complete_optimized: {
+        Args: {
+          limit_param?: number
+          offset_param?: number
+          tenant_uuid: string
+        }
+        Returns: {
+          commission_data: Json
+          commission_id: string
+          parent_commission_data: Json
+          recipient_data: Json
+          sale_data: Json
+        }[]
+      }
       get_contextual_audit_logs: {
         Args: {
           p_action_filter?: string
@@ -3199,12 +3213,41 @@ export type Database = {
         }
         Returns: Json
       }
+      get_funnel_stats_optimized: {
+        Args: { tenant_uuid: string }
+        Returns: {
+          avg_probability: number
+          clients_count: number
+          conversion_rate: number
+          order_index: number
+          stage_color: string
+          stage_id: string
+          stage_name: string
+          total_expected_value: number
+        }[]
+      }
       get_query_performance_metrics: {
         Args: { tenant_uuid: string }
         Returns: {
           measurement_time: string
           metric_name: string
           metric_value: number
+        }[]
+      }
+      get_sales_complete_optimized: {
+        Args: {
+          limit_param?: number
+          offset_param?: number
+          tenant_uuid: string
+        }
+        Returns: {
+          client_data: Json
+          commission_summary: Json
+          office_data: Json
+          product_data: Json
+          sale_data: Json
+          sale_id: string
+          seller_data: Json
         }[]
       }
       get_security_monitoring_data: {

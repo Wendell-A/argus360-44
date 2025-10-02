@@ -210,46 +210,27 @@ export const useCachedFunnelStats = (enabled: boolean = true) => {
         async () => {
           console.log('🔄 Fetching funnel stats from database...');
           
-          // Buscar estatísticas do funil
+          // Usar RPC otimizada para estatísticas do funil
           const { data: funnelData, error: funnelError } = await supabase
-            .from('sales_funnel_stages')
-            .select(`
-              id,
-              name,
-              color,
-              order_index,
-              client_funnel_position!inner(
-                client_id,
-                probability,
-                expected_value,
-                is_current
-              )
-            `)
-            .eq('tenant_id', activeTenant.tenant_id)
-            .eq('client_funnel_position.is_current', true);
+            .rpc('get_funnel_stats_optimized', {
+              tenant_uuid: activeTenant.tenant_id
+            });
 
           if (funnelError) {
             console.error('❌ Funnel stats error:', funnelError);
             throw funnelError;
           }
 
-          // Processar estatísticas por estágio
+          // Dados já vêm processados e agregados da RPC
           const stageStats = (funnelData || []).map(stage => ({
-            stage_id: stage.id,
-            stage_name: stage.name,
-            stage_color: stage.color,
+            stage_id: stage.stage_id,
+            stage_name: stage.stage_name,
+            stage_color: stage.stage_color,
             order_index: stage.order_index,
-            clients_count: stage.client_funnel_position?.length || 0,
-            total_expected_value: stage.client_funnel_position?.reduce(
-              (sum: number, pos: any) => sum + (pos.expected_value || 0), 
-              0
-            ) || 0,
-            avg_probability: stage.client_funnel_position?.length > 0 
-              ? stage.client_funnel_position.reduce(
-                  (sum: number, pos: any) => sum + (pos.probability || 0), 
-                  0
-                ) / stage.client_funnel_position.length
-              : 0
+            clients_count: Number(stage.clients_count) || 0,
+            total_expected_value: Number(stage.total_expected_value) || 0,
+            avg_probability: Number(stage.avg_probability) || 0,
+            conversion_rate: Number(stage.conversion_rate) || 0
           }));
 
           const stats = {
