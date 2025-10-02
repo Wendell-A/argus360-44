@@ -2689,6 +2689,7 @@ export type Database = {
           birth_date: string | null
           classification: string | null
           created_at: string | null
+          data_masked: boolean | null
           document: string | null
           email: string | null
           id: string | null
@@ -2712,6 +2713,7 @@ export type Database = {
           birth_date?: string | null
           classification?: string | null
           created_at?: string | null
+          data_masked?: never
           document?: never
           email?: never
           id?: string | null
@@ -2735,6 +2737,7 @@ export type Database = {
           birth_date?: string | null
           classification?: string | null
           created_at?: string | null
+          data_masked?: never
           document?: never
           email?: never
           id?: string | null
@@ -3413,6 +3416,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_sensitive_client_access: {
+        Args: {
+          _access_type: string
+          _client_id: string
+          _fields_accessed: string[]
+        }
+        Returns: undefined
+      }
       mask_document: {
         Args: { doc: string }
         Returns: string
@@ -3468,6 +3479,10 @@ export type Database = {
       }
       validate_tenant_isolation: {
         Args: { record_tenant_id: string; table_name: string; user_id?: string }
+        Returns: boolean
+      }
+      verify_strict_tenant_isolation: {
+        Args: { _table_name: string; _tenant_id: string; _user_id?: string }
         Returns: boolean
       }
     }
