@@ -54,6 +54,20 @@ const SidebarNav = ({ children, ...props }: { children: React.ReactNode; [key: s
   <SidebarMenu {...props}>{children}</SidebarMenu>
 );
 
+// Interface para itens do menu
+interface MenuItem {
+  name: string;
+  path: string;
+  icon: any;
+  enabled: boolean;
+  subItems?: Array<{ name: string; path: string }>;
+}
+
+interface MenuSection {
+  group: string;
+  items: MenuItem[];
+}
+
 export default function AppSidebar() {
   const { signOut } = useAuth();
   const { profileData, organizationData, isLoading: profileLoading } = useProfile();
@@ -86,7 +100,7 @@ export default function AppSidebar() {
     }
   };
 
-  const menuItems = [
+  const menuItems: MenuSection[] = [
     {
       group: 'Principal',
       items: [
@@ -221,20 +235,57 @@ export default function AppSidebar() {
                 <SidebarNav>
                   {section.items
                     .filter(item => item.enabled)
-                    .map((item) => (
-                      <SidebarItem key={item.name}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={location.pathname === item.path}
-                          title={state === 'collapsed' ? item.name : undefined}
-                        >
-                          <Link to={item.path}>
-                            <item.icon className="w-4 h-4" />
-                            {state !== 'collapsed' && <span>{item.name}</span>}
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarItem>
-                    ))}
+                    .map((item) => {
+                      // Se o item tem subitens (submenu)
+                      if ('subItems' in item && item.subItems && item.subItems.length > 0) {
+                        return (
+                          <SidebarItem key={item.name}>
+                            <div className="space-y-1">
+                              {/* Título do grupo (não clicável) */}
+                              {state !== 'collapsed' && (
+                                <div className="flex items-center px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                                  <item.icon className="w-4 h-4 mr-2" />
+                                  <span>{item.name}</span>
+                                </div>
+                              )}
+                              
+                              {/* Subitens */}
+                              <div className={state !== 'collapsed' ? 'ml-6 space-y-1' : 'space-y-1'}>
+                                {item.subItems.map((subItem: any) => (
+                                  <SidebarMenuButton
+                                    key={subItem.name}
+                                    asChild
+                                    isActive={location.pathname === subItem.path}
+                                    title={state === 'collapsed' ? subItem.name : undefined}
+                                  >
+                                    <Link to={subItem.path}>
+                                      <item.icon className="w-4 h-4" />
+                                      {state !== 'collapsed' && <span>{subItem.name}</span>}
+                                    </Link>
+                                  </SidebarMenuButton>
+                                ))}
+                              </div>
+                            </div>
+                          </SidebarItem>
+                        );
+                      }
+                      
+                      // Item normal sem submenu
+                      return (
+                        <SidebarItem key={item.name}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={location.pathname === item.path}
+                            title={state === 'collapsed' ? item.name : undefined}
+                          >
+                            <Link to={item.path}>
+                              <item.icon className="w-4 h-4" />
+                              {state !== 'collapsed' && <span>{item.name}</span>}
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarItem>
+                      );
+                    })}
                 </SidebarNav>
               </SidebarGroupContent>
             </SidebarGroup>
