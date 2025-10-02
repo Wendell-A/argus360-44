@@ -16,7 +16,9 @@ import Clientes from '@/pages/Clientes';
 import Vendas from '@/pages/Vendas';
 import Inadimplentes from '@/pages/Inadimplentes';
 import Vendedores from '@/pages/Vendedores';
-import Comissoes from '@/pages/Comissoes';
+import Comissoes from '@/pages/comissoes';
+import ComissoesEscritorio from '@/pages/comissoes/ComissoesEscritorio';
+import ComissoesVendedores from '@/pages/comissoes/ComissoesVendedores';
 import Consorcios from '@/pages/Consorcios';
 import SimulacaoConsorcio from '@/pages/SimulacaoConsorcio';
 import Metas from '@/pages/Metas';
@@ -90,6 +92,8 @@ function App() {
                 <Route path="/inadimplentes" element={<Inadimplentes />} />
                 <Route path="/vendedores" element={<Vendedores />} />
                 <Route path="/comissoes" element={<Comissoes />} />
+                <Route path="/comissoes/escritorio" element={<ComissoesEscritorio />} />
+                <Route path="/comissoes/vendedores" element={<ComissoesVendedores />} />
                 <Route path="/consorcios" element={<Consorcios />} />
                 <Route path="/simulacao-consorcio" element={<SimulacaoConsorcio />} />
                 <Route path="/proposals" element={<Proposals />} />

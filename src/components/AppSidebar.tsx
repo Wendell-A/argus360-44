@@ -96,7 +96,16 @@ export default function AppSidebar() {
         { name: 'Vendas', path: '/vendas', icon: ShoppingCart, enabled: true },
         { name: 'Inadimplentes', path: '/inadimplentes', icon: FileWarning, enabled: true },
         { name: 'Vendedores', path: '/vendedores', icon: Users, enabled: menuConfig?.modules?.sellers || false },
-        { name: 'Comissões', path: '/comissoes', icon: DollarSign, enabled: menuConfig?.modules?.commissions || false },
+        { 
+          name: 'Comissões', 
+          path: '/comissoes', 
+          icon: DollarSign, 
+          enabled: menuConfig?.modules?.commissions || false,
+          subItems: [
+            { name: 'Escritório', path: '/comissoes/escritorio' },
+            { name: 'Vendedores', path: '/comissoes/vendedores' }
+          ]
+        },
         { name: 'Consórcios', path: '/consorcios', icon: Car, enabled: true },
         { name: 'Orçamentos', path: '/proposals', icon: FileSpreadsheet, enabled: true },
         { name: 'Metas', path: '/metas', icon: Target, enabled: true },
