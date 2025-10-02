@@ -18,17 +18,36 @@ export function useSales() {
         throw new Error('No tenant selected');
       }
 
-      const { data, error } = await supabase
+      // Buscar vendas sem JOIN para evitar exposição de dados sensíveis
+      const { data: salesData, error } = await supabase
         .from('sales')
-        .select(`
-          *,
-          clients:client_id(name, document),
-          consortium_products:product_id(name, category)
-        `)
+        .select('*')
         .eq('tenant_id', activeTenant.tenant_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Buscar dados mascarados de clientes
+      const clientIds = [...new Set(salesData?.map(s => s.client_id).filter(Boolean))];
+      const { data: clientsData } = await supabase
+        .from('clients_masked')
+        .select('id, name, document')
+        .in('id', clientIds);
+
+      // Buscar produtos
+      const productIds = [...new Set(salesData?.map(s => s.product_id).filter(Boolean))];
+      const { data: productsData } = await supabase
+        .from('consortium_products')
+        .select('id, name, category')
+        .in('id', productIds);
+
+      // Combinar dados com informações mascaradas
+      const data = salesData?.map(sale => ({
+        ...sale,
+        clients: clientsData?.find(c => c.id === sale.client_id) || null,
+        consortium_products: productsData?.find(p => p.id === sale.product_id) || null,
+      }));
+
       return data;
     },
     enabled: !!activeTenant?.tenant_id,
