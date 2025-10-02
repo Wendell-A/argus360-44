@@ -33,7 +33,7 @@ import {
   Trash2,
   ArrowRightLeft
 } from "lucide-react";
-import { useClients, useCreateClient, useDeleteClient } from "@/hooks/useClients";
+import { useClientsMasked, useCreateClient, useDeleteClient } from "@/hooks/useClientsMasked";
 import { ClientModal } from "@/components/ClientModal";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateClientFunnelPosition, useSalesFunnelStages, useCreateDefaultFunnelStages } from "@/hooks/useSalesFunnel";
@@ -52,7 +52,7 @@ export default function Clientes() {
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [clientToTransfer, setClientToTransfer] = useState<any>(null);
   
-  const { clients, isLoading, error: clientsError } = useClients();
+  const { clients, isLoading, error: clientsError } = useClientsMasked();
   const { createClientAsync, isCreating: isCreatingClient, error: createError } = useCreateClient();
   const { deleteClientAsync, isDeleting } = useDeleteClient();
   const { toast } = useToast();

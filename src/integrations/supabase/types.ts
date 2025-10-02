@@ -2890,7 +2890,6 @@ export type Database = {
           phone: string | null
           position: string | null
           position_id: string | null
-          settings: Json | null
           updated_at: string | null
         }
         Insert: {
@@ -2907,7 +2906,6 @@ export type Database = {
           phone?: never
           position?: string | null
           position_id?: string | null
-          settings?: Json | null
           updated_at?: string | null
         }
         Update: {
@@ -2924,7 +2922,6 @@ export type Database = {
           phone?: never
           position?: string | null
           position_id?: string | null
-          settings?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -2998,15 +2995,24 @@ export type Database = {
         Row: {
           active: boolean | null
           avatar_url: string | null
+          context_level: number | null
           created_at: string | null
           data_masked: boolean | null
+          department: string | null
           department_id: string | null
           email: string | null
           full_name: string | null
+          hierarchical_level: number | null
+          hire_date: string | null
           id: string | null
+          invited_at: string | null
           joined_at: string | null
           office_id: string | null
+          permissions: Json | null
           phone: string | null
+          position: string | null
+          profile_id: string | null
+          profile_position_id: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           team_id: string | null
           tenant_id: string | null
@@ -3014,6 +3020,13 @@ export type Database = {
           user_id: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_position_id_fkey"
+            columns: ["profile_position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tenant_users_department_id_fkey"
             columns: ["department_id"]
@@ -3026,6 +3039,13 @@ export type Database = {
             columns: ["office_id"]
             isOneToOne: false
             referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_users_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
           {
