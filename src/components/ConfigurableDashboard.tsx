@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { useDashboardFilteredData } from '@/hooks/useDashboardFilteredData';
 import { useDashboardFiltersStore } from '@/stores/useDashboardFiltersStore';
 import { ConversionRateWidget } from './dashboard/ConversionRateWidget';
+import { useProfile } from '@/hooks/useProfile';
 
 export function ConfigurableDashboard() {
   const [selectedConfig, setSelectedConfig] = useState<'A' | 'B' | 'C'>('A');
@@ -28,8 +29,16 @@ export function ConfigurableDashboard() {
   const saveMutation = useSaveDashboardConfiguration();
   
   // Filtros do Dashboard
-  const { isActive: hasActiveFilters } = useDashboardFiltersStore();
+  const { isActive: hasActiveFilters, filters } = useDashboardFiltersStore();
   const { data: filteredData, isLoading: isLoadingFiltered } = useDashboardFilteredData();
+  
+  // Buscar office_id do usuário para o widget de conversão
+  const { organizationData } = useProfile();
+  
+  // Definir officeId: priorizar filtros ativos, senão usar office_id do perfil
+  const dashboardOfficeId = filters.officeIds && filters.officeIds.length > 0 
+    ? filters.officeIds[0] 
+    : organizationData?.office_id || undefined;
 
   console.log('📊 [ConfigurableDashboard] Estado dos filtros:', {
     hasActiveFilters,
@@ -210,7 +219,8 @@ export function ConfigurableDashboard() {
               <div key={metric.id} className="col-span-1 md:col-span-2">
                 <ConversionRateWidget 
                   startDate={undefined} 
-                  endDate={undefined} 
+                  endDate={undefined}
+                  officeId={dashboardOfficeId}
                 />
               </div>
             );
