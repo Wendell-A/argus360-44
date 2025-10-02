@@ -9,6 +9,7 @@ interface CommissionFilters {
   office?: string;
   seller?: string;
   product?: string;
+  commission_type?: 'office' | 'seller';
 }
 
 export const useCommissions = (filters: CommissionFilters = {}) => {
@@ -99,6 +100,11 @@ export const useCommissions = (filters: CommissionFilters = {}) => {
           )
         `)
         .eq("tenant_id", activeTenant.tenant_id);
+
+      // CRÍTICO: Filtrar por tipo de comissão para evitar vazamento de dados
+      if (filters.commission_type) {
+        query = query.eq("commission_type", filters.commission_type);
+      }
 
       // Aplicar filtros de data baseado no payment_date
       if (dateRange.start && dateRange.end) {
