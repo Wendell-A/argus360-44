@@ -2651,6 +2651,36 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       clients_masked: {
@@ -3327,6 +3357,14 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      has_any_role_in_tenant: {
+        Args: {
+          _roles: Database["public"]["Enums"]["user_role"][]
+          _tenant_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_granular_permission: {
         Args: {
           p_action: string
@@ -3334,6 +3372,14 @@ export type Database = {
           p_resource: string
           p_tenant_id: string
           p_user_id: string
+        }
+        Returns: boolean
+      }
+      has_role_in_tenant: {
+        Args: {
+          _role: Database["public"]["Enums"]["user_role"]
+          _tenant_id: string
+          _user_id: string
         }
         Returns: boolean
       }
