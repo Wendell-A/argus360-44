@@ -70,3 +70,22 @@ Cada tela possui documentação detalhada em arquivos separados:
 - [Fluxo de Autenticação](./fluxos/Autenticacao.md)
 - [Fluxo de Vendas](./fluxos/Vendas.md)
 - [Fluxo de Comissões](./fluxos/Comissoes.md)
+
+## Análises e Arquitetura Otimizada
+
+- [Análise de Valor do Sistema](./analise/analise-valor-sistema-03-10-2025.md)
+- [Arquitetura de Consultas Otimizadas](./analise/arquitetura-consultas-otimizadas-03-10-2025.md)
+- [Mapa de Rotas e Telas](./telas/mapa-rotas-e-telas-argus360-44-03-10-2025.md)
+
+## Análises por Tela
+
+- [Vendas](./analise/telas/analise-vendas-03-10-2025.md)
+- [CRM](./analise/telas/analise-crm-03-10-2025.md)
+- [Comissões](./analise/telas/analise-comissoes-03-10-2025.md)
+- [Dashboard](./analise/telas/analise-dashboard-03-10-2025.md)
+- [Auditoria de Segurança](./analise/telas/analise-auditoria-seguranca-03-10-2025.md)
+
+## Guia e KPIs
+
+- [Guia de Desenvolvimento do Argus360](./guia/guia-desenvolvimento-argus360-03-10-2025.md)
+- [KPIs e Benchmarks](./analise/kpis-benchmarks-03-10-2025.md)
