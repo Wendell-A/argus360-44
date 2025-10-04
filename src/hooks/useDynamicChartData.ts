@@ -428,7 +428,9 @@ function processTimeData(data: any[], config: ChartConfig): ChartDataPoint[] {
   });
   
   // Converter para array e calcular valores finais
+  // Sort chronologically by monthKey (YYYY-MM format) BEFORE formatting
   const result = Array.from(monthlyData.entries())
+    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
     .map(([monthKey, data]) => {
       let value: number;
       
@@ -458,7 +460,6 @@ function processTimeData(data: any[], config: ChartConfig): ChartDataPoint[] {
         value,
       };
     })
-    .sort((a, b) => a.name.localeCompare(b.name))
     .slice(-6); // Últimos 6 meses
   
   return result;
